@@ -26,6 +26,7 @@ dev = [
 target-version = "py314"
 line-length = 100
 src = ["apps", "config", "tests"]
+extend-exclude = [".specify", ".opencode", ".venv", "staticfiles"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "DJ"]

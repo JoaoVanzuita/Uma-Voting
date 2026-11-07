@@ -83,6 +83,12 @@ DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+AUTH_USER_MODEL = "accounts.User"
+
+LOGIN_URL = "/entrar/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/entrar/"
+
 # ---------------------------------------------------------------------------
 # Internacionalização e fuso horário
 # ---------------------------------------------------------------------------
@@ -94,11 +100,11 @@ USE_TZ = True
 # ---------------------------------------------------------------------------
 # Arquivos estáticos e mídia
 # ---------------------------------------------------------------------------
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 STORAGES = {
@@ -119,11 +125,18 @@ SESSION_COOKIE_AGE = env("DJANGO_SESSION_COOKIE_AGE")
 
 CSRF_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SECURE = env("DJANGO_CSRF_COOKIE_SECURE")
+# O HTMX envia o token no cabeçalho X-CSRFToken; o cookie precisa ser legível.
+CSRF_COOKIE_HTTPONLY = False
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
+SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
+
+# Entradas de formulário e uploads ficam limitadas (contratos de importação: 5 MB).
+DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 # ---------------------------------------------------------------------------
 # Cache compartilhado entre workers (throttle de login)
@@ -170,6 +183,11 @@ LOGGING = {
         "django.security": {
             "handlers": ["console"],
             "level": "WARNING",
+            "propagate": False,
+        },
+        "apps": {
+            "handlers": ["console"],
+            "level": "INFO",
             "propagate": False,
         },
     },

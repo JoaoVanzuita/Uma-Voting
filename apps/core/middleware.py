@@ -29,12 +29,13 @@ class RequestIDMiddleware:
         request_id = incoming if _REQUEST_ID_RE.match(incoming) else uuid.uuid4().hex
 
         request.request_id = request_id
-        token = _request_id.set(request_id)
-        try:
-            response = self.get_response(request)
-        finally:
-            _request_id.reset(token)
+        # Mantém o contexto ativo após a resposta: o BaseHandler do Django
+        # registra 4xx/5xx fora da cadeia de middlewares, e o filtro precisa
+        # do ID para correlacionar esse log. A próxima requisição sobrescreve
+        # o valor no mesmo contexto.
+        _request_id.set(request_id)
 
+        response = self.get_response(request)
         response[REQUEST_ID_HEADER] = request_id
         return response
 

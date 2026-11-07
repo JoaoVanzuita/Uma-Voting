@@ -62,16 +62,16 @@ Projeto Django único na raiz do repositório:
 
 **⚠️ CRITICAL**: nenhuma história deve começar antes desta fase.
 
-- [ ] T013 Criar `accounts.User(AbstractBaseUser)` em `apps/accounts/models.py` com `USERNAME_FIELD='username'`, `REQUIRED_FIELDS=[]`, campos `username`, `password`, `is_admin`, `is_active`, `date_joined`, `last_login`, manager com `get_by_natural_key()` usando `username__iexact` e `UniqueConstraint(Lower('username'), name='uniq_user_username_ci')`; gerar migration
-- [ ] T014 Criar `CatalogSource` (`name`, `kind IN ('html','api','file','manual')`, `base_url`, `terms_url`, `license_note`, `enabled`), `Character` (`stable_id` único), `CharacterVersion` (`stable_id` único, `release_date_global` nullable, unique `(character_id, stable_id)`), `Aptitude` (unique `(category, value)`), `CharacterVersionAptitude` (unique `(version_id, aptitude_id)`) e `ImageAsset` (`file_path` único, partial unique `(character_id) WHERE is_current`, `status IN ('valid','invalid','missing')`, checksum, width > 0, height > 0) em `apps/catalog/models.py`; gerar migration com índices
-- [ ] T015 Criar data migration em `apps/catalog/migrations/0002_seed_aptitudes.py` com as 10 aptidões (4 estratégias, 4 distâncias, 2 superfícies) e o `CatalogSource` `curadoria-local` (o modelo é criado em T014)
-- [ ] T016 [P] Criar factories compartilhadas em `tests/factories.py` para usuários, fontes de catálogo, personagens, versões, aptidões e imagens
-- [ ] T017 [P] Criar template tags compartilhadas em `apps/core/templatetags/ui_tags.py` para URL de imagem/placeholder, badges de estado e formatação de data/hora em `America/Sao_Paulo`
-- [ ] T018 [P] Criar componentes CSS compartilhados (botões, formulários, tabelas, alertas, cards, estados vazios) em `static/css/components.css` e `static/css/pages.css`
-- [ ] T019 [P] Criar utilitários JS em `static/js/app.js` para contador de seleção, fallback de imagem, CSRF em HTMX e gerenciamento de foco
-- [ ] T020 Criar esqueletos de URLs e views namespaced em `apps/accounts/urls.py`, `apps/catalog/urls.py`, `apps/voting/urls.py` e `config/urls.py`
-- [ ] T021 Configurar logging sem dados sensíveis, segurança base, sessão em banco, `DatabaseCache`, `SESSION_EXPIRE_AT_BROWSER_CLOSE=True` e cookies em `config/settings/base.py`
-- [ ] T022 Criar `AdminRequiredMixin`, `ActiveUserRequiredMixin` e helper de elegibilidade em `apps/core/permissions.py` com verificação server-side
+- [X] T013 Criar `accounts.User(AbstractBaseUser)` em `apps/accounts/models.py` com `USERNAME_FIELD='username'`, `REQUIRED_FIELDS=[]`, campos `username`, `password`, `is_admin`, `is_active`, `date_joined`, `last_login`, manager com `get_by_natural_key()` usando `username__iexact` e `UniqueConstraint(Lower('username'), name='uniq_user_username_ci')`; gerar migration
+- [X] T014 Criar `CatalogSource` (`name`, `kind IN ('html','api','file','manual')`, `base_url`, `terms_url`, `license_note`, `enabled`), `Character` (`stable_id` único), `CharacterVersion` (`stable_id` único, `release_date_global` nullable, unique `(character_id, stable_id)`), `Aptitude` (unique `(category, value)`), `CharacterVersionAptitude` (unique `(version_id, aptitude_id)`) e `ImageAsset` (`file_path` único, partial unique `(character_id) WHERE is_current`, `status IN ('valid','invalid','missing')`, checksum, width > 0, height > 0) em `apps/catalog/models.py`; gerar migration com índices
+- [X] T015 Criar data migration em `apps/catalog/migrations/0002_seed_aptitudes.py` com as 10 aptidões (4 estratégias, 4 distâncias, 2 superfícies) e o `CatalogSource` `curadoria-local` (o modelo é criado em T014)
+- [X] T016 [P] Criar factories compartilhadas em `tests/factories.py` para usuários, fontes de catálogo, personagens, versões, aptidões e imagens
+- [X] T017 [P] Criar template tags compartilhadas em `apps/core/templatetags/ui_tags.py` para URL de imagem/placeholder, badges de estado e formatação de data/hora em `America/Sao_Paulo`
+- [X] T018 [P] Criar componentes CSS compartilhados (botões, formulários, tabelas, alertas, cards, estados vazios) em `static/css/components.css` e `static/css/pages.css`
+- [X] T019 [P] Criar utilitários JS em `static/js/app.js` para contador de seleção, fallback de imagem, CSRF em HTMX e gerenciamento de foco
+- [X] T020 Criar esqueletos de URLs e views namespaced em `apps/accounts/urls.py`, `apps/catalog/urls.py`, `apps/voting/urls.py` e `config/urls.py`
+- [X] T021 Configurar logging sem dados sensíveis, segurança base, sessão em banco, `DatabaseCache`, `SESSION_EXPIRE_AT_BROWSER_CLOSE=True` e cookies em `config/settings/base.py`
+- [X] T022 Criar `AdminRequiredMixin`, `ActiveUserRequiredMixin` e helper de elegibilidade em `apps/core/permissions.py` com verificação server-side
 
 **Checkpoint**: modelos compartilhados, settings, segurança e base visual prontos.
 
