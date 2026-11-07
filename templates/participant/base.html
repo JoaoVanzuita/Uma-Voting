@@ -5,26 +5,38 @@
 {% block body %}
   <header class="site-header">
     <div class="container-page site-header__inner">
-      <a class="brand" href="/">Uma Voting</a>
+      <a class="brand" href="{% url 'participant:home' %}">Uma Voting</a>
 
       <nav class="site-nav" aria-label="Navegação principal">
-        <a class="site-nav__link" href="/">Votações</a>
+        <a class="site-nav__link" href="{% url 'participant:home' %}">Votações</a>
         <a class="site-nav__link" href="/historico/">Histórico</a>
       </nav>
 
       <div class="site-header__user">
         {% if request.user.is_authenticated %}
           <span class="user-chip">{{ request.user.username }}</span>
-          <form class="inline-form" method="post" action="/sair/">
+          <form class="inline-form" method="post" action="{% url 'participant:logout' %}">
             {% csrf_token %}
             <button class="btn btn-tertiary" type="submit">Sair</button>
           </form>
         {% else %}
-          <a class="btn btn-primary" href="/entrar/">Entrar</a>
+          <a class="btn btn-primary" href="{% url 'participant:login' %}">Entrar</a>
         {% endif %}
       </div>
     </div>
   </header>
+
+  {% if is_participant_mode %}
+    <div class="container-page messages">
+      <div class="alert alert-info cluster">
+        <span>Modo participante ativo.</span>
+        <form class="inline-form" method="post" action="{% url 'participant:admin_mode' %}">
+          {% csrf_token %}
+          <button class="btn btn-tertiary" type="submit">Voltar à administração</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
 
   {% include "components/messages.html" %}
 

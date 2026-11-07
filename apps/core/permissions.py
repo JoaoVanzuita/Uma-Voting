@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
+from django.urls import reverse_lazy
 
 
 def is_active_user(user) -> bool:
@@ -26,9 +27,11 @@ class ActiveUserRequiredMixin(LoginRequiredMixin):
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """Restringe a área administrativa a administradores ativos.
 
-    Visitantes não autenticados são redirecionados ao login; usuários
-    autenticados sem privilégio recebem 403.
+    Visitantes não autenticados são redirecionados ao login administrativo;
+    usuários autenticados sem privilégio recebem 403.
     """
+
+    login_url = reverse_lazy("admin:login")
 
     def test_func(self) -> bool:
         return is_admin_user(self.request.user)

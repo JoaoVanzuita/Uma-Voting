@@ -5,13 +5,13 @@
 {% block body %}
   <div class="admin-shell">
     <aside class="admin-sidebar">
-      <a class="brand" href="/admin/">
+      <a class="brand" href="{% url 'admin:dashboard' %}">
         Uma Voting
         <small>Administração</small>
       </a>
 
       <nav class="admin-nav" aria-label="Navegação administrativa">
-        <a class="admin-nav__link" href="/admin/">Dashboard</a>
+        <a class="admin-nav__link" href="{% url 'admin:dashboard' %}">Dashboard</a>
         <a class="admin-nav__link" href="/admin/participantes/">Participantes</a>
         <a class="admin-nav__link" href="/admin/catalogo/">Catálogo</a>
         <a class="admin-nav__link" href="/admin/votacoes/">Votações</a>
@@ -20,11 +20,11 @@
       <div class="admin-sidebar__footer">
         {% if request.user.is_authenticated %}
           <span class="user-chip">{{ request.user.username }}</span>
-          <form class="inline-form" method="post" action="/admin/modo-participante/">
+          <form class="inline-form" method="post" action="{% url 'admin:participant_mode' %}">
             {% csrf_token %}
             <button class="btn btn-tertiary" type="submit">Modo participante</button>
           </form>
-          <form class="inline-form" method="post" action="/admin/sair/">
+          <form class="inline-form" method="post" action="{% url 'admin:logout' %}">
             {% csrf_token %}
             <button class="btn btn-tertiary" type="submit">Sair</button>
           </form>

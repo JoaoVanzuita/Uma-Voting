@@ -1,9 +1,18 @@
-"""Rotas do app de votações.
+"""Rotas de votações nos namespaces ``participant`` e ``admin``."""
 
-As rotas de participante e administração são montadas em ``config/urls.py``
-nos namespaces ``participant`` e ``admin`` a partir das Fases 4 e 7.
-"""
+from django.urls import path
+
+from .views import admin as admin_views
+from .views import participant as participant_views
 
 app_name = "voting"
 
-urlpatterns: list = []
+participant_patterns = [
+    path("", participant_views.home, name="home"),
+]
+
+admin_patterns = [
+    path("admin/", admin_views.dashboard, name="dashboard"),
+]
+
+urlpatterns = [*participant_patterns, *admin_patterns]

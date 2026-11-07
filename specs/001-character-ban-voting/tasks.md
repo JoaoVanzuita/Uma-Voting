@@ -89,22 +89,22 @@ fazer logout e confirmar expiração ao fechar o navegador.
 
 ### Tests for User Story 1
 
-- [ ] T023 [P] [US1] Testes unitários de unicidade case-insensitive e manager `get_by_natural_key()` em `apps/accounts/tests/test_models.py`
-- [ ] T024 [P] [US1] Testes de integração de login admin/participante, rejeição de username admin, inexistente/inativo, CSRF, aviso de limitação do username, logout, expiração ao fechar navegador e alternância de modo em `apps/accounts/tests/test_auth_views.py`
-- [ ] T025 [P] [US1] Testes de throttle de login por IP/username em `apps/accounts/tests/test_throttle.py`
+- [X] T023 [P] [US1] Testes unitários de unicidade case-insensitive e manager `get_by_natural_key()` em `apps/accounts/tests/test_models.py`
+- [X] T024 [P] [US1] Testes de integração de login admin/participante, rejeição de username admin, inexistente/inativo, CSRF, aviso de limitação do username, logout, expiração ao fechar navegador e alternância de modo em `apps/accounts/tests/test_auth_views.py`
+- [X] T025 [P] [US1] Testes de throttle de login por IP/username em `apps/accounts/tests/test_throttle.py`
 
 ### Implementation for User Story 1
 
-- [ ] T026 [US1] Implementar `accounts.services.auth` com login admin (senha), login participante (username), rejeição de admin no fluxo de participante, mensagem genérica e logout em `apps/accounts/services/auth.py`
-- [ ] T027 [US1] Implementar `accounts.services.throttle` com `DatabaseCache`, janela de 5 minutos e limites do plano em `apps/accounts/services/throttle.py`
-- [ ] T028 [US1] Criar formulários e views de login/logout/modo em `apps/accounts/forms.py` e `apps/accounts/views.py`
-- [ ] T029 [US1] Criar templates de login `templates/participant/login.html` e `templates/admin/login.html` com link para o outro acesso, mensagens genéricas e aviso no login de participante: “Este acesso identifica apenas o username; não comprova sua identidade.”
-- [ ] T030 [US1] Implementar `create_admin` com senha via prompt/stdin em `apps/accounts/management/commands/create_admin.py`
-- [ ] T031 [US1] Configurar `AUTHENTICATION_BACKENDS`, sessão, CSRF, cookies `Secure`/`HttpOnly`/`SameSite=Lax` e `SESSION_COOKIE_AGE` em `config/settings/base.py` e `config/settings/prod.py`
-- [ ] T032 [US1] Wire das rotas `participant:login`, `admin:login`, `participant:logout` e `admin:logout` em `apps/accounts/urls.py` e `config/urls.py`
-- [ ] T033 [US1] Implementar middleware/context processor de modo admin↔participante em `apps/core/middleware.py` e `apps/core/context_processors.py`
-- [ ] T034 [US1] Adicionar logging de falhas de autenticação e transições de sessão sem senha/username sensível em `apps/accounts/services/auth.py`
-- [ ] T035 [US1] Executar os cenários do quickstart §5.1, exceto a listagem de votações elegíveis (validada em T053), e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
+- [X] T026 [US1] Implementar `accounts.services.auth` com login admin (senha), login participante (username), rejeição de admin no fluxo de participante, mensagem genérica e logout em `apps/accounts/services/auth.py`
+- [X] T027 [US1] Implementar `accounts.services.throttle` com `DatabaseCache`, janela de 5 minutos e limites do plano em `apps/accounts/services/throttle.py`
+- [X] T028 [US1] Criar formulários e views de login/logout/modo em `apps/accounts/forms.py` e `apps/accounts/views.py`
+- [X] T029 [US1] Criar templates de login `templates/participant/login.html` e `templates/admin/login.html` com link para o outro acesso, mensagens genéricas e aviso no login de participante: “Este acesso identifica apenas o username; não comprova sua identidade.”
+- [X] T030 [US1] Implementar `create_admin` com senha via prompt/stdin em `apps/accounts/management/commands/create_admin.py`
+- [X] T031 [US1] Configurar `AUTHENTICATION_BACKENDS`, sessão, CSRF, cookies `Secure`/`HttpOnly`/`SameSite=Lax` e `SESSION_COOKIE_AGE` em `config/settings/base.py` e `config/settings/prod.py`
+- [X] T032 [US1] Wire das rotas `participant:login`, `admin:login`, `participant:logout` e `admin:logout` em `apps/accounts/urls.py` e `config/urls.py`
+- [X] T033 [US1] Implementar middleware/context processor de modo admin↔participante em `apps/core/middleware.py` e `apps/core/context_processors.py`
+- [X] T034 [US1] Adicionar logging de falhas de autenticação e transições de sessão sem senha/username sensível em `apps/accounts/services/auth.py`
+- [X] T035 [US1] Executar os cenários do quickstart §5.1, exceto a listagem de votações elegíveis (validada em T053), e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
 
 **Checkpoint**: US1 funcional e testável isoladamente.
 

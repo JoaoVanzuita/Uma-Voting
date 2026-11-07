@@ -1,0 +1,27 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Painel administrativo — Uma Voting{% endblock %}
+
+{% block page_title %}Painel administrativo{% endblock %}
+
+{% block content %}
+  <section class="panel stack" aria-labelledby="welcome-title">
+    <div>
+      <h2 id="welcome-title">Olá, {{ request.user.username }}</h2>
+      <p class="text-muted">
+        Sessão administrativa ativa. Use a navegação lateral para gerenciar a comunidade.
+      </p>
+    </div>
+
+    <div class="cluster">
+      <a class="btn btn-secondary" href="/admin/participantes/">Participantes</a>
+      <a class="btn btn-secondary" href="/admin/catalogo/">Catálogo</a>
+      <a class="btn btn-secondary" href="/admin/votacoes/">Votações</a>
+    </div>
+
+    <form method="post" action="{% url 'admin:participant_mode' %}">
+      {% csrf_token %}
+      <button class="btn btn-primary" type="submit">Ver como participante</button>
+    </form>
+  </section>
+{% endblock %}

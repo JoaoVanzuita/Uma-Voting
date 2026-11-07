@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Entrar como participante — Uma Voting{% endblock %}
+
+{% block body %}
+  <div class="auth-shell">
+    <aside class="auth-aside">
+      <span class="badge badge--info">Comunidade fechada</span>
+      <h1 class="auth-aside__title">Participe das votações da comunidade.</h1>
+      <p>
+        Informe o username cadastrado para acessar as votações para as quais você é
+        elegível e consultar suas próprias cédulas.
+      </p>
+    </aside>
+
+    <section class="auth-card" aria-labelledby="login-title">
+      <div class="auth-card__header">
+        <h1 id="login-title" class="h2">Entrar como participante</h1>
+        <p>Use o username informado pela administração.</p>
+      </div>
+
+      <form method="post" data-submit-once>
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger" role="alert">
+            {{ form.non_field_errors.0 }}
+          </div>
+        {% endif %}
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.username.id_for_label }}">
+            Username <span class="required" aria-hidden="true">*</span>
+          </label>
+          {{ form.username }}
+          {% for error in form.username.errors %}
+            <p class="form-error">{{ error }}</p>
+          {% endfor %}
+        </div>
+
+        <button class="btn btn-primary" type="submit">Entrar</button>
+      </form>
+
+      <div class="auth-card__notice">
+        Este acesso identifica apenas o username; não comprova sua identidade.
+      </div>
+
+      <p class="auth-card__switch">
+        É administrador? <a href="{% url 'admin:login' %}">Acesse com username e senha</a>.
+      </p>
+    </section>
+  </div>
+{% endblock %}

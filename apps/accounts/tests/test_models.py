@@ -46,3 +46,11 @@ def test_administrador_tem_senha_utilizavel():
 def test_manager_rejeita_username_vazio():
     with pytest.raises(ValueError):
         User.objects.create_user("   ")
+
+
+@pytest.mark.django_db
+def test_username_preserva_grafia_cadastrada():
+    user = UserFactory(username="TokaiTeio")
+
+    assert user.username == "TokaiTeio"
+    assert user.display_name == "TokaiTeio"
