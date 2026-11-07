@@ -1,0 +1,37 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{% if instance %}Editar participante{% else %}Novo participante{% endif %} — Uma Voting{% endblock %}
+
+{% block page_title %}
+  {% if instance %}Editar participante{% else %}Novo participante{% endif %}
+{% endblock %}
+
+{% block content %}
+  <section class="panel">
+    <form method="post" data-submit-once>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.username.id_for_label }}">
+          Username <span class="required" aria-hidden="true">*</span>
+        </label>
+        {{ form.username }}
+        <p class="form-help">
+          Apenas o username é armazenado. Participantes não possuem senha de acesso.
+        </p>
+        {% for error in form.username.errors %}
+          <p class="form-error">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Salvar</button>
+        <a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

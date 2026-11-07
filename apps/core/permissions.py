@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from functools import wraps
+
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import PermissionDenied
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 
 
 def is_active_user(user) -> bool:
@@ -40,6 +43,20 @@ class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         if self.request.user.is_authenticated:
             raise PermissionDenied("Acesso restrito a administradores.")
         return super().handle_no_permission()
+
+
+def admin_required(view_func):
+    """Restringe views administrativas a administradores ativos."""
+
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect_to_login(request.get_full_path(), reverse("admin:login"))
+        if not is_admin_user(request.user):
+            raise PermissionDenied("Acesso restrito a administradores.")
+        return view_func(request, *args, **kwargs)
+
+    return _wrapped
 
 
 def is_eligible(user, voting) -> bool:

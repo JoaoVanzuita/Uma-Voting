@@ -1,0 +1,101 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Importar participantes — Uma Voting{% endblock %}
+
+{% block page_title %}Importar participantes{% endblock %}
+
+{% block content %}
+  <section class="panel stack">
+    <p>
+      Envie um arquivo CSV em UTF-8 com uma coluna <code>username</code> e até 1 MB.
+      O cabeçalho é opcional. A importação é atômica: qualquer erro impede a gravação.
+    </p>
+
+    <form method="post" enctype="multipart/form-data" data-submit-once>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label" for="{{ form.file.id_for_label }}">Arquivo CSV</label>
+        {{ form.file }}
+        {% for error in form.file.errors %}
+          <p class="form-error">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Validar arquivo</button>
+        <a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+
+  {% if report %}
+    <section class="panel stack" aria-labelledby="report-title">
+      <h2 id="report-title">Relatório</h2>
+      <p class="text-muted">
+        {{ report.total_lines }} linha(s) analisada(s);
+        {{ report.valid_rows|length }} válida(s);
+        {{ report.errors|length }} inconsistência(s).
+      </p>
+
+      {% if report.errors %}
+        <div class="alert alert-danger" role="alert">
+          A importação não foi aplicada. Corrija o arquivo e tente novamente.
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">Linha</th>
+                <th scope="col">Valor</th>
+                <th scope="col">Erro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for issue in report.errors %}
+                <tr>
+                  <td>{{ issue.line|default:"—" }}</td>
+                  <td><code>{{ issue.value|default:"—" }}</code></td>
+                  <td>{{ issue.message }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% elif report.applied %}
+        <div class="alert alert-success" role="alert">
+          {{ report.imported_count }} participante(s) importado(s) com sucesso.
+        </div>
+        <p>
+          <a class="btn btn-primary" href="{% url 'admin:participant_list' %}">
+            Ver participantes
+          </a>
+        </p>
+      {% else %}
+        <h3>Usernames válidos</h3>
+        <ul class="plain-list">
+          {% for username in report.valid_rows %}
+            <li>{{ username }}</li>
+          {% endfor %}
+        </ul>
+
+        <form method="post" data-submit-once>
+          {% csrf_token %}
+          <input type="hidden" name="action" value="apply">
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">
+              Confirmar importação de {{ report.valid_rows|length }} participante(s)
+            </button>
+            <a class="btn btn-secondary" href="{% url 'admin:participant_import' %}">
+              Enviar outro arquivo
+            </a>
+          </div>
+        </form>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}

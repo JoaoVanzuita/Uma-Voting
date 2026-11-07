@@ -158,20 +158,20 @@ desativar e verificar inclusão automática em uma votação em rascunho.
 
 ### Tests for User Story 3
 
-- [ ] T054 [P] [US3] Testes unitários de criação/edição/desativação e unicidade case-insensitive em `apps/accounts/tests/test_participants.py`
-- [ ] T055 [P] [US3] Testes de importação CSV (válido, duplicidades, vazio, encoding, atomicidade) em `apps/accounts/tests/test_import.py`
-- [ ] T056 [P] [US3] Testes de integração do admin de participantes (CRUD, busca, importação) em `apps/accounts/tests/test_admin_participants.py`
+- [X] T054 [P] [US3] Testes unitários de criação/edição/desativação e unicidade case-insensitive em `apps/accounts/tests/test_participants.py`
+- [X] T055 [P] [US3] Testes de importação CSV (válido, duplicidades, vazio, encoding, atomicidade) em `apps/accounts/tests/test_import.py`
+- [X] T056 [P] [US3] Testes de integração do admin de participantes (CRUD, busca, importação) em `apps/accounts/tests/test_admin_participants.py`
 
 ### Implementation for User Story 3
 
-- [ ] T057 [US3] Implementar `accounts.services.participants` com `create_participant` (com `set_unusable_password()`), `update_participant` e `deactivate_participant`; rejeitar `is_admin=True` na área de participantes em `apps/accounts/services/participants.py`
-- [ ] T058 [US3] Implementar parser/importador CSV atômico em `apps/accounts/services/imports.py` com relatório por linha e rejeição integral em caso de inconsistência
-- [ ] T059 [US3] Criar formulários/views/urls de participantes em `apps/accounts/forms.py`, `apps/accounts/views.py` e `apps/accounts/urls.py`
-- [ ] T060 [US3] Criar templates `templates/admin/participants/list.html`, `form.html` e `import.html`
-- [ ] T061 [US3] Implementar `import_participants` em `apps/accounts/management/commands/import_participants.py`
-- [ ] T062 [US3] Implementar `add_default_eligible(voting)` em `apps/voting/services/eligibility.py` e testes de inclusão de todos os usuários ativos, incluindo administradores elegíveis, na criação, e de exclusão de cadastros posteriores
-- [ ] T063 [US3] Adicionar navegação de participantes e badge read-only para administradores em `templates/admin/base.html`
-- [ ] T064 [US3] Executar os cenários do quickstart §5.2 e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
+- [X] T057 [US3] Implementar `accounts.services.participants` com `create_participant` (com `set_unusable_password()`), `update_participant` e `deactivate_participant`; rejeitar `is_admin=True` na área de participantes em `apps/accounts/services/participants.py`
+- [X] T058 [US3] Implementar parser/importador CSV atômico em `apps/accounts/services/imports.py` com relatório por linha e rejeição integral em caso de inconsistência
+- [X] T059 [US3] Criar formulários/views/urls de participantes em `apps/accounts/forms.py`, `apps/accounts/views.py` e `apps/accounts/urls.py`
+- [X] T060 [US3] Criar templates `templates/admin/participants/list.html`, `form.html` e `import.html`
+- [X] T061 [US3] Implementar `import_participants` em `apps/accounts/management/commands/import_participants.py`
+- [X] T062 [US3] Implementar `add_default_eligible(voting)` em `apps/voting/services/eligibility.py` e testes de inclusão de todos os usuários ativos, incluindo administradores elegíveis, na criação, e de exclusão de cadastros posteriores
+- [X] T063 [US3] Adicionar navegação de participantes e badge read-only para administradores em `templates/admin/base.html`
+- [X] T064 [US3] Executar os cenários do quickstart §5.2 e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
 
 **Checkpoint**: US3 funcional; importação inválida não grava dados.
 

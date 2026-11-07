@@ -1,0 +1,95 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Participantes — Uma Voting{% endblock %}
+
+{% block page_title %}Participantes{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-primary" href="{% url 'admin:participant_create' %}">Novo participante</a>
+  <a class="btn btn-secondary" href="{% url 'admin:participant_import' %}">Importar CSV</a>
+{% endblock %}
+
+{% block content %}
+  <form class="filters" method="get" role="search">
+    <div class="filters__row">
+      <div class="filters__search form-group">
+        <label class="form-label" for="participant-search">Pesquisar por username</label>
+        <input
+          id="participant-search"
+          class="form-control"
+          type="search"
+          name="q"
+          value="{{ query }}"
+          placeholder="Digite parte do username"
+          autocomplete="off"
+        >
+      </div>
+      <button class="btn btn-secondary" type="submit">Pesquisar</button>
+      {% if query %}
+        <a class="filters__clear" href="{% url 'admin:participant_list' %}">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if participants %}
+    <div class="table-wrap">
+      <table class="table">
+        <caption class="visually-hidden">Lista de participantes</caption>
+        <thead>
+          <tr>
+            <th scope="col">Username</th>
+            <th scope="col">Situação</th>
+            <th scope="col" class="table__actions">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for participant in participants %}
+            <tr>
+              <td>
+                {{ participant.username }}
+                {% if participant.is_admin %}
+                  <span class="badge badge--info">Administrador — somente leitura</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if participant.is_active %}
+                  <span class="badge badge--success">Ativo</span>
+                {% else %}
+                  <span class="badge badge--danger">Inativo</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="table__actions">
+                  {% if participant.is_admin %}
+                    <span class="text-muted text-small">Read-only</span>
+                  {% else %}
+                    <a
+                      class="btn btn-tertiary"
+                      href="{% url 'admin:participant_edit' participant.pk %}"
+                    >Editar</a>
+                    {% if participant.is_active %}
+                      <form
+                        class="inline-form"
+                        method="post"
+                        action="{% url 'admin:participant_deactivate' participant.pk %}"
+                      >
+                        {% csrf_token %}
+                        <button class="btn btn-danger" type="submit">Desativar</button>
+                      </form>
+                    {% endif %}
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h2>Nenhum participante encontrado</h2>
+      <p>{% if query %}Tente outro termo de pesquisa.{% else %}Cadastre o primeiro participante.{% endif %}</p>
+    </div>
+  {% endif %}
+{% endblock %}
