@@ -1,0 +1,59 @@
+[project]
+name = "uma-voting"
+version = "0.1.0"
+description = "Votações de banimento de personagens para uma comunidade fechada de Umamusume: Pretty Derby."
+readme = "README.md"
+requires-python = ">=3.14,<3.15"
+license = { text = "Proprietary" }
+dependencies = [
+    "django==5.2.18",
+    "django-environ>=0.12,<0.15",
+    "gunicorn==23.0.0",
+    "pillow>=11.0,<14",
+    "psycopg[binary]>=3.2,<4",
+]
+
+[dependency-groups]
+dev = [
+    "factory-boy>=3.3,<4",
+    "freezegun>=1.5,<2",
+    "pytest>=9.0,<10",
+    "pytest-django>=4.14,<5",
+    "ruff>=0.14,<1",
+]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+src = ["apps", "config", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "DJ"]
+ignore = [
+    # Django usa nomes como "User" em settings e migrations.
+    "DJ001",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"*/migrations/*.py" = ["E501"]
+"apps/*/apps.py" = ["DJ012"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+testpaths = ["apps", "tests"]
+addopts = "-ra --strict-markers"
+filterwarnings = [
+    "error::RuntimeWarning:django",
+]
+
+[tool.coverage.run]
+source = ["apps", "config"]
+omit = ["*/migrations/*", "*/tests/*"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["apps", "config"]

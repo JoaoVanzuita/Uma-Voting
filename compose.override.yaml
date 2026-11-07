@@ -1,0 +1,31 @@
+# Desenvolvimento: runserver com código montado, porta 8000 exposta e Caddy desativado.
+services:
+  release:
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+    volumes:
+      - .:/app
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+
+  web:
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+
+  scheduler:
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+    volumes:
+      - .:/app
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+
+  caddy:
+    profiles: ["proxy"]

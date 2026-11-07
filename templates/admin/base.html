@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block body_class %}layout-admin{% endblock %}
+
+{% block body %}
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <a class="brand" href="/admin/">
+        Uma Voting
+        <small>Administração</small>
+      </a>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav__link" href="/admin/">Dashboard</a>
+        <a class="admin-nav__link" href="/admin/participantes/">Participantes</a>
+        <a class="admin-nav__link" href="/admin/catalogo/">Catálogo</a>
+        <a class="admin-nav__link" href="/admin/votacoes/">Votações</a>
+      </nav>
+
+      <div class="admin-sidebar__footer">
+        {% if request.user.is_authenticated %}
+          <span class="user-chip">{{ request.user.username }}</span>
+          <form class="inline-form" method="post" action="/admin/modo-participante/">
+            {% csrf_token %}
+            <button class="btn btn-tertiary" type="submit">Modo participante</button>
+          </form>
+          <form class="inline-form" method="post" action="/admin/sair/">
+            {% csrf_token %}
+            <button class="btn btn-tertiary" type="submit">Sair</button>
+          </form>
+        {% endif %}
+      </div>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <h1 class="h2">{% block page_title %}Administração{% endblock %}</h1>
+          {% block page_subtitle %}{% endblock %}
+        </div>
+        {% block page_actions %}{% endblock %}
+      </header>
+
+      {% include "components/messages.html" %}
+
+      <main id="conteudo">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+{% endblock %}
