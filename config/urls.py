@@ -1,10 +1,11 @@
 """Roteamento raiz do projeto."""
 
-from apps.accounts import urls as accounts_urls
-from apps.voting import urls as voting_urls
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path
+
+from apps.accounts import urls as accounts_urls
+from apps.voting import urls as voting_urls
 
 handler403 = "apps.core.views.error_403"
 handler404 = "apps.core.views.error_404"

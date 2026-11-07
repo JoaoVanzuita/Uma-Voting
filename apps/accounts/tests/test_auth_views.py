@@ -5,14 +5,14 @@ from django.conf import settings
 from django.core.cache import cache
 from django.test import Client
 from django.urls import reverse
+
+from apps.core.middleware import ADMIN_MODE_SESSION_KEY
 from tests.factories import (
     DEFAULT_ADMIN_PASSWORD,
     AdminUserFactory,
     ParticipantFactory,
     UserFactory,
 )
-
-from apps.core.middleware import ADMIN_MODE_SESSION_KEY
 
 pytestmark = pytest.mark.django_db
 

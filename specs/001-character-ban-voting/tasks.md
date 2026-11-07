@@ -122,27 +122,27 @@ selecionar 3, revisar, confirmar, consultar a cédula e verificar que um segundo
 
 ### Tests for User Story 2
 
-- [ ] T036 [P] [US2] Testes de modelos/constraints de `Voting`, `VotingEligibility`, snapshots, `Ballot` e `BallotChoice`, incluindo duas votações abertas simultâneas com elegibilidades/cédulas independentes, em `apps/voting/tests/test_models.py`
-- [ ] T037 [P] [US2] Testes de serviço de cédula (quantidade exata, duplicidade, snapshot, votação fechada, segundo envio) em `apps/voting/tests/test_ballots.py`
-- [ ] T038 [P] [US2] Testes de integração de seleção, busca, filtros, revisão, confirmação e consulta da própria cédula, incluindo asserção do aviso de cédula definitiva e admin elegível no modo participante com voto contado normalmente e cédula própria visível, em `apps/voting/tests/test_participant_flow.py`
-- [ ] T039 [P] [US2] Testes de concorrência de envio duplo e envio vs encerramento em `tests/concurrency/test_ballots.py`
+- [X] T036 [P] [US2] Testes de modelos/constraints de `Voting`, `VotingEligibility`, snapshots, `Ballot` e `BallotChoice`, incluindo duas votações abertas simultâneas com elegibilidades/cédulas independentes, em `apps/voting/tests/test_models.py`
+- [X] T037 [P] [US2] Testes de serviço de cédula (quantidade exata, duplicidade, snapshot, votação fechada, segundo envio) em `apps/voting/tests/test_ballots.py`
+- [X] T038 [P] [US2] Testes de integração de seleção, busca, filtros, revisão, confirmação e consulta da própria cédula, incluindo asserção do aviso de cédula definitiva e admin elegível no modo participante com voto contado normalmente e cédula própria visível, em `apps/voting/tests/test_participant_flow.py`
+- [X] T039 [P] [US2] Testes de concorrência de envio duplo e envio vs encerramento em `tests/concurrency/test_ballots.py`
 
 ### Implementation for User Story 2
 
-- [ ] T040 [US2] Criar `Voting` (`CHECK choices_count > 0`, `CHECK closes_at > opens_at`, modos automáticos exigem datas, status `draft/scheduled/open/closed/cancelled`), `VotingEligibility` (unique `(voting_id, user_id)`), `VotingCharacterSnapshot` (unique `(voting_id, source_character_id)` e `(voting_id, stable_id)`), `VotingVersionSnapshot` (unique `(character_snapshot_id, source_version_id)`), `VotingVersionAptitudeSnapshot` (unique `(version_snapshot_id, aptitude_id)`), `Ballot` (unique `(voting_id, participant_id)`) e `BallotChoice` (unique `(ballot_id, character_snapshot_id)`) em `apps/voting/models.py`
-- [ ] T041 [US2] Gerar migration de `apps/voting/models.py` com constraints e índices de `data-model.md` §13
-- [ ] T042 [US2] Adicionar factories de votação aberta, snapshots, elegibilidade e cédula em `tests/factories.py`
-- [ ] T043 [US2] Implementar `submit_ballot` e `get_own_ballot` em `apps/voting/services/ballots.py` com `transaction.atomic()`, `SELECT ... FOR SHARE` na votação, validação de status/horário/elegibilidade, quantidade exata, IDs distintos, snapshot, `AlreadyVotedError` e 409
-- [ ] T044 [US2] Implementar `search_characters` em `apps/voting/services/filters.py`: OU dentro da categoria, E entre categorias, mesma versão, busca `icontains` e `DISTINCT` por personagem
-- [ ] T045 [US2] Implementar views de participante `home`, `voting_detail`, `character_grid`, `review`, `confirm` e `ballot` em `apps/voting/views/participant.py` e `apps/voting/urls.py`, validando elegibilidade, `voting.status` e cédula própria filtrada por `request.user` inclusive para admin no modo participante
-- [ ] T046 [US2] Criar templates `templates/participant/home.html`, `voting_detail.html`, `character_grid.html`, `review.html` e `ballot.html` com lista de elegíveis, estado vazio, cards, busca, filtros, contador e revisão
-- [ ] T047 [US2] Implementar partial HTMX de busca/filtros preservando `selected` e o contador em `templates/participant/character_grid.html` e `static/js/app.js`
-- [ ] T048 [US2] Implementar seleção sem duplicidade, limite de escolhas, indicação visual, contador `aria-live` e bloqueio ao atingir o limite em `static/js/app.js` e templates
-- [ ] T049 [US2] Adicionar validação server-side e mensagens PT-BR para quantidade/duplicidade/snapshot/estado em `apps/voting/views/participant.py`
-- [ ] T050 [US2] Criar migration PostgreSQL em `apps/voting/migrations/0002_ballot_triggers.py` com funções/triggers `ballot_insert_open`, `ballot_eligible_participant`, `ballot_no_update`, `ballot_delete_window`, `ballot_choice_insert_open`, `ballot_choice_no_update`, `ballot_choice_delete_window`, `ballot_choice_same_voting` e `ballot_choice_count` (constraint trigger diferido)
-- [ ] T051 [US2] Criar testes de triggers de cédula/contagem/exclusão em `apps/voting/tests/test_db_invariants.py`
-- [ ] T052 [US2] Implementar fallback de imagem quebrada e placeholder nos cards em `apps/core/templatetags/ui_tags.py` e `static/js/app.js`
-- [ ] T053 [US2] Executar os cenários do quickstart §5.1 (listagem de votações elegíveis e estado vazio) e §5.4/§5.5 (incluindo admin elegível votando no modo participante e medição de SC-002 <3 min), e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
+- [X] T040 [US2] Criar `Voting` (`CHECK choices_count > 0`, `CHECK closes_at > opens_at`, modos automáticos exigem datas, status `draft/scheduled/open/closed/cancelled`), `VotingEligibility` (unique `(voting_id, user_id)`), `VotingCharacterSnapshot` (unique `(voting_id, source_character_id)` e `(voting_id, stable_id)`), `VotingVersionSnapshot` (unique `(character_snapshot_id, source_version_id)`), `VotingVersionAptitudeSnapshot` (unique `(version_snapshot_id, aptitude_id)`), `Ballot` (unique `(voting_id, participant_id)`) e `BallotChoice` (unique `(ballot_id, character_snapshot_id)`) em `apps/voting/models.py`
+- [X] T041 [US2] Gerar migration de `apps/voting/models.py` com constraints e índices de `data-model.md` §13
+- [X] T042 [US2] Adicionar factories de votação aberta, snapshots, elegibilidade e cédula em `tests/factories.py`
+- [X] T043 [US2] Implementar `submit_ballot` e `get_own_ballot` em `apps/voting/services/ballots.py` com `transaction.atomic()`, `SELECT ... FOR SHARE` na votação, validação de status/horário/elegibilidade, quantidade exata, IDs distintos, snapshot, `AlreadyVotedError` e 409
+- [X] T044 [US2] Implementar `search_characters` em `apps/voting/services/filters.py`: OU dentro da categoria, E entre categorias, mesma versão, busca `icontains` e `DISTINCT` por personagem
+- [X] T045 [US2] Implementar views de participante `home`, `voting_detail`, `character_grid`, `review`, `confirm` e `ballot` em `apps/voting/views/participant.py` e `apps/voting/urls.py`, validando elegibilidade, `voting.status` e cédula própria filtrada por `request.user` inclusive para admin no modo participante
+- [X] T046 [US2] Criar templates `templates/participant/home.html`, `voting_detail.html`, `character_grid.html`, `review.html` e `ballot.html` com lista de elegíveis, estado vazio, cards, busca, filtros, contador e revisão
+- [X] T047 [US2] Implementar partial HTMX de busca/filtros preservando `selected` e o contador em `templates/participant/character_grid.html` e `static/js/app.js`
+- [X] T048 [US2] Implementar seleção sem duplicidade, limite de escolhas, indicação visual, contador `aria-live` e bloqueio ao atingir o limite em `static/js/app.js` e templates
+- [X] T049 [US2] Adicionar validação server-side e mensagens PT-BR para quantidade/duplicidade/snapshot/estado em `apps/voting/views/participant.py`
+- [X] T050 [US2] Criar migration PostgreSQL em `apps/voting/migrations/0002_ballot_triggers.py` com funções/triggers `ballot_insert_open`, `ballot_eligible_participant`, `ballot_no_update`, `ballot_delete_window`, `ballot_choice_insert_open`, `ballot_choice_no_update`, `ballot_choice_delete_window`, `ballot_choice_same_voting` e `ballot_choice_count` (constraint trigger diferido)
+- [X] T051 [US2] Criar testes de triggers de cédula/contagem/exclusão em `apps/voting/tests/test_db_invariants.py`
+- [X] T052 [US2] Implementar fallback de imagem quebrada e placeholder nos cards em `apps/core/templatetags/ui_tags.py` e `static/js/app.js`
+- [X] T053 [US2] Executar os cenários do quickstart §5.1 (listagem de votações elegíveis e estado vazio) e §5.4/§5.5 (incluindo admin elegível votando no modo participante e medição de SC-002 <3 min), e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
 
 **Checkpoint**: US1 e US2 funcionam; o fluxo central de voto está validado.
 

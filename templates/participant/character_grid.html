@@ -1,0 +1,48 @@
+{% load ui_tags %}
+
+{% if characters %}
+  <ul class="character-grid" aria-label="Personagens disponíveis">
+    {% for character in characters %}
+      <li>
+        <label
+          class="character-option"
+          data-character-option
+          data-selected="{% if character.selected %}true{% else %}false{% endif %}"
+          data-disabled="false"
+        >
+          <input
+            type="checkbox"
+            name="character_ids"
+            value="{{ character.pk }}"
+            {% if character.selected %}checked{% endif %}
+          >
+          <span class="character-option__media">
+            {% image_url character.image_asset as image_src %}
+            <img
+              src="{{ image_src }}"
+              data-fallback-src="{% placeholder_url %}"
+              alt="Retrato de {{ character.display_name }}"
+              width="256"
+              height="256"
+              loading="lazy"
+            >
+          </span>
+          <span class="character-option__check" aria-hidden="true">✓</span>
+          <span class="character-option__name">{{ character.display_name }}</span>
+        </label>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  {% if not_open %}
+    <div class="no-results" role="status">Esta votação não está aberta.</div>
+  {% else %}
+    <div class="no-results" role="status">
+      Nenhuma personagem encontrada com a busca e os filtros atuais.
+    </div>
+  {% endif %}
+{% endif %}
+
+{% if oob_summary %}
+  {% include "participant/partials/selection_summary.html" %}
+{% endif %}

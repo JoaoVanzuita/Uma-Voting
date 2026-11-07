@@ -23,6 +23,54 @@
   /* -----------------------------------------------------------------------
    * Contador e limite de seleção
    * --------------------------------------------------------------------- */
+  function selectedValues(form) {
+    var values = {};
+    if (!form) {
+      return values;
+    }
+
+    var hiddenInputs = form.querySelectorAll(
+      '[data-selected-inputs] input[name="selected"]'
+    );
+    Array.prototype.forEach.call(hiddenInputs, function (input) {
+      values[input.value] = true;
+    });
+
+    var checkboxes = form.querySelectorAll(CHARACTER_CHECKBOX);
+    Array.prototype.forEach.call(checkboxes, function (checkbox) {
+      if (checkbox.checked) {
+        values[checkbox.value] = true;
+      }
+    });
+
+    return values;
+  }
+
+  function syncHiddenSelection(form, checkbox) {
+    var holder = form.querySelector("[data-selected-inputs]");
+    if (!holder) {
+      return;
+    }
+
+    var hiddenInputs = holder.querySelectorAll('input[name="selected"]');
+    var existing = null;
+    Array.prototype.forEach.call(hiddenInputs, function (input) {
+      if (input.value === checkbox.value) {
+        existing = input;
+      }
+    });
+
+    if (checkbox.checked && !existing) {
+      var input = document.createElement("input");
+      input.type = "hidden";
+      input.name = "selected";
+      input.value = checkbox.value;
+      holder.appendChild(input);
+    } else if (!checkbox.checked && existing) {
+      existing.remove();
+    }
+  }
+
   function updateSelectionState(form) {
     if (!form) {
       return;
@@ -32,14 +80,13 @@
     var checkboxes = Array.prototype.slice.call(
       form.querySelectorAll(CHARACTER_CHECKBOX)
     );
-    var checked = checkboxes.filter(function (checkbox) {
-      return checkbox.checked;
-    });
-    var limitReached = max > 0 && checked.length >= max;
+    var selected = selectedValues(form);
+    var count = Object.keys(selected).length;
+    var limitReached = max > 0 && count >= max;
 
     var counter = form.querySelector("[data-selection-counter]");
     if (counter) {
-      counter.textContent = checked.length + " de " + max + " escolhas";
+      counter.textContent = count + " de " + max + " escolhas";
       counter.setAttribute("data-limit-reached", limitReached ? "true" : "false");
     }
 
@@ -58,11 +105,10 @@
       if (limitReached) {
         status.textContent =
           "Limite de " + max + " escolhas atingido. Desmarque uma opção para trocar.";
-      } else if (checked.length === 0) {
+      } else if (count === 0) {
         status.textContent = "Nenhuma personagem selecionada.";
       } else {
-        status.textContent =
-          checked.length + " de " + max + " escolhas selecionadas.";
+        status.textContent = count + " de " + max + " escolhas selecionadas.";
       }
     }
   }
@@ -77,7 +123,9 @@
     if (!target || !target.matches || !target.matches(CHARACTER_CHECKBOX)) {
       return;
     }
-    updateSelectionState(target.closest(SELECTION_FORM));
+    var form = target.closest(SELECTION_FORM);
+    syncHiddenSelection(form, target);
+    updateSelectionState(form);
   });
 
   /* -----------------------------------------------------------------------

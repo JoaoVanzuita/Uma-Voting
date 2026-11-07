@@ -35,6 +35,10 @@ ignore = [
     "DJ001",
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config", "tests"]
+known-third-party = ["django", "factory", "freezegun", "pytest"]
+
 [tool.ruff.lint.per-file-ignores]
 "*/migrations/*.py" = ["E501"]
 "apps/*/apps.py" = ["DJ012"]

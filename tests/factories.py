@@ -5,6 +5,9 @@ from __future__ import annotations
 from datetime import date
 
 import factory
+from django.contrib.auth import get_user_model
+from django.utils import timezone
+
 from apps.catalog.models import (
     Aptitude,
     CatalogSource,
@@ -13,8 +16,17 @@ from apps.catalog.models import (
     CharacterVersionAptitude,
     ImageAsset,
 )
-from django.contrib.auth import get_user_model
-from django.utils import timezone
+from apps.voting.models import (
+    Ballot,
+    BallotChoice,
+    Mode,
+    Voting,
+    VotingCharacterSnapshot,
+    VotingEligibility,
+    VotingStatus,
+    VotingVersionAptitudeSnapshot,
+    VotingVersionSnapshot,
+)
 
 DEFAULT_ADMIN_PASSWORD = "senha-admin-teste"
 
@@ -119,3 +131,109 @@ class ImageAssetFactory(factory.django.DjangoModelFactory):
     source = None
     license_note = "Acervo local de teste."
     validated_at = factory.LazyFunction(timezone.now)
+
+
+# ---------------------------------------------------------------------------
+# Votações, snapshots e cédulas
+# ---------------------------------------------------------------------------
+
+
+class VotingFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Voting
+
+    title = factory.Sequence(lambda n: f"Votação {n}")
+    description = "Votação de teste."
+    choices_count = 3
+    catalog_cutoff_date = date(2026, 12, 1)
+    open_mode = Mode.MANUAL
+    close_mode = Mode.MANUAL
+    status = VotingStatus.DRAFT
+    created_by = factory.SubFactory(AdminUserFactory)
+
+
+class OpenVotingFactory(VotingFactory):
+    status = VotingStatus.OPEN
+    opened_at = factory.LazyFunction(timezone.now)
+    eligible_frozen_at = factory.LazyFunction(timezone.now)
+    catalog_frozen_at = factory.LazyFunction(timezone.now)
+
+
+class VotingEligibilityFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VotingEligibility
+
+    voting = factory.SubFactory(VotingFactory)
+    user = factory.SubFactory(ParticipantFactory)
+
+
+class VotingCharacterSnapshotFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VotingCharacterSnapshot
+
+    voting = factory.SubFactory(OpenVotingFactory)
+    source_character = factory.SubFactory(CharacterFactory)
+    stable_id = factory.LazyAttribute(lambda obj: obj.source_character.stable_id)
+    display_name = factory.LazyAttribute(lambda obj: obj.source_character.display_name)
+    image_asset = None
+
+
+class VotingVersionSnapshotFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VotingVersionSnapshot
+
+    character_snapshot = factory.SubFactory(VotingCharacterSnapshotFactory)
+    source_version = factory.SubFactory(
+        CharacterVersionFactory,
+        character=factory.SelfAttribute("..character_snapshot.source_character"),
+    )
+    stable_id = factory.LazyAttribute(lambda obj: obj.source_version.stable_id)
+    release_date_global = factory.LazyAttribute(
+        lambda obj: obj.source_version.release_date_global or date(2025, 1, 1)
+    )
+
+
+class VotingVersionAptitudeSnapshotFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = VotingVersionAptitudeSnapshot
+
+    version_snapshot = factory.SubFactory(VotingVersionSnapshotFactory)
+    aptitude = factory.SubFactory(AptitudeFactory)
+
+
+class BallotFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Ballot
+        skip_postgeneration_save = True
+
+    voting = factory.SubFactory(OpenVotingFactory)
+    participant = factory.SubFactory(ParticipantFactory)
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        # A trigger de elegibilidade exige a linha antes do INSERT da cédula.
+        VotingEligibility.objects.get_or_create(
+            voting=kwargs["voting"],
+            user=kwargs["participant"],
+        )
+        return super()._create(model_class, *args, **kwargs)
+
+    @factory.post_generation
+    def choices(self, create, extracted, **_kwargs):
+        """Cria a quantidade exata de escolhas, salvo se ``choices=0``."""
+        if not create:
+            return
+        count = self.voting.choices_count if extracted is None else int(extracted)
+        for _ in range(count):
+            BallotChoiceFactory(ballot=self)
+
+
+class BallotChoiceFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = BallotChoice
+
+    ballot = factory.SubFactory(BallotFactory)
+    character_snapshot = factory.SubFactory(
+        VotingCharacterSnapshotFactory,
+        voting=factory.SelfAttribute("..ballot.voting"),
+    )

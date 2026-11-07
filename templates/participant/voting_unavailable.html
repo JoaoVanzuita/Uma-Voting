@@ -1,0 +1,18 @@
+{% extends "participant/base.html" %}
+
+{% block title %}Votação indisponível — Uma Voting{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-muted text-small">Votação</p>
+      <h1>{{ voting.title }}</h1>
+    </div>
+  </div>
+
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+
+  <p>
+    <a class="btn btn-secondary" href="{% url 'participant:home' %}">Voltar às votações</a>
+  </p>
+{% endblock %}

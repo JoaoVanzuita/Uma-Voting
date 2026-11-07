@@ -1,4 +1,5 @@
 {% extends "participant/base.html" %}
+{% load ui_tags %}
 
 {% block title %}Votações — Uma Voting{% endblock %}
 
@@ -10,8 +11,51 @@
     </div>
   </div>
 
-  <div class="empty-state">
-    <h2>Nenhuma votação disponível</h2>
-    <p>Não há votações abertas ou agendadas para você neste momento.</p>
-  </div>
+  {% if votings %}
+    <ul class="voting-list">
+      {% for voting in votings %}
+        <li>
+          <article class="card voting-card">
+            <div class="card__body">
+              <div class="card__meta">
+                {% status_badge voting.status %}
+                <span>{{ voting.choices_count }} escolhas por participante</span>
+              </div>
+
+              <h2 class="card__title voting-card__title">{{ voting.title }}</h2>
+
+              {% if voting.description %}
+                <p class="text-muted">{{ voting.description|truncatechars:140 }}</p>
+              {% endif %}
+
+              <div class="voting-card__dates">
+                {% if voting.status == "open" and voting.closes_at %}
+                  <span>Encerra em {{ voting.closes_at|datetime_br }}</span>
+                {% elif voting.status == "scheduled" and voting.opens_at %}
+                  <span>Abre em {{ voting.opens_at|datetime_br }}</span>
+                {% endif %}
+              </div>
+
+              <div class="card__actions">
+                {% if voting.status == "open" %}
+                  <a class="btn btn-primary" href="{% url 'participant:voting_detail' voting.id %}">
+                    Votar
+                  </a>
+                {% else %}
+                  <a class="btn btn-secondary" href="{% url 'participant:voting_detail' voting.id %}">
+                    Ver detalhes
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          </article>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="empty-state">
+      <h2>Nenhuma votação disponível</h2>
+      <p>Não há votações abertas ou agendadas para você neste momento.</p>
+    </div>
+  {% endif %}
 {% endblock %}

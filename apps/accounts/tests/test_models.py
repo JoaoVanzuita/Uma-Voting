@@ -2,9 +2,9 @@
 
 import pytest
 from django.db import IntegrityError, transaction
-from tests.factories import DEFAULT_ADMIN_PASSWORD, AdminUserFactory, UserFactory
 
 from apps.accounts.models import User
+from tests.factories import DEFAULT_ADMIN_PASSWORD, AdminUserFactory, UserFactory
 
 
 @pytest.mark.django_db

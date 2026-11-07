@@ -1,0 +1,108 @@
+{% extends "participant/base.html" %}
+{% load ui_tags %}
+
+{% block title %}{{ voting.title }} — Uma Voting{% endblock %}
+
+{% block content %}
+  <header class="voting-header">
+    <div>
+      <p class="text-muted text-small">Votação</p>
+      <h1>{{ voting.title }}</h1>
+      {% if voting.description %}
+        <p>{{ voting.description }}</p>
+      {% endif %}
+      <div class="voting-header__meta">
+        {% status_badge voting.status %}
+        <span>{{ voting.choices_count }} escolhas por participante</span>
+        {% if voting.closes_at %}
+          <span>Encerra em {{ voting.closes_at|datetime_br }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
+  </header>
+
+  {% if error %}
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+  {% endif %}
+
+  {% if not_open %}
+    <div class="empty-state">
+      <h2>Esta votação ainda não está aberta</h2>
+      <p>Volte quando a votação for iniciada para registrar sua cédula.</p>
+    </div>
+  {% else %}
+    <form
+      method="post"
+      action="{% url 'participant:review' voting.id %}"
+      data-selection-form
+      data-max-choices="{{ voting.choices_count }}"
+      data-submit-once
+    >
+      {% csrf_token %}
+
+      <div class="filters">
+        <div class="filters__row">
+          <div class="filters__search form-group">
+            <label class="form-label" for="character-search">Buscar personagem</label>
+            <input
+              id="character-search"
+              class="form-control"
+              type="search"
+              name="q"
+              value="{{ query }}"
+              placeholder="Digite parte do nome"
+              autocomplete="off"
+              hx-get="{% url 'participant:character_grid' voting.id %}"
+              hx-target="#character-grid"
+              hx-swap="innerHTML"
+              hx-trigger="input changed delay:300ms, search"
+              hx-include="closest form"
+            >
+          </div>
+
+          {% for group in filter_groups %}
+            <fieldset class="filters__chips">
+              <legend class="visually-hidden">{{ group.label }}</legend>
+              {% for option in group.options %}
+                <label class="chip">
+                  <input
+                    type="checkbox"
+                    name="{{ group.category }}"
+                    value="{{ option.value }}"
+                    {% if option.checked %}checked{% endif %}
+                    hx-get="{% url 'participant:character_grid' voting.id %}"
+                    hx-target="#character-grid"
+                    hx-swap="innerHTML"
+                    hx-include="closest form"
+                  >
+                  {{ option.label }}
+                </label>
+              {% endfor %}
+            </fieldset>
+          {% endfor %}
+        </div>
+
+        <a class="filters__clear" href="{% url 'participant:voting_detail' voting.id %}">
+          Limpar busca e filtros
+        </a>
+      </div>
+
+      <div
+        id="character-grid"
+        class="grid-region"
+        aria-busy="false"
+      >
+        {% include "participant/character_grid.html" %}
+      </div>
+
+      <div data-selected-inputs>
+        {% for pk in selected_ids %}
+          <input type="hidden" name="selected" value="{{ pk }}">
+        {% endfor %}
+      </div>
+
+      {% include "participant/partials/selection_summary.html" %}
+    </form>
+  {% endif %}
+{% endblock %}

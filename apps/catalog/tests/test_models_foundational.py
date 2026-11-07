@@ -2,12 +2,6 @@
 
 import pytest
 from django.db import IntegrityError, transaction
-from tests.factories import (
-    AptitudeFactory,
-    CharacterVersionAptitudeFactory,
-    CharacterVersionFactory,
-    ImageAssetFactory,
-)
 
 from apps.catalog.models import (
     Aptitude,
@@ -15,6 +9,12 @@ from apps.catalog.models import (
     CharacterVersion,
     CharacterVersionAptitude,
     ImageAsset,
+)
+from tests.factories import (
+    AptitudeFactory,
+    CharacterVersionAptitudeFactory,
+    CharacterVersionFactory,
+    ImageAssetFactory,
 )
 
 

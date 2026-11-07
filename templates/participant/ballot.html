@@ -1,0 +1,57 @@
+{% extends "participant/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Minha cédula — {{ voting.title }}{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-muted text-small">Minha cédula</p>
+      <h1>{{ voting.title }}</h1>
+      <div class="ballot-summary">
+        {% status_badge voting.status %}
+        {% if ballot %}
+          <span class="text-muted">Enviada em {{ ballot.created_at|datetime_br }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
+  </div>
+
+  {% if error %}
+    <div class="alert alert-danger" role="alert">{{ error }}</div>
+  {% endif %}
+
+  {% if ballot %}
+    <section class="panel" aria-labelledby="ballot-title">
+      <h2 id="ballot-title">Escolhas registradas</h2>
+      <p class="text-muted">
+        A cédula é definitiva para esta votação. Você pode consultá-la enquanto a votação
+        estiver aberta e após o encerramento.
+      </p>
+
+      <ul class="review-list">
+        {% for choice in ballot.choices.all %}
+          <li class="review-item">
+            <span class="review-item__media">
+              {% image_url choice.character_snapshot.image_asset as image_src %}
+              <img
+                src="{{ image_src }}"
+                data-fallback-src="{% placeholder_url %}"
+                alt="Retrato de {{ choice.character_snapshot.display_name }}"
+                width="56"
+                height="56"
+              >
+            </span>
+            <p class="review-item__name">{{ choice.character_snapshot.display_name }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% else %}
+    <div class="empty-state">
+      <h2>Nenhuma cédula registrada</h2>
+      <p>Você ainda não enviou uma cédula para esta votação.</p>
+    </div>
+  {% endif %}
+{% endblock %}
