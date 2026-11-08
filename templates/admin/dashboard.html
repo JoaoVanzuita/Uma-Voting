@@ -1,27 +1,140 @@
 {% extends "admin/base.html" %}
+{% load ui_tags %}
 
 {% block title %}Painel administrativo — Uma Voting{% endblock %}
 
 {% block page_title %}Painel administrativo{% endblock %}
 
-{% block content %}
-  <section class="panel stack" aria-labelledby="welcome-title">
-    <div>
-      <h2 id="welcome-title">Olá, {{ request.user.username }}</h2>
-      <p class="text-muted">
-        Sessão administrativa ativa. Use a navegação lateral para gerenciar a comunidade.
-      </p>
-    </div>
+{% block page_subtitle %}
+  Olá, {{ request.user.username }}.
+{% endblock %}
 
+{% block page_actions %}
+  <a class="btn btn-primary" href="{% url 'admin:voting_create' %}">Nova votação</a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid grid--stats">
+    <section class="card stat">
+      <p class="stat__label">Participantes ativos</p>
+      <p class="stat__value">{{ active_participants }}</p>
+      <a class="text-small" href="{% url 'admin:participant_list' %}">Gerenciar</a>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Votações abertas</p>
+      <p class="stat__value">{{ open_votings }}</p>
+      <a class="text-small" href="{% url 'admin:voting_list' %}?status=open">Ver abertas</a>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Votações agendadas</p>
+      <p class="stat__value">{{ scheduled_votings }}</p>
+      <a class="text-small" href="{% url 'admin:voting_list' %}?status=scheduled">Ver agendadas</a>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Mudanças de catálogo pendentes</p>
+      <p class="stat__value">{{ pending_changes }}</p>
+      <a class="text-small" href="{% url 'admin:catalog_status' %}">Revisar catálogo</a>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Personagens sem imagem válida</p>
+      <p class="stat__value">{{ characters_without_image }}</p>
+      <a class="text-small" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Imagens correntes inválidas</p>
+      <p class="stat__value">{{ invalid_images }}</p>
+      <a class="text-small" href="{% url 'admin:catalog_images' %}?status=invalid">Validar</a>
+    </section>
+  </div>
+
+  <section class="panel stack" aria-labelledby="shortcuts-title">
+    <h2 id="shortcuts-title">Atalhos</h2>
     <div class="cluster">
       <a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Participantes</a>
-      <a class="btn btn-secondary" href="/admin/catalogo/">Catálogo</a>
-      <a class="btn btn-secondary" href="/admin/votacoes/">Votações</a>
+      <a class="btn btn-secondary" href="{% url 'admin:participant_create' %}">Novo participante</a>
+      <a class="btn btn-secondary" href="{% url 'admin:participant_import' %}">Importar participantes</a>
+      <a class="btn btn-secondary" href="{% url 'admin:catalog_status' %}">Catálogo</a>
+      <a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Personagens</a>
+      <a class="btn btn-secondary" href="{% url 'admin:catalog_images' %}">Imagens</a>
+      <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Votações</a>
+      <a class="btn btn-secondary" href="{% url 'admin:voting_create' %}">Nova votação</a>
     </div>
+  </section>
 
-    <form method="post" action="{% url 'admin:participant_mode' %}">
-      {% csrf_token %}
-      <button class="btn btn-primary" type="submit">Ver como participante</button>
-    </form>
+  <section class="panel stack" aria-labelledby="ongoing-title">
+    <h2 id="ongoing-title">Votações em andamento</h2>
+    {% if ongoing_votings %}
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Votações abertas e agendadas</caption>
+          <thead>
+            <tr>
+              <th scope="col">Título</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Abertura</th>
+              <th scope="col">Encerramento</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for voting in ongoing_votings %}
+              <tr>
+                <td>{{ voting.title }}</td>
+                <td>{% status_badge voting.status %}</td>
+                <td>{{ voting.opens_at|datetime_br }}</td>
+                <td>{{ voting.closes_at|datetime_br }}</td>
+                <td>
+                  <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
+                    Detalhes
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>Nenhuma votação aberta ou agendada no momento.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel stack" aria-labelledby="latest-title">
+    <h2 id="latest-title">Últimas votações</h2>
+    {% if latest_votings %}
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Últimas votações criadas</caption>
+          <thead>
+            <tr>
+              <th scope="col">Título</th>
+              <th scope="col">Estado</th>
+              <th scope="col">Criada em</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for voting in latest_votings %}
+              <tr>
+                <td>{{ voting.title }}</td>
+                <td>{% status_badge voting.status %}</td>
+                <td>{{ voting.created_at|datetime_br }}</td>
+                <td>
+                  <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
+                    Detalhes
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>Nenhuma votação criada ainda.</p>
+        <a class="btn btn-primary" href="{% url 'admin:voting_create' %}">Criar votação</a>
+      </div>
+    {% endif %}
   </section>
 {% endblock %}

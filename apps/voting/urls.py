@@ -9,6 +9,7 @@ app_name = "voting"
 
 participant_patterns = [
     path("", participant_views.home, name="home"),
+    path("historico/", participant_views.history, name="history"),
     path(
         "votacoes/<int:voting_id>/",
         participant_views.voting_detail,

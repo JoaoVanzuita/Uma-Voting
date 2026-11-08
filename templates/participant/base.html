@@ -9,12 +9,15 @@
 
       <nav class="site-nav" aria-label="Navegação principal">
         <a class="site-nav__link" href="{% url 'participant:home' %}">Votações</a>
-        <a class="site-nav__link" href="/historico/">Histórico</a>
+        <a class="site-nav__link" href="{% url 'participant:history' %}">Histórico</a>
       </nav>
 
       <div class="site-header__user">
         {% if request.user.is_authenticated %}
           <span class="user-chip">{{ request.user.username }}</span>
+          {% if request.user.is_admin and not is_participant_mode %}
+            <a class="btn btn-tertiary" href="{% url 'admin:dashboard' %}">Administração</a>
+          {% endif %}
           <form class="inline-form" method="post" action="{% url 'participant:logout' %}">
             {% csrf_token %}
             <button class="btn btn-tertiary" type="submit">Sair</button>

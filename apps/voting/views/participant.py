@@ -345,3 +345,35 @@ def result(request, voting_id: int):
             "own_ballot": get_own_ballot(voting, request.user),
         },
     )
+
+
+@login_required
+def history(request):
+    """Histórico do participante, sem votações canceladas."""
+    answered = (
+        Voting.objects.filter(
+            eligibilities__user=request.user,
+            ballots__participant=request.user,
+        )
+        .exclude(status=VotingStatus.CANCELLED)
+        .distinct()
+        .order_by("-created_at")
+    )
+    closed_without_ballot = (
+        Voting.objects.filter(
+            eligibilities__user=request.user,
+            status=VotingStatus.CLOSED,
+        )
+        .exclude(ballots__participant=request.user)
+        .distinct()
+        .order_by("-closed_at", "-created_at")
+    )
+
+    return render(
+        request,
+        "participant/history.html",
+        {
+            "answered": answered,
+            "closed_without_ballot": closed_without_ballot,
+        },
+    )

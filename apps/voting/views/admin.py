@@ -6,10 +6,11 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
-from django.views.generic import TemplateView
 
+from apps.accounts.models import User
+from apps.catalog.models import Character, ImageAsset, SyncChange
 from apps.core.exceptions import PreconditionError
-from apps.core.permissions import AdminRequiredMixin, admin_required
+from apps.core.permissions import admin_required
 from apps.voting.forms import EligibleAddForm, VotingForm
 from apps.voting.models import (
     Ballot,
@@ -41,11 +42,44 @@ from apps.voting.services.results import (
 )
 
 
-class AdminDashboardView(AdminRequiredMixin, TemplateView):
-    template_name = "admin/dashboard.html"
+@admin_required
+def dashboard(request):
+    active_participants = User.objects.filter(is_active=True).count()
+    open_votings = Voting.objects.filter(status=VotingStatus.OPEN).count()
+    scheduled_votings = Voting.objects.filter(status=VotingStatus.SCHEDULED).count()
+    pending_changes = SyncChange.objects.filter(status=SyncChange.Status.PENDING).count()
+    characters_without_image = (
+        Character.objects.exclude(
+            images__is_current=True,
+            images__status=ImageAsset.Status.VALID,
+        )
+        .distinct()
+        .count()
+    )
+    invalid_images = ImageAsset.objects.filter(
+        is_current=True,
+        status=ImageAsset.Status.INVALID,
+    ).count()
 
+    latest_votings = Voting.objects.select_related("created_by").order_by("-created_at")[:5]
+    ongoing_votings = Voting.objects.filter(
+        status__in=[VotingStatus.OPEN, VotingStatus.SCHEDULED]
+    ).order_by("status", "opens_at", "title")[:5]
 
-dashboard = AdminDashboardView.as_view()
+    return render(
+        request,
+        "admin/dashboard.html",
+        {
+            "active_participants": active_participants,
+            "open_votings": open_votings,
+            "scheduled_votings": scheduled_votings,
+            "pending_changes": pending_changes,
+            "characters_without_image": characters_without_image,
+            "invalid_images": invalid_images,
+            "latest_votings": latest_votings,
+            "ongoing_votings": ongoing_votings,
+        },
+    )
 
 
 @admin_required

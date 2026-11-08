@@ -1,0 +1,93 @@
+{% extends "participant/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Histórico — Uma Voting{% endblock %}
+
+{% block content %}
+  <div class="page-header">
+    <div>
+      <p class="text-muted text-small">Histórico</p>
+      <h1>Minhas votações</h1>
+      <p class="text-muted">
+        Votações respondidas e encerradas para as quais você era elegível. Votações
+        canceladas não aparecem aqui.
+      </p>
+    </div>
+    <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
+  </div>
+
+  <section class="panel stack" aria-labelledby="answered-title">
+    <h2 id="answered-title">Respondidas</h2>
+    {% if answered %}
+      <ul class="voting-list">
+        {% for voting in answered %}
+          <li>
+            <article class="card voting-card">
+              <div class="card__body">
+                <div class="card__meta">
+                  {% status_badge voting.status %}
+                  <span>{{ voting.choices_count }} escolhas</span>
+                </div>
+                <h3 class="card__title voting-card__title">{{ voting.title }}</h3>
+                {% if voting.closed_at %}
+                  <p class="text-muted">Encerrada em {{ voting.closed_at|datetime_br }}</p>
+                {% endif %}
+                <div class="card__actions">
+                  {% if voting.status == "open" %}
+                    <a class="btn btn-primary" href="{% url 'participant:ballot' voting.pk %}">
+                      Ver minha cédula
+                    </a>
+                  {% else %}
+                    <a class="btn btn-primary" href="{% url 'participant:result' voting.pk %}">
+                      Ver resultado
+                    </a>
+                    <a class="btn btn-secondary" href="{% url 'participant:ballot' voting.pk %}">
+                      Minha cédula
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <p>Você ainda não respondeu nenhuma votação.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel stack" aria-labelledby="closed-title">
+    <h2 id="closed-title">Encerradas sem resposta</h2>
+    {% if closed_without_ballot %}
+      <ul class="voting-list">
+        {% for voting in closed_without_ballot %}
+          <li>
+            <article class="card voting-card">
+              <div class="card__body">
+                <div class="card__meta">
+                  {% status_badge voting.status %}
+                  <span>{{ voting.choices_count }} escolhas</span>
+                </div>
+                <h3 class="card__title voting-card__title">{{ voting.title }}</h3>
+                <p class="text-muted">
+                  Encerrada em {{ voting.closed_at|datetime_br }}. Você não registrou cédula.
+                </p>
+                <div class="card__actions">
+                  <a class="btn btn-secondary" href="{% url 'participant:result' voting.pk %}">
+                    Ver resultado
+                  </a>
+                </div>
+              </div>
+            </article>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <p>Nenhuma votação encerrada sem resposta.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

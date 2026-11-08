@@ -318,17 +318,17 @@ canceladas não aparecem para participante.
 
 ### Tests for User Story 8
 
-- [ ] T120 [P] [US8] Testes de integração de histórico do participante, painel admin e histórico de canceladas em `apps/voting/tests/test_history.py`
+- [X] T120 [P] [US8] Testes de integração de histórico do participante, painel admin e histórico de canceladas em `apps/voting/tests/test_history.py`
 
 ### Implementation for User Story 8
 
-- [ ] T121 [P] [US8] Implementar views/urls/templates de histórico do participante em `apps/voting/views/participant.py` e `templates/participant/history.html`
-- [ ] T122 [P] [US8] Implementar dashboard administrativo com total de participantes ativos, votações abertas, votações agendadas, mudanças de catálogo pendentes, imagens ausentes/inválidas, últimas votações e atalhos em `apps/voting/views/admin.py` e `templates/admin/dashboard.html`
-- [ ] T123 [US8] Implementar lista/filtros de votações administrativas incluindo canceladas em `apps/voting/views/admin.py` e `templates/admin/voting/list.html`
-- [ ] T124 [US8] Garantir que o histórico do participante exclui canceladas e separa respondidas/encerradas em `apps/voting/views/participant.py`
-- [ ] T125 [US8] Adicionar sidebar administrativa, navegação de participante e links de alternância de modo em `templates/admin/base.html` e `templates/participant/base.html`
-- [ ] T126 [US8] Adicionar estados vazios, carregamento, erro e sucesso consistentes em `templates/participant/` e `templates/admin/`
-- [ ] T127 [US8] Executar os cenários do quickstart §5.1/§5.2 (histórico/dashboard) e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
+- [X] T121 [P] [US8] Implementar views/urls/templates de histórico do participante em `apps/voting/views/participant.py` e `templates/participant/history.html`
+- [X] T122 [P] [US8] Implementar dashboard administrativo com total de participantes ativos, votações abertas, votações agendadas, mudanças de catálogo pendentes, imagens ausentes/inválidas, últimas votações e atalhos em `apps/voting/views/admin.py` e `templates/admin/dashboard.html`
+- [X] T123 [US8] Implementar lista/filtros de votações administrativas incluindo canceladas em `apps/voting/views/admin.py` e `templates/admin/voting/list.html`
+- [X] T124 [US8] Garantir que o histórico do participante exclui canceladas e separa respondidas/encerradas em `apps/voting/views/participant.py`
+- [X] T125 [US8] Adicionar sidebar administrativa, navegação de participante e links de alternância de modo em `templates/admin/base.html` e `templates/participant/base.html`
+- [X] T126 [US8] Adicionar estados vazios, carregamento, erro e sucesso consistentes em `templates/participant/` e `templates/admin/`
+- [X] T127 [US8] Executar os cenários do quickstart §5.1/§5.2 (histórico/dashboard) e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
 
 **Checkpoint**: histórico e painel completos; navegação consistente.
 
