@@ -69,9 +69,7 @@ def _resolve_aptitudes(payload: dict) -> list[Aptitude]:
             try:
                 resolved.append(Aptitude.objects.get(category=category, value=value))
             except Aptitude.DoesNotExist as exc:
-                raise CatalogSyncError(
-                    f"Aptidão não cadastrada: {category}={value}."
-                ) from exc
+                raise CatalogSyncError(f"Aptidão não cadastrada: {category}={value}.") from exc
     return resolved
 
 
@@ -79,10 +77,7 @@ def _set_version_aptitudes(version: CharacterVersion, payload: dict) -> None:
     aptitudes = _resolve_aptitudes(payload)
     CharacterVersionAptitude.objects.filter(version=version).delete()
     CharacterVersionAptitude.objects.bulk_create(
-        [
-            CharacterVersionAptitude(version=version, aptitude=aptitude)
-            for aptitude in aptitudes
-        ]
+        [CharacterVersionAptitude(version=version, aptitude=aptitude) for aptitude in aptitudes]
     )
 
 
@@ -230,9 +225,7 @@ def _plan_changes(report: CatalogParseReport) -> tuple[list[PlannedChange], list
         for row in character_payload.versions:
             existing_version = existing_versions.get(row.version_stable_id)
             if existing_version is None:
-                conflict = CharacterVersion.objects.filter(
-                    stable_id=row.version_stable_id
-                ).first()
+                conflict = CharacterVersion.objects.filter(stable_id=row.version_stable_id).first()
                 if conflict is not None and conflict.character_id != existing.pk:
                     errors.append(
                         ImportIssue(
@@ -448,6 +441,4 @@ def reject_change(change: SyncChange, admin, note: str = "") -> None:
     change.reviewed_by = admin
     change.reviewed_at = timezone.now()
     change.review_note = note
-    change.save(
-        update_fields=["status", "reviewed_by", "reviewed_at", "review_note"]
-    )
+    change.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_note"])

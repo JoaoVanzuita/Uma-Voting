@@ -72,9 +72,7 @@ def test_snapshot_respeita_cutoff_e_ignora_nao_lancadas():
     create_snapshots(voting)
 
     snapshot = VotingCharacterSnapshot.objects.get(voting=voting)
-    versions = set(
-        snapshot.version_snapshots.values_list("stable_id", flat=True)
-    )
+    versions = set(snapshot.version_snapshots.values_list("stable_id", flat=True))
     assert versions == {"original", "no-corte"}
 
 
@@ -175,15 +173,11 @@ def test_snapshots_sao_imutaveis():
 
     with pytest.raises(DatabaseError):
         with transaction.atomic():
-            VotingCharacterSnapshot.objects.filter(pk=snapshot.pk).update(
-                display_name="Alterado"
-            )
+            VotingCharacterSnapshot.objects.filter(pk=snapshot.pk).update(display_name="Alterado")
 
     with pytest.raises(DatabaseError):
         with transaction.atomic():
-            VotingVersionSnapshot.objects.filter(pk=version.pk).update(
-                stable_id="alterado"
-            )
+            VotingVersionSnapshot.objects.filter(pk=version.pk).update(stable_id="alterado")
 
     with pytest.raises(DatabaseError):
         with transaction.atomic():

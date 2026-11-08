@@ -26,18 +26,14 @@ def create_snapshots(voting: Voting) -> int:
     """
     cutoff = voting.catalog_cutoff_date
     characters = (
-        eligible_characters(cutoff)
-        .prefetch_related("versions", "images")
-        .order_by("display_name")
+        eligible_characters(cutoff).prefetch_related("versions", "images").order_by("display_name")
     )
 
     created = 0
     with transaction.atomic():
         for character in characters:
             versions = list(
-                eligible_versions(character, cutoff).prefetch_related(
-                    "version_aptitudes__aptitude"
-                )
+                eligible_versions(character, cutoff).prefetch_related("version_aptitudes__aptitude")
             )
             if not versions:
                 continue

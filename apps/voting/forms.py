@@ -48,12 +48,8 @@ class VotingForm(forms.ModelForm):
         widgets = {
             "title": forms.TextInput(attrs=FORM_CONTROL),
             "description": forms.Textarea(attrs={"rows": 4, **FORM_CONTROL}),
-            "choices_count": forms.NumberInput(
-                attrs={"min": 1, "step": 1, **FORM_CONTROL}
-            ),
-            "catalog_cutoff_date": forms.DateInput(
-                attrs={"type": "date", **FORM_CONTROL}
-            ),
+            "choices_count": forms.NumberInput(attrs={"min": 1, "step": 1, **FORM_CONTROL}),
+            "catalog_cutoff_date": forms.DateInput(attrs={"type": "date", **FORM_CONTROL}),
             "open_mode": forms.Select(attrs=FORM_CONTROL),
             "close_mode": forms.Select(attrs=FORM_CONTROL),
         }

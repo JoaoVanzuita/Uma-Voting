@@ -70,9 +70,7 @@ class Command(BaseCommand):
             for warning in report.warnings:
                 self.stderr.write(f"Aviso: {warning}")
             for issue in report.errors:
-                self.stderr.write(
-                    f"{issue.character or '—'} [{issue.file}]: {issue.message}"
-                )
+                self.stderr.write(f"{issue.character or '—'} [{issue.file}]: {issue.message}")
 
         if report.errors:
             raise SystemExit(1)

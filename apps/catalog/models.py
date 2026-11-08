@@ -266,8 +266,7 @@ class SyncRun(models.Model):
 
     def __str__(self) -> str:
         return (
-            f"{self.source.name} — {self.get_status_display()} "
-            f"({self.started_at:%d/%m/%Y %H:%M})"
+            f"{self.source.name} — {self.get_status_display()} ({self.started_at:%d/%m/%Y %H:%M})"
         )
 
 

@@ -22,9 +22,7 @@ class Command(BaseCommand):
         if options["interval"] <= 0:
             raise ValueError("O intervalo deve ser positivo.")
 
-        self.stdout.write(
-            f"Scheduler iniciado (intervalo={options['interval']}s)."
-        )
+        self.stdout.write(f"Scheduler iniciado (intervalo={options['interval']}s).")
         run_scheduler(
             interval=options["interval"],
             max_cycles=1 if options["once"] else None,

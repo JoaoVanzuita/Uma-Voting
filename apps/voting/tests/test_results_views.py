@@ -70,9 +70,7 @@ def test_administrador_nao_acessa_cedula_de_outro_pela_rota_administrativa(clien
     submit_ballot(voting, participant, [snapshots[0].pk])
 
     # A única rota administrativa de cédula é a exclusão; não existe leitura de escolhas.
-    response = client.get(
-        reverse("admin:ballot_delete", args=[voting.pk, participant.pk])
-    )
+    response = client.get(reverse("admin:ballot_delete", args=[voting.pk, participant.pk]))
 
     assert response.status_code == 405
 

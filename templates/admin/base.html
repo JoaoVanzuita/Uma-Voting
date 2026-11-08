@@ -11,10 +11,10 @@
       </a>
 
       <nav class="admin-nav" aria-label="Navegação administrativa">
-        <a class="admin-nav__link" href="{% url 'admin:dashboard' %}">Dashboard</a>
-        <a class="admin-nav__link" href="{% url 'admin:participant_list' %}">Participantes</a>
-        <a class="admin-nav__link" href="{% url 'admin:catalog_status' %}">Catálogo</a>
-        <a class="admin-nav__link" href="{% url 'admin:voting_list' %}">Votações</a>
+        <a class="admin-nav__link" href="{% url 'admin:dashboard' %}" {% if request.resolver_match.url_name == "dashboard" %}aria-current="page"{% endif %}>Dashboard</a>
+        <a class="admin-nav__link" href="{% url 'admin:participant_list' %}" {% if request.resolver_match.url_name == "participant_list" %}aria-current="page"{% endif %}>Participantes</a>
+        <a class="admin-nav__link" href="{% url 'admin:catalog_status' %}" {% if request.resolver_match.url_name == "catalog_status" %}aria-current="page"{% endif %}>Catálogo</a>
+        <a class="admin-nav__link" href="{% url 'admin:voting_list' %}" {% if request.resolver_match.url_name == "voting_list" %}aria-current="page"{% endif %}>Votações</a>
       </nav>
 
       <div class="admin-sidebar__footer">

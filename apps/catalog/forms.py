@@ -16,7 +16,5 @@ class CatalogSyncForm(forms.Form):
     )
     file = forms.FileField(
         label="Arquivo de catálogo (CSV)",
-        widget=forms.ClearableFileInput(
-            attrs={"class": "form-control", "accept": ".csv,text/csv"}
-        ),
+        widget=forms.ClearableFileInput(attrs={"class": "form-control", "accept": ".csv,text/csv"}),
     )

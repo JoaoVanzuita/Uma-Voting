@@ -5,19 +5,20 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('voting', '0003_voting_triggers'),
+        ("voting", "0003_voting_triggers"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='ballot',
-            index=models.Index(fields=['voting', 'created_at'], name='ballot_voting_created_idx'),
+            model_name="ballot",
+            index=models.Index(fields=["voting", "created_at"], name="ballot_voting_created_idx"),
         ),
         migrations.AddIndex(
-            model_name='ballotchoice',
-            index=models.Index(fields=['character_snapshot', 'ballot'], name='ballot_choice_snap_ballot_idx'),
+            model_name="ballotchoice",
+            index=models.Index(
+                fields=["character_snapshot", "ballot"], name="ballot_choice_snap_ballot_idx"
+            ),
         ),
     ]

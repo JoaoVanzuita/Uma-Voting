@@ -87,7 +87,7 @@ def test_abertura_e_cancelamento_concorrentes():
             open_voting(voting, "admin")
             with lock:
                 results.append("opened")
-        except (VotingStateError, PreconditionError):
+        except VotingStateError, PreconditionError:
             with lock:
                 results.append("blocked")
         finally:

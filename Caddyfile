@@ -16,6 +16,7 @@
 	}
 
 	handle {
+		# Rate limit de login é aplicado na aplicação (DatabaseCache) por IP/username.
 		reverse_proxy web:8000 {
 			# Sobrescreve o cabeçalho para que o throttle use o IP real do cliente.
 			header_up X-Forwarded-For {remote_host}
@@ -27,6 +28,8 @@
 		X-Content-Type-Options "nosniff"
 		X-Frame-Options "DENY"
 		Referrer-Policy "same-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Cross-Origin-Resource-Policy "same-origin"
 		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 		-Server
 	}

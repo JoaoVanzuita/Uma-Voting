@@ -112,8 +112,7 @@ def test_aprovacao_de_sincronizacao_nao_alteram_snapshots(tmp_path):
 
     path = tmp_path / "catalog.csv"
     path.write_text(
-        HEADER
-        + "tokai-teio,Tokai Teio Renomeada,tokai-teio-original,Original,"
+        HEADER + "tokai-teio,Tokai Teio Renomeada,tokai-teio-original,Original,"
         "2025-06-26,pace,medium,turf\n",
         encoding="utf-8",
     )

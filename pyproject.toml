@@ -48,6 +48,9 @@ DJANGO_SETTINGS_MODULE = "config.settings.test"
 python_files = ["test_*.py"]
 testpaths = ["apps", "tests"]
 addopts = "-ra --strict-markers"
+markers = [
+    "e2e: testes de fumaça opcionais com Playwright (requer playwright instalado)",
+]
 filterwarnings = [
     "error::RuntimeWarning:django",
 ]

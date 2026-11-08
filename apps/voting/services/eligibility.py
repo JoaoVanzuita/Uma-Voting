@@ -43,9 +43,7 @@ def add_eligible(voting: Voting, user_ids) -> int:
     """Adiciona usuários ativos como elegíveis, somente em rascunho."""
     _require_draft(voting)
     ids = {int(getattr(user_id, "pk", user_id)) for user_id in user_ids}
-    active_ids = set(
-        User.objects.filter(pk__in=ids, is_active=True).values_list("id", flat=True)
-    )
+    active_ids = set(User.objects.filter(pk__in=ids, is_active=True).values_list("id", flat=True))
     existing_ids = set(
         VotingEligibility.objects.filter(voting=voting, user_id__in=active_ids).values_list(
             "user_id", flat=True
@@ -76,14 +74,10 @@ def set_eligible(voting: Voting, user_ids) -> None:
     """Substitui a lista de elegíveis, somente em rascunho."""
     _require_draft(voting)
     ids = {int(getattr(user_id, "pk", user_id)) for user_id in user_ids}
-    active_ids = set(
-        User.objects.filter(pk__in=ids, is_active=True).values_list("id", flat=True)
-    )
+    active_ids = set(User.objects.filter(pk__in=ids, is_active=True).values_list("id", flat=True))
 
     with transaction.atomic():
-        VotingEligibility.objects.filter(voting=voting).exclude(
-            user_id__in=active_ids
-        ).delete()
+        VotingEligibility.objects.filter(voting=voting).exclude(user_id__in=active_ids).delete()
         existing_ids = set(
             VotingEligibility.objects.filter(voting=voting).values_list("user_id", flat=True)
         )

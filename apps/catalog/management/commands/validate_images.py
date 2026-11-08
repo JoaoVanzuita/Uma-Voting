@@ -56,9 +56,7 @@ class Command(BaseCommand):
                 f"{len(report.characters_without_image)} personagem(ns) sem imagem válida."
             )
             for issue in report.issues:
-                self.stderr.write(
-                    f"{issue.character or '—'} [{issue.file}]: {issue.message}"
-                )
+                self.stderr.write(f"{issue.character or '—'} [{issue.file}]: {issue.message}")
             for orphan in report.orphans:
                 self.stderr.write(f"Órfão: {orphan}")
             for checksum in report.duplicate_checksums:

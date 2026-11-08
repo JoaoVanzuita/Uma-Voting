@@ -70,9 +70,7 @@ class CatalogRow:
             "stable_id": self.version_stable_id,
             "display_name": self.version_name,
             "release_date_global": (
-                self.release_date_global.isoformat()
-                if self.release_date_global
-                else None
+                self.release_date_global.isoformat() if self.release_date_global else None
             ),
             "aptitudes": {
                 "strategy": [self.strategy],
@@ -115,9 +113,7 @@ class CatalogParseReport:
     @property
     def ignored_characters(self) -> list[CatalogCharacter]:
         return [
-            character
-            for character in self.characters.values()
-            if not character.has_global_release
+            character for character in self.characters.values() if not character.has_global_release
         ]
 
     def error_dicts(self) -> list[dict]:
@@ -142,8 +138,7 @@ def _parse_list(value: str, allowed: tuple[str, ...], label: str) -> tuple[str, 
     invalid = [item for item in values if item not in allowed]
     if invalid:
         raise ValueError(
-            f"Valor inválido em {label}: {', '.join(invalid)} "
-            f"(use {', '.join(allowed)})."
+            f"Valor inválido em {label}: {', '.join(invalid)} (use {', '.join(allowed)})."
         )
     return values
 
@@ -207,10 +202,7 @@ def parse_catalog_csv(file_obj) -> CatalogParseReport:
 
         report.total_rows += 1
         line = index
-        values = {
-            key: (raw.get(key) or "").strip()
-            for key in REQUIRED_COLUMNS
-        }
+        values = {key: (raw.get(key) or "").strip() for key in REQUIRED_COLUMNS}
 
         error_count = len(report.errors)
 
@@ -238,8 +230,7 @@ def parse_catalog_csv(file_obj) -> CatalogParseReport:
                     ImportIssue(
                         line,
                         "character_name",
-                        f"Nome divergente para '{character_stable_id}' "
-                        f"(esperado '{previous}').",
+                        f"Nome divergente para '{character_stable_id}' (esperado '{previous}').",
                     )
                 )
             else:
@@ -277,9 +268,7 @@ def parse_catalog_csv(file_obj) -> CatalogParseReport:
         try:
             release_date = _parse_date(values["release_date_global"])
         except ValueError as exc:
-            report.errors.append(
-                ImportIssue(line, "release_date_global", str(exc))
-            )
+            report.errors.append(ImportIssue(line, "release_date_global", str(exc)))
             release_date = None
 
         strategy = values["strategy"]
@@ -288,8 +277,7 @@ def parse_catalog_csv(file_obj) -> CatalogParseReport:
                 ImportIssue(
                     line,
                     "strategy",
-                    f"Estratégia inválida '{strategy}' "
-                    f"(use {', '.join(STRATEGIES)}).",
+                    f"Estratégia inválida '{strategy}' (use {', '.join(STRATEGIES)}).",
                 )
             )
 

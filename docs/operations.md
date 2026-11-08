@@ -25,10 +25,24 @@ não rodam no entrypoint de cada worker.
 
 - **Transições de votação**: container `scheduler` executa
   `python manage.py run_scheduler --interval 60`.
-- **Sincronização de catálogo**: cron/systemd diário às 03:00 chamando `scripts/sync_catalog.sh`;
-  o scheduler de votos não sincroniza catálogo.
+- **Sincronização de catálogo**: cron/systemd diário às 03:00 chamando
+  `scripts/sync_catalog.sh`; o scheduler de votos não sincroniza catálogo.
 - **Sessões**: `clearsessions` diário via cron/systemd.
 - **Idempotência**: transições usam lock de banco e podem ser repetidas com segurança.
+
+Exemplo de cron (horário de `America/Sao_Paulo`):
+
+```cron
+0 3 * * * cd /app && CATALOG_FILE=/app/var/catalog.csv ./scripts/sync_catalog.sh
+30 3 * * * cd /app && python manage.py clearsessions
+```
+
+Sincronização manual:
+
+```bash
+CATALOG_FILE=/app/var/catalog.csv ./scripts/sync_catalog.sh
+python manage.py import_catalog --file catalog.csv --source curadoria-local --apply
+```
 
 ## 4. Backups e restauração
 
@@ -47,6 +61,10 @@ tar -xzf media-YYYY-MM-DD.tar.gz
 - Retenção: 30 backups diários + 12 mensais, fora do host.
 - Testar restauração trimestralmente em ambiente limpo.
 - Incluir banco e `media/` no mesmo procedimento.
+
+```cron
+15 2 * * * cd /app && ./scripts/backup.sh
+```
 
 ## 5. Revisão manual de licença de imagens
 
@@ -71,6 +89,11 @@ Registrar data, operador, ambiente e duração neste documento.
 - **2026-11-07 — SC-001 (pré-validação)**: fluxo automatizado de criação, edição, ajuste de
   elegíveis e agendamento executado no ambiente de teste em 0,6 s. A medição manual de UX com
   operador será registrada na validação final (T134).
+- **2026-11-07 — SC-002 (pendente)**: fluxo de cédula coberto por testes de integração; medição
+  manual com participante deve ser registrada antes do deploy.
+- **2026-11-07 — SC-010 (pendente)**: procedimento: importar catálogo com 500 personagens,
+  abrir votação, medir busca por nome e combinação de três filtros no navegador; registrar
+  duração. O grid usa `loading="lazy"` nas imagens e a busca é filtrada no servidor por HTMX.
 
 ## 7. Saúde, logs e monitoramento
 

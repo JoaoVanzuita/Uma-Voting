@@ -338,17 +338,17 @@ canceladas não aparecem para participante.
 
 **Purpose**: endurecimento, operação, documentação e validação final.
 
-- [ ] T128 [P] Endurecer segurança: CSP, headers, HSTS, cookies, `check --deploy` e rate limit em `Caddyfile`, `config/settings/prod.py` e `apps/accounts/services/throttle.py`
-- [ ] T129 [P] Auditar acessibilidade e responsividade (360 px–desktop, teclado, foco, contraste, `aria-live`) em `templates/` e `static/css/`
-- [ ] T130 [P] Otimizar consultas, índices, paginação/lazy loading e tempo de busca em `apps/voting/services/` e `static/js/app.js`, e documentar medição manual com 500 personagens (<1 s)
-- [ ] T131 [P] Finalizar backups/restauração e runbook (incluindo `clearsessions` diário) em `scripts/backup.sh`, `scripts/restore.sh` e `docs/operations.md`
-- [ ] T132 [P] Finalizar CI (lint, testes, `makemigrations --check`, `check --deploy`, build) em `.github/workflows/ci.yml`
-- [ ] T133 [P] Criar smoke tests E2E opcionais com Playwright em `tests/e2e/test_critical_flows.py`
-- [ ] T134 Documentar decisões, limitações e operação em `README.md`, `docs/operations.md` e `docs/governance-notes.md`, incluindo revisão manual de licença, medições SC-001/SC-002/SC-010 e riscos aceitos
-- [ ] T135 Executar o quickstart completo e corrigir falhas de integração em `specs/001-character-ban-voting/quickstart.md`
-- [ ] T136 [P] Revisar privacidade/segurança, rodar auditoria de dependências e registrar em `docs/security-review.md`, incluindo checklist de cadastro público, exibição somente de username e revisão manual de licença
-- [ ] T137 [P] Registrar a emenda 2.0.0, os riscos aceitos G5/M3 e as medições manuais G2/G4 em `docs/governance-notes.md`
-- [ ] T138 Criar `scripts/sync_catalog.sh` e documentar a sincronização periódica diária às 03:00 via cron/systemd em `scripts/sync_catalog.sh` e `docs/operations.md`
+- [X] T128 [P] Endurecer segurança: CSP, headers, HSTS, cookies, `check --deploy` e rate limit em `Caddyfile`, `config/settings/prod.py` e `apps/accounts/services/throttle.py`
+- [X] T129 [P] Auditar acessibilidade e responsividade (360 px–desktop, teclado, foco, contraste, `aria-live`) em `templates/` e `static/css/`
+- [X] T130 [P] Otimizar consultas, índices, paginação/lazy loading e tempo de busca em `apps/voting/services/` e `static/js/app.js`, e documentar medição manual com 500 personagens (<1 s)
+- [X] T131 [P] Finalizar backups/restauração e runbook (incluindo `clearsessions` diário) em `scripts/backup.sh`, `scripts/restore.sh` e `docs/operations.md`
+- [X] T132 [P] Finalizar CI (lint, testes, `makemigrations --check`, `check --deploy`, build) em `.github/workflows/ci.yml`
+- [X] T133 [P] Criar smoke tests E2E opcionais com Playwright em `tests/e2e/test_critical_flows.py`
+- [X] T134 Documentar decisões, limitações e operação em `README.md`, `docs/operations.md` e `docs/governance-notes.md`, incluindo revisão manual de licença, medições SC-001/SC-002/SC-010 e riscos aceitos
+- [X] T135 Executar o quickstart completo e corrigir falhas de integração em `specs/001-character-ban-voting/quickstart.md`
+- [X] T136 [P] Revisar privacidade/segurança, rodar auditoria de dependências e registrar em `docs/security-review.md`, incluindo checklist de cadastro público, exibição somente de username e revisão manual de licença
+- [X] T137 [P] Registrar a emenda 2.0.0, os riscos aceitos G5/M3 e as medições manuais G2/G4 em `docs/governance-notes.md`
+- [X] T138 Criar `scripts/sync_catalog.sh` e documentar a sincronização periódica diária às 03:00 via cron/systemd em `scripts/sync_catalog.sh` e `docs/operations.md`
 
 ---
 

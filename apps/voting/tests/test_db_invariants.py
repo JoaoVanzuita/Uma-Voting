@@ -240,9 +240,7 @@ def test_snapshot_nao_pode_ser_alterado_nem_apagado():
 
     with pytest.raises(DatabaseError):
         with transaction.atomic():
-            VotingCharacterSnapshot.objects.filter(pk=snapshot.pk).update(
-                display_name="Alterado"
-            )
+            VotingCharacterSnapshot.objects.filter(pk=snapshot.pk).update(display_name="Alterado")
 
     with pytest.raises(DatabaseError):
         with transaction.atomic():

@@ -237,6 +237,12 @@ class VotingVersionAptitudeSnapshot(models.Model):
                 name="uniq_snapshot_aptitude",
             ),
         ]
+        indexes = [
+            models.Index(
+                fields=["aptitude"],
+                name="voting_apt_snapshot_apt_idx",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.version_snapshot} — {self.aptitude}"

@@ -33,7 +33,7 @@ def search_characters(
     versão precisa satisfazer todos os critérios.
     """
     filters = filters or {}
-    queryset = VotingCharacterSnapshot.objects.filter(voting=voting)
+    queryset = VotingCharacterSnapshot.objects.filter(voting=voting).select_related("image_asset")
 
     if query:
         queryset = queryset.filter(display_name__icontains=query.strip())

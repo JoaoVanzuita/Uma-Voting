@@ -75,6 +75,19 @@ administradores.
 | SC-002 — concluir cédula <3 min | Medição cronometrada no quickstart | `docs/operations.md` |
 | SC-010 — busca/filtros <1 s com 500 personagens | Medição manual documentada | `docs/operations.md` |
 
+### 5.1 Registros
+
+- **2026-11-07 — SC-001 (G2 A)**: fluxo automatizado de criação, configuração, ajuste de
+  elegíveis e agendamento executado em 0,6 s no ambiente de teste. Medição manual de UX
+  permanece pendente e deve ser registrada antes do deploy.
+- **2026-11-07 — SC-002 (G4 B)**: fluxo de cédula coberto por testes de integração; medição
+  manual com participante pendente.
+- **2026-11-07 — SC-010 (G4 B)**: procedimento manual com 500 personagens documentado em
+  `docs/operations.md` §6; medição pendente.
+- **Riscos aceitos**: G5 (licença de imagens sem gate técnico), M3 (cadastro público/exibição
+  de username por revisão manual) e C3 (inferência por comparação de agregados) permanecem
+  registrados na seção 4 e na emenda 2.0.0.
+
 ## 6. Referências
 
 - `.specify/memory/constitution.md`

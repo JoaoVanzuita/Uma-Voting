@@ -71,9 +71,7 @@ class Command(BaseCommand):
                     f"{len(preview.ignored_characters)} ignorada(s)."
                 )
                 for issue in preview.errors:
-                    self.stderr.write(
-                        f"Linha {issue.line or '—'} [{issue.field}]: {issue.message}"
-                    )
+                    self.stderr.write(f"Linha {issue.line or '—'} [{issue.field}]: {issue.message}")
             if preview.has_errors:
                 raise CommandError("Arquivo inválido; o catálogo não foi alterado.")
             return
@@ -94,9 +92,7 @@ class Command(BaseCommand):
                         "total_rows": None,
                         "new_characters": applied,
                         "pending_changes": pending,
-                        "errors": (
-                            [{"message": run.error_message}] if run.error_message else []
-                        ),
+                        "errors": ([{"message": run.error_message}] if run.error_message else []),
                     },
                     ensure_ascii=False,
                     indent=2,

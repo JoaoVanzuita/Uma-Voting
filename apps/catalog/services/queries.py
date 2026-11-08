@@ -25,9 +25,7 @@ def is_eligible(character: Character, cutoff: date) -> bool:
 
 def eligible_characters(cutoff: date) -> QuerySet[Character]:
     """Personagens com ao menos uma versão lançada até o corte."""
-    return Character.objects.filter(
-        versions__release_date_global__lte=cutoff
-    ).distinct()
+    return Character.objects.filter(versions__release_date_global__lte=cutoff).distinct()
 
 
 def consolidated_aptitudes(character: Character, cutoff: date) -> set[Aptitude]:

@@ -102,8 +102,7 @@ def test_detalhe_lista_mudancas_pendentes(client):
         {
             "source": CatalogSource.objects.get(name="curadoria-local").pk,
             "file": catalog_upload(
-                "tokai-teio,Tokai Teio Renomeada,original,Original,"
-                "2025-06-26,pace,medium,turf\n"
+                "tokai-teio,Tokai Teio Renomeada,original,Original,2025-06-26,pace,medium,turf\n"
             ),
         },
     )
@@ -134,8 +133,7 @@ def test_aprovacao_pelo_admin_aplica_mudanca(client):
         {
             "source": CatalogSource.objects.get(name="curadoria-local").pk,
             "file": catalog_upload(
-                "tokai-teio,Tokai Teio Renomeada,original,Original,"
-                "2025-06-26,pace,medium,turf\n"
+                "tokai-teio,Tokai Teio Renomeada,original,Original,2025-06-26,pace,medium,turf\n"
             ),
         },
     )
@@ -160,9 +158,7 @@ def test_rejeicao_pelo_admin_registra_nota(client):
         reverse("admin:catalog_sync"),
         {
             "source": CatalogSource.objects.get(name="curadoria-local").pk,
-            "file": catalog_upload(
-                "tokai-teio,Tokai Teio,nova,Nova,2025-06-26,pace,medium,turf\n"
-            ),
+            "file": catalog_upload("tokai-teio,Tokai Teio,nova,Nova,2025-06-26,pace,medium,turf\n"),
         },
     )
     change = SyncChange.objects.get()

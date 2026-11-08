@@ -35,9 +35,7 @@ DEFAULT_CUTOFF = date(2026, 12, 1)
 
 def _image_stats() -> dict[str, int]:
     return {
-        "valid": ImageAsset.objects.filter(
-            is_current=True, status=ImageAsset.Status.VALID
-        ).count(),
+        "valid": ImageAsset.objects.filter(is_current=True, status=ImageAsset.Status.VALID).count(),
         "invalid": ImageAsset.objects.filter(
             is_current=True, status=ImageAsset.Status.INVALID
         ).count(),
@@ -98,8 +96,7 @@ def catalog_sync(request):
     if run.status == SyncRun.Status.FAILED:
         messages.error(
             request,
-            "A sincronização falhou; o catálogo não foi alterado. "
-            + (run.error_message or ""),
+            "A sincronização falhou; o catálogo não foi alterado. " + (run.error_message or ""),
         )
     elif run.changes.filter(status=SyncChange.Status.PENDING).exists():
         messages.warning(
@@ -181,9 +178,7 @@ def catalog_characters(request):
             {
                 "character": character,
                 "aptitudes": consolidated_aptitude_values(character, cutoff),
-                "eligible_versions": character.versions.filter(
-                    release_date_global__lte=cutoff
-                ),
+                "eligible_versions": character.versions.filter(release_date_global__lte=cutoff),
                 "image": character.images.filter(is_current=True).first(),
             }
         )

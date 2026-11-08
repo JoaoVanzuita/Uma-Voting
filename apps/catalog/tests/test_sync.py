@@ -68,10 +68,7 @@ def test_parser_valida_colunas_e_aptidoes():
 
 def test_parser_rejeita_estrategia_invalida_e_data_invalida():
     report = parse_catalog_csv(
-        csv_file(
-            "tokai-teio,Tokai Teio,tokai-teio-original,Original,26/06/2025,"
-            "Pace,medium,turf\n"
-        )
+        csv_file("tokai-teio,Tokai Teio,tokai-teio-original,Original,26/06/2025,Pace,medium,turf\n")
     )
 
     assert report.has_errors
@@ -108,9 +105,7 @@ def test_nova_personagem_e_aplicada_automaticamente(tmp_path):
     character = Character.objects.get(stable_id="tokai-teio")
     assert character.display_name == "Tokai Teio"
     assert character.versions.count() == 2
-    assert CharacterVersionAptitude.objects.filter(
-        version__character=character
-    ).count() == 8
+    assert CharacterVersionAptitude.objects.filter(version__character=character).count() == 8
     change = SyncChange.objects.get(sync_run=run)
     assert change.status == SyncChange.Status.AUTO_APPLIED
     assert change.change_type == SyncChange.ChangeType.NEW_CHARACTER
@@ -192,8 +187,7 @@ def test_rejeicao_registra_nota_sem_aplicar(tmp_path):
     CharacterFactory(stable_id="tokai-teio", display_name="Tokai Teio")
     path = write_catalog(
         tmp_path,
-        "tokai-teio,Tokai Teio Renomeada,tokai-teio-nova,Nova,"
-        "2025-06-26,pace,medium,turf\n",
+        "tokai-teio,Tokai Teio Renomeada,tokai-teio-nova,Nova,2025-06-26,pace,medium,turf\n",
     )
     run = sync_from_file(path, source)
     change = run.changes.get(change_type=SyncChange.ChangeType.NEW_VERSION)
@@ -212,8 +206,7 @@ def test_personagem_sem_data_global_e_ignorada(tmp_path):
     source = CatalogSourceFactory(name="curadoria-local")
     path = write_catalog(
         tmp_path,
-        "nao-lancada,Não Lançada,nao-lancada-original,Original,,"
-        "pace,medium,turf\n",
+        "nao-lancada,Não Lançada,nao-lancada-original,Original,,pace,medium,turf\n",
     )
 
     run = sync_from_file(path, source)

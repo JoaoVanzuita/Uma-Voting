@@ -102,12 +102,7 @@ def participation(voting: Voting) -> list[ParticipationRow]:
     rows = (
         VotingEligibility.objects.filter(voting=voting)
         .select_related("user")
-        .annotate(
-            voted=Exists(ballots.filter(participant_id=OuterRef("user_id")))
-        )
+        .annotate(voted=Exists(ballots.filter(participant_id=OuterRef("user_id"))))
         .order_by("user__username")
     )
-    return [
-        ParticipationRow(username=row.user.username, voted=row.voted)
-        for row in rows
-    ]
+    return [ParticipationRow(username=row.user.username, voted=row.voted) for row in rows]

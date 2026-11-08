@@ -178,9 +178,7 @@ def validate_image_asset(asset: ImageAsset) -> ImageValidation:
     asset.height = max(height, 1)
     asset.checksum_sha256 = checksum
     asset.validated_at = timezone.now()
-    asset.save(
-        update_fields=["status", "width", "height", "checksum_sha256", "validated_at"]
-    )
+    asset.save(update_fields=["status", "width", "height", "checksum_sha256", "validated_at"])
     return ImageValidation(ImageAsset.Status.VALID, "", width, height, checksum)
 
 
@@ -286,9 +284,7 @@ def _read_manifest(manifest) -> list[dict[str, str]]:
 
     reader = csv.DictReader(io.StringIO(text), strict=True)
     reader.fieldnames = [name.strip() for name in (reader.fieldnames or [])]
-    if not reader.fieldnames or not {"character_stable_id", "file"}.issubset(
-        reader.fieldnames
-    ):
+    if not reader.fieldnames or not {"character_stable_id", "file"}.issubset(reader.fieldnames):
         raise ValueError("Manifesto deve conter as colunas character_stable_id e file.")
     return [row for row in reader]
 
@@ -398,9 +394,7 @@ def import_images(manifest, source_dir, *, dry_run: bool = True) -> ImageImportR
             character=character
         )
         if duplicates.exists():
-            report.warnings.append(
-                f"Checksum {checksum[:12]}… também usado por outra personagem."
-            )
+            report.warnings.append(f"Checksum {checksum[:12]}… também usado por outra personagem.")
 
         if existing_checksum is not None:
             action = "reuse"
@@ -432,11 +426,9 @@ def import_images(manifest, source_dir, *, dry_run: bool = True) -> ImageImportR
 
                 with transaction.atomic():
                     if is_current:
-                        ImageAsset.objects.filter(
-                            character=character, is_current=True
-                        ).exclude(pk=getattr(existing_checksum, "pk", None)).update(
-                            is_current=False
-                        )
+                        ImageAsset.objects.filter(character=character, is_current=True).exclude(
+                            pk=getattr(existing_checksum, "pk", None)
+                        ).update(is_current=False)
                     if existing_checksum is None:
                         ImageAsset.objects.create(
                             character=character,
@@ -454,15 +446,11 @@ def import_images(manifest, source_dir, *, dry_run: bool = True) -> ImageImportR
                     elif is_current and not existing_checksum.is_current:
                         existing_checksum.is_current = True
                         existing_checksum.validated_at = timezone.now()
-                        existing_checksum.save(
-                            update_fields=["is_current", "validated_at"]
-                        )
+                        existing_checksum.save(update_fields=["is_current", "validated_at"])
                     if existing_checksum is not None:
                         existing_checksum.status = ImageAsset.Status.VALID
                         existing_checksum.validated_at = timezone.now()
-                        existing_checksum.save(
-                            update_fields=["status", "validated_at"]
-                        )
+                        existing_checksum.save(update_fields=["status", "validated_at"])
             except OSError as exc:
                 report.errors.append(ImageIssue(character_stable_id, file_value, str(exc)))
                 continue
