@@ -11,12 +11,14 @@ from django.utils import timezone
 from apps.catalog.services.queries import eligible_characters
 from apps.core.exceptions import DomainError, PreconditionError
 from apps.voting.models import (
+    Ballot,
     Mode,
     Voting,
     VotingEligibility,
     VotingStatus,
 )
 from apps.voting.services.eligibility import add_default_eligible
+from apps.voting.services.snapshots import create_snapshots
 
 logger = logging.getLogger("apps.voting.lifecycle")
 
@@ -195,4 +197,99 @@ def schedule_voting(voting: Voting) -> Voting:
         locked.save(update_fields=["status", "updated_at"])
 
     logger.info("Votação agendada voting_id=%s", voting.pk)
+    return locked
+
+
+def open_voting(voting: Voting, trigger: str) -> Voting:
+    """Abre a votação, congela elegíveis/catálogo e cria os snapshots.
+
+    ``trigger`` é ``admin`` para abertura manual em rascunho ou ``scheduler``
+    para a abertura automática de uma votação agendada.
+    """
+    now = timezone.now()
+
+    with transaction.atomic():
+        locked = Voting.objects.select_for_update().get(pk=voting.pk)
+
+        if trigger == "admin":
+            if locked.status != VotingStatus.DRAFT:
+                raise VotingStateError(
+                    "Somente votações em rascunho podem ser abertas manualmente."
+                )
+            if locked.open_mode != Mode.MANUAL:
+                raise VotingStateError(
+                    "Votações com abertura automática são abertas pelo agendador."
+                )
+        elif trigger == "scheduler":
+            if locked.status != VotingStatus.SCHEDULED:
+                raise VotingStateError(
+                    "Somente votações agendadas podem ser abertas pelo agendador."
+                )
+            if locked.open_mode != Mode.AUTOMATIC:
+                raise VotingStateError("A votação não está configurada para abertura automática.")
+            if locked.opens_at is None or locked.opens_at > now:
+                raise VotingStateError("Ainda não é hora de abrir esta votação.")
+        else:
+            raise VotingStateError("Gatilho de abertura inválido.")
+
+        check_open_preconditions(locked)
+        create_snapshots(locked)
+
+        locked.eligible_frozen_at = now
+        locked.catalog_frozen_at = now
+        locked.opened_at = now
+        locked.status = VotingStatus.OPEN
+        locked.save(
+            update_fields=[
+                "eligible_frozen_at",
+                "catalog_frozen_at",
+                "opened_at",
+                "status",
+                "updated_at",
+            ]
+        )
+
+    logger.info("Votação aberta voting_id=%s trigger=%s", voting.pk, trigger)
+    return locked
+
+
+def close_voting(voting: Voting, trigger: str = "admin") -> Voting:
+    """Encerra uma votação aberta, bloqueando novas cédulas."""
+    with transaction.atomic():
+        locked = Voting.objects.select_for_update().get(pk=voting.pk)
+        if locked.status != VotingStatus.OPEN:
+            raise VotingStateError("Somente votações abertas podem ser encerradas.")
+
+        locked.closed_at = timezone.now()
+        locked.status = VotingStatus.CLOSED
+        locked.save(update_fields=["closed_at", "status", "updated_at"])
+
+    logger.info("Votação encerrada voting_id=%s trigger=%s", voting.pk, trigger)
+    return locked
+
+
+def cancel_voting(voting: Voting, admin=None, reason: str | None = None) -> Voting:
+    """Cancela a votação em qualquer estado e elimina todas as cédulas.
+
+    O status é alterado para ``cancelled`` antes da exclusão das cédulas para
+    satisfazer as triggers de janela de exclusão. A operação é idempotente.
+    """
+    with transaction.atomic():
+        locked = Voting.objects.select_for_update().get(pk=voting.pk)
+        if locked.status == VotingStatus.CANCELLED:
+            return locked
+
+        locked.status = VotingStatus.CANCELLED
+        locked.cancelled_at = timezone.now()
+        locked.save(update_fields=["status", "cancelled_at", "updated_at"])
+
+        # As triggers permitem a exclusão com a votação já cancelada.
+        Ballot.objects.filter(voting=locked).delete()
+
+    logger.info(
+        "Votação cancelada voting_id=%s admin_id=%s reason=%s",
+        voting.pk,
+        getattr(admin, "pk", None),
+        reason or "-",
+    )
     return locked

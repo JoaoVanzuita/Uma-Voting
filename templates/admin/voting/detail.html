@@ -86,12 +86,64 @@
         </a>
       </p>
     {% endif %}
+
+    {% if ballots %}
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Cédulas registradas</caption>
+          <thead>
+            <tr>
+              <th scope="col">Participante</th>
+              <th scope="col">Registrada em</th>
+              <th scope="col" class="table__actions">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ballot in ballots %}
+              <tr>
+                <td>{{ ballot.participant.username }}</td>
+                <td>{{ ballot.created_at|datetime_br }}</td>
+                <td>
+                  {% if can_close %}
+                    <form
+                      class="inline-form"
+                      method="post"
+                      action="{% url 'admin:ballot_delete' voting.pk ballot.participant_id %}"
+                      data-confirm="Excluir a cédula deste participante? Ele poderá votar novamente."
+                      data-submit-once
+                    >
+                      {% csrf_token %}
+                      <button class="btn btn-danger" type="submit">Excluir cédula</button>
+                    </form>
+                  {% else %}
+                    <span class="text-muted text-small">Somente com votação aberta</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
   </section>
 
   <section class="panel stack" aria-labelledby="actions-title">
     <h2 id="actions-title">Ações</h2>
 
-    {% if can_edit and voting.open_mode == "automatic" %}
+    {% if can_open %}
+      <p>
+        A abertura manual congela os elegíveis e o catálogo e cria os snapshots.
+      </p>
+      <form
+        method="post"
+        action="{% url 'admin:voting_open' voting.pk %}"
+        data-confirm="Abrir a votação agora? Os elegíveis e o catálogo serão congelados."
+        data-submit-once
+      >
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Abrir votação</button>
+      </form>
+    {% elif can_edit and voting.open_mode == "automatic" %}
       <p>
         Esta votação abre automaticamente em
         <strong>{{ voting.opens_at|datetime_br }}</strong>. Ao agendar, a configuração
@@ -111,10 +163,38 @@
         Abertura manual: a configuração pode ser editada e os elegíveis ajustados até a
         abertura explícita.
       </p>
-    {% else %}
-      <p class="text-muted">
-        A configuração está bloqueada porque a votação não está em rascunho.
-      </p>
+    {% endif %}
+
+    {% if can_close %}
+      <form
+        method="post"
+        action="{% url 'admin:voting_close' voting.pk %}"
+        data-confirm="Encerrar a votação? Novas cédulas serão bloqueadas."
+        data-submit-once
+      >
+        {% csrf_token %}
+        <button class="btn btn-secondary" type="submit">Encerrar votação</button>
+      </form>
+    {% endif %}
+
+    {% if can_cancel %}
+      <form
+        method="post"
+        action="{% url 'admin:voting_cancel' voting.pk %}"
+        data-confirm="Cancelar a votação? Todas as cédulas serão eliminadas definitivamente."
+        data-submit-once
+      >
+        {% csrf_token %}
+        <div class="form-group">
+          <label class="form-label" for="cancel-reason">Motivo do cancelamento (opcional)</label>
+          <input id="cancel-reason" class="form-control" type="text" name="reason">
+        </div>
+        <button class="btn btn-danger" type="submit">Cancelar votação</button>
+      </form>
+    {% endif %}
+
+    {% if not can_edit and not can_close and not can_cancel %}
+      <p class="text-muted">Nenhuma ação de ciclo de vida disponível.</p>
     {% endif %}
   </section>
 {% endblock %}

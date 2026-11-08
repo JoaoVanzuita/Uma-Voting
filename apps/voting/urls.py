@@ -60,6 +60,26 @@ admin_patterns = [
         admin_views.voting_schedule,
         name="voting_schedule",
     ),
+    path(
+        "admin/votacoes/<int:voting_id>/abrir/",
+        admin_views.voting_open,
+        name="voting_open",
+    ),
+    path(
+        "admin/votacoes/<int:voting_id>/encerrar/",
+        admin_views.voting_close,
+        name="voting_close",
+    ),
+    path(
+        "admin/votacoes/<int:voting_id>/cancelar/",
+        admin_views.voting_cancel,
+        name="voting_cancel",
+    ),
+    path(
+        "admin/votacoes/<int:voting_id>/cedulas/<int:user_id>/excluir/",
+        admin_views.ballot_delete,
+        name="ballot_delete",
+    ),
 ]
 
 urlpatterns = [*participant_patterns, *admin_patterns]

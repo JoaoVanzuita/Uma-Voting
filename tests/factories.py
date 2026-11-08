@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import date
 
 import factory
 from django.contrib.auth import get_user_model
+from django.db import connection
 from django.utils import timezone
 
 from apps.catalog.models import (
@@ -29,6 +31,22 @@ from apps.voting.models import (
 )
 
 DEFAULT_ADMIN_PASSWORD = "senha-admin-teste"
+
+
+@contextmanager
+def fixture_seed():
+    """Permite que factories criem elegíveis/snapshots em votações já abertas.
+
+    O escape hatch existe apenas para dados de teste; a aplicação nunca define
+    ``app.fixture_seed``. As triggers de produção continuam ativas.
+    """
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT set_config('app.fixture_seed', 'on', false)")
+    try:
+        yield
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT set_config('app.fixture_seed', 'off', false)")
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -166,6 +184,11 @@ class VotingEligibilityFactory(factory.django.DjangoModelFactory):
     voting = factory.SubFactory(VotingFactory)
     user = factory.SubFactory(ParticipantFactory)
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        with fixture_seed():
+            return super()._create(model_class, *args, **kwargs)
+
 
 class VotingCharacterSnapshotFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -176,6 +199,11 @@ class VotingCharacterSnapshotFactory(factory.django.DjangoModelFactory):
     stable_id = factory.LazyAttribute(lambda obj: obj.source_character.stable_id)
     display_name = factory.LazyAttribute(lambda obj: obj.source_character.display_name)
     image_asset = None
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        with fixture_seed():
+            return super()._create(model_class, *args, **kwargs)
 
 
 class VotingVersionSnapshotFactory(factory.django.DjangoModelFactory):
@@ -192,6 +220,11 @@ class VotingVersionSnapshotFactory(factory.django.DjangoModelFactory):
         lambda obj: obj.source_version.release_date_global or date(2025, 1, 1)
     )
 
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        with fixture_seed():
+            return super()._create(model_class, *args, **kwargs)
+
 
 class VotingVersionAptitudeSnapshotFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -199,6 +232,11 @@ class VotingVersionAptitudeSnapshotFactory(factory.django.DjangoModelFactory):
 
     version_snapshot = factory.SubFactory(VotingVersionSnapshotFactory)
     aptitude = factory.SubFactory(AptitudeFactory)
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        with fixture_seed():
+            return super()._create(model_class, *args, **kwargs)
 
 
 class BallotFactory(factory.django.DjangoModelFactory):
@@ -212,10 +250,11 @@ class BallotFactory(factory.django.DjangoModelFactory):
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
         # A trigger de elegibilidade exige a linha antes do INSERT da cédula.
-        VotingEligibility.objects.get_or_create(
-            voting=kwargs["voting"],
-            user=kwargs["participant"],
-        )
+        with fixture_seed():
+            VotingEligibility.objects.get_or_create(
+                voting=kwargs["voting"],
+                user=kwargs["participant"],
+            )
         return super()._create(model_class, *args, **kwargs)
 
     @factory.post_generation

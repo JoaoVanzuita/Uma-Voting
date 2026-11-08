@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
@@ -16,6 +17,7 @@ from apps.voting.models import (
     VotingEligibility,
     VotingStatus,
 )
+from apps.voting.services.ballots import delete_ballot_admin
 from apps.voting.services.eligibility import (
     EligibilityError,
     add_eligible,
@@ -24,8 +26,11 @@ from apps.voting.services.eligibility import (
 from apps.voting.services.lifecycle import (
     VotingConfigError,
     VotingStateError,
+    cancel_voting,
+    close_voting,
     create_voting,
     evaluate_open_preconditions,
+    open_voting,
     schedule_voting,
     update_voting,
 )
@@ -118,7 +123,12 @@ def voting_detail(request, voting_id: int):
     )
     preconditions = evaluate_open_preconditions(voting)
     eligible_count = VotingEligibility.objects.filter(voting=voting).count()
-    ballot_count = Ballot.objects.filter(voting=voting).count()
+    ballots = (
+        Ballot.objects.filter(voting=voting)
+        .select_related("participant")
+        .order_by("participant__username")
+    )
+    ballot_count = ballots.count()
 
     return render(
         request,
@@ -128,7 +138,15 @@ def voting_detail(request, voting_id: int):
             "preconditions": preconditions,
             "eligible_count": eligible_count,
             "ballot_count": ballot_count,
+            "ballots": ballots,
             "can_edit": voting.status == VotingStatus.DRAFT,
+            "can_open": (
+                voting.status == VotingStatus.DRAFT
+                and voting.open_mode == "manual"
+                and preconditions.ok
+            ),
+            "can_close": voting.status == VotingStatus.OPEN,
+            "can_cancel": voting.status != VotingStatus.CANCELLED,
         },
     )
 
@@ -188,4 +206,58 @@ def voting_schedule(request, voting_id: int):
         messages.error(request, exc.message)
     else:
         messages.success(request, "Votação agendada. A configuração ficou bloqueada.")
+    return redirect("admin:voting_detail", voting_id=voting.pk)
+
+
+@admin_required
+@require_POST
+def voting_open(request, voting_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+    try:
+        open_voting(voting, "admin")
+    except (VotingStateError, VotingConfigError, PreconditionError) as exc:
+        messages.error(request, exc.message)
+    else:
+        messages.success(request, "Votação aberta e catálogo congelado.")
+    return redirect("admin:voting_detail", voting_id=voting.pk)
+
+
+@admin_required
+@require_POST
+def voting_close(request, voting_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+    try:
+        close_voting(voting, "admin")
+    except VotingStateError as exc:
+        messages.error(request, exc.message)
+    else:
+        messages.success(request, "Votação encerrada.")
+    return redirect("admin:voting_detail", voting_id=voting.pk)
+
+
+@admin_required
+@require_POST
+def voting_cancel(request, voting_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+    reason = request.POST.get("reason", "").strip()
+    cancel_voting(voting, admin=request.user, reason=reason or None)
+    messages.success(request, "Votação cancelada e cédulas eliminadas.")
+    return redirect("admin:voting_detail", voting_id=voting.pk)
+
+
+@admin_required
+@require_POST
+def ballot_delete(request, voting_id: int, user_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+    participant = get_object_or_404(get_user_model(), pk=user_id)
+
+    try:
+        deleted = delete_ballot_admin(voting, participant, request.user)
+    except (VotingStateError, PreconditionError) as exc:
+        messages.error(request, exc.message)
+    else:
+        if deleted:
+            messages.success(request, "Cédula excluída. O participante pode votar novamente.")
+        else:
+            messages.info(request, "Não havia cédula para este participante.")
     return redirect("admin:voting_detail", voting_id=voting.pk)

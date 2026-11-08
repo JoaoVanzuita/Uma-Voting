@@ -225,6 +225,22 @@
     }
   });
 
+  /* Confirmação de ações destrutivas sem script inline (CSP). */
+  document.addEventListener(
+    "submit",
+    function (event) {
+      var form = event.target;
+      if (!form || !form.matches || !form.hasAttribute("data-confirm")) {
+        return;
+      }
+      if (!window.confirm(form.getAttribute("data-confirm"))) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }
+    },
+    true
+  );
+
   /* Evita envio duplicado de formulários marcados explicitamente. */
   document.addEventListener("submit", function (event) {
     var form = event.target;

@@ -140,3 +140,25 @@ def get_own_ballot(voting: Voting, participant) -> Ballot | None:
         .prefetch_related("choices__character_snapshot__image_asset")
         .first()
     )
+
+
+def delete_ballot_admin(voting: Voting, participant, admin) -> bool:
+    """Exclui a cédula de um participante enquanto a votação está aberta.
+
+    Não carrega nem registra escolhas e não mantém autoria/horário da exclusão.
+    """
+    with transaction.atomic():
+        locked = Voting.objects.select_for_update().get(pk=voting.pk)
+        _ensure_voting_open(locked)
+
+        ballot = Ballot.objects.filter(voting=locked, participant=participant).first()
+        if ballot is None:
+            return False
+
+        # A cascata de escolhas é autorizada pela flag local consumida pelas triggers.
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT set_config('app.ballot_delete', 'on', true)")
+        ballot.delete()
+
+    logger.info("Cédula excluída administrativamente voting_id=%s", voting.pk)
+    return True

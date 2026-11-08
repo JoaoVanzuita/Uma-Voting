@@ -254,25 +254,25 @@ e testar recuperação de janelas perdidas.
 
 ### Tests for User Story 6
 
-- [ ] T094 [P] [US6] Testes de lifecycle (abrir, encerrar, cancelar, idempotência) em `apps/voting/tests/test_lifecycle.py`
-- [ ] T095 [P] [US6] Testes de snapshot (cutoff, versões, aptidões, imagem e imutabilidade) em `apps/voting/tests/test_snapshots.py`
-- [ ] T096 [P] [US6] Testes do scheduler (abertura/encerramento, janela perdida, sem elegíveis, lock) em `apps/voting/tests/test_scheduler.py`
-- [ ] T097 [P] [US6] Testes de concorrência (abertura vs cancelamento, encerramento vs envio, exclusão vs encerramento) em `tests/concurrency/test_lifecycle.py` e testes dedicados de exclusão administrativa em `apps/voting/tests/test_admin_ballot_delete.py` cobrindo FR-071–FR-075
-- [ ] T098 [P] [US6] Testes de triggers de transição/configuração/elegibilidade/snapshot em `apps/voting/tests/test_db_invariants.py`
+- [X] T094 [P] [US6] Testes de lifecycle (abrir, encerrar, cancelar, idempotência) em `apps/voting/tests/test_lifecycle.py`
+- [X] T095 [P] [US6] Testes de snapshot (cutoff, versões, aptidões, imagem e imutabilidade) em `apps/voting/tests/test_snapshots.py`
+- [X] T096 [P] [US6] Testes do scheduler (abertura/encerramento, janela perdida, sem elegíveis, lock) em `apps/voting/tests/test_scheduler.py`
+- [X] T097 [P] [US6] Testes de concorrência (abertura vs cancelamento, encerramento vs envio, exclusão vs encerramento) em `tests/concurrency/test_lifecycle.py` e testes dedicados de exclusão administrativa em `apps/voting/tests/test_admin_ballot_delete.py` cobrindo FR-071–FR-075
+- [X] T098 [P] [US6] Testes de triggers de transição/configuração/elegibilidade/snapshot em `apps/voting/tests/test_db_invariants.py`
 
 ### Implementation for User Story 6
 
-- [ ] T099 [US6] Implementar `create_snapshots` em `apps/voting/services/snapshots.py`: copiar personagens, versões e aptidões com `release_date_global <= catalog_cutoff_date`, `display_name`/`stable_id` denormalizados e `image_asset` exato
-- [ ] T100 [US6] Implementar `open_voting`, `close_voting` e `cancel_voting` em `apps/voting/services/lifecycle.py` com `SELECT ... FOR UPDATE`, pré-condições, transições e exclusão de cédulas no cancelamento
-- [ ] T101 [US6] Implementar `process_due_transitions` e `run_scheduler` em `apps/voting/services/scheduler.py` com `pg_try_advisory_lock`, `FOR UPDATE SKIP LOCKED`, idempotência e recuperação de janelas
-- [ ] T102 [US6] Implementar comandos `process_voting_transitions` e `run_scheduler` em `apps/voting/management/commands/`
-- [ ] T103 [US6] Criar migration PostgreSQL em `apps/voting/migrations/0003_voting_triggers.py` com `voting_transition`, `voting_config_immutable`, `eligibility_draft_only`, `snapshot_no_update/delete`, `snapshot_insert_window`, `snapshot_image_character` e `snapshot_version_character`
-- [ ] T104 [US6] Implementar views/urls de ciclo de vida (abrir, encerrar, cancelar, excluir cédula) em `apps/voting/views/admin.py` e `apps/voting/urls.py`, e o serviço `delete_ballot_admin` em `apps/voting/services/ballots.py`, sem notificar o participante, sem registrar autoria/horário da exclusão e sem exibir diferença de agregados antes/depois
-- [ ] T105 [US6] Adicionar confirmação e feedback das ações de ciclo de vida em `templates/admin/voting/detail.html`
-- [ ] T106 [US6] Configurar o serviço `scheduler` no Compose com comando `python manage.py run_scheduler --interval 60` em `compose.yaml` e `compose.prod.yaml`
-- [ ] T107 [US6] Adicionar logging de transições e ciclos do scheduler sem escolhas em `apps/voting/services/lifecycle.py` e `scheduler.py`
-- [ ] T108 [US6] Adicionar testes de cancelamento em todos os estados e da regra “status cancelled antes de apagar cédulas” em `apps/voting/tests/test_lifecycle.py`
-- [ ] T109 [US6] Executar os cenários do quickstart §5.7 e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
+- [X] T099 [US6] Implementar `create_snapshots` em `apps/voting/services/snapshots.py`: copiar personagens, versões e aptidões com `release_date_global <= catalog_cutoff_date`, `display_name`/`stable_id` denormalizados e `image_asset` exato
+- [X] T100 [US6] Implementar `open_voting`, `close_voting` e `cancel_voting` em `apps/voting/services/lifecycle.py` com `SELECT ... FOR UPDATE`, pré-condições, transições e exclusão de cédulas no cancelamento
+- [X] T101 [US6] Implementar `process_due_transitions` e `run_scheduler` em `apps/voting/services/scheduler.py` com `pg_try_advisory_lock`, `FOR UPDATE SKIP LOCKED`, idempotência e recuperação de janelas
+- [X] T102 [US6] Implementar comandos `process_voting_transitions` e `run_scheduler` em `apps/voting/management/commands/`
+- [X] T103 [US6] Criar migration PostgreSQL em `apps/voting/migrations/0003_voting_triggers.py` com `voting_transition`, `voting_config_immutable`, `eligibility_draft_only`, `snapshot_no_update/delete`, `snapshot_insert_window`, `snapshot_image_character` e `snapshot_version_character`
+- [X] T104 [US6] Implementar views/urls de ciclo de vida (abrir, encerrar, cancelar, excluir cédula) em `apps/voting/views/admin.py` e `apps/voting/urls.py`, e o serviço `delete_ballot_admin` em `apps/voting/services/ballots.py`, sem notificar o participante, sem registrar autoria/horário da exclusão e sem exibir diferença de agregados antes/depois
+- [X] T105 [US6] Adicionar confirmação e feedback das ações de ciclo de vida em `templates/admin/voting/detail.html`
+- [X] T106 [US6] Configurar o serviço `scheduler` no Compose com comando `python manage.py run_scheduler --interval 60` em `compose.yaml` e `compose.prod.yaml`
+- [X] T107 [US6] Adicionar logging de transições e ciclos do scheduler sem escolhas em `apps/voting/services/lifecycle.py` e `scheduler.py`
+- [X] T108 [US6] Adicionar testes de cancelamento em todos os estados e da regra “status cancelled antes de apagar cédulas” em `apps/voting/tests/test_lifecycle.py`
+- [X] T109 [US6] Executar os cenários do quickstart §5.7 e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
 
 **Checkpoint**: ciclo de vida completo, transições automáticas e recuperação validadas.
 
