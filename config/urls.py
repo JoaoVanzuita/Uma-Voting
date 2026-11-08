@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from django.urls import include, path
 
 from apps.accounts import urls as accounts_urls
+from apps.catalog import urls as catalog_urls
 from apps.voting import urls as voting_urls
 
 handler403 = "apps.core.views.error_403"
@@ -18,6 +19,7 @@ participant_patterns = [
 
 admin_patterns = [
     *accounts_urls.admin_patterns,
+    *catalog_urls.admin_patterns,
     *voting_urls.admin_patterns,
 ]
 

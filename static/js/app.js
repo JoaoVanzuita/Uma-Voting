@@ -148,6 +148,27 @@
   );
 
   /* -----------------------------------------------------------------------
+   * Filtro local de estado das imagens no admin
+   * --------------------------------------------------------------------- */
+  function applyImageFilter(select) {
+    if (!select) {
+      return;
+    }
+    var value = select.value;
+    var rows = document.querySelectorAll("[data-image-status]");
+    Array.prototype.forEach.call(rows, function (row) {
+      row.hidden = Boolean(value) && row.getAttribute("data-image-status") !== value;
+    });
+  }
+
+  document.addEventListener("change", function (event) {
+    var target = event.target;
+    if (target && target.matches && target.matches("[data-image-filter]")) {
+      applyImageFilter(target);
+    }
+  });
+
+  /* -----------------------------------------------------------------------
    * CSRF para requisições HTMX
    * --------------------------------------------------------------------- */
   document.addEventListener("htmx:configRequest", function (event) {

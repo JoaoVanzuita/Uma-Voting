@@ -188,27 +188,27 @@ não mudam.
 
 ### Tests for User Story 4
 
-- [ ] T065 [P] [US4] Testes de modelos/constraints do catálogo em `apps/catalog/tests/test_models.py`
-- [ ] T066 [P] [US4] Testes de parser/sincronização híbrida (nova auto-aplicada, existente pendente, cutoff, aptidões) em `apps/catalog/tests/test_sync.py`
-- [ ] T067 [P] [US4] Testes de validação/importação de imagens (WebP 256×256, checksum, órfãos, placeholder) em `apps/catalog/tests/test_images.py`
-- [ ] T068 [P] [US4] Testes de integração do admin de catálogo (status, prévia, aprovação/rejeição, imagens) em `apps/catalog/tests/test_admin.py`
+- [X] T065 [P] [US4] Testes de modelos/constraints do catálogo em `apps/catalog/tests/test_models.py`
+- [X] T066 [P] [US4] Testes de parser/sincronização híbrida (nova auto-aplicada, existente pendente, cutoff, aptidões) em `apps/catalog/tests/test_sync.py`
+- [X] T067 [P] [US4] Testes de validação/importação de imagens (WebP 256×256, checksum, órfãos, placeholder) em `apps/catalog/tests/test_images.py`
+- [X] T068 [P] [US4] Testes de integração do admin de catálogo (status, prévia, aprovação/rejeição, imagens) em `apps/catalog/tests/test_admin.py`
 
 ### Implementation for User Story 4
 
-- [ ] T069 [US4] Criar `SyncRun` e `SyncChange` em `apps/catalog/models.py` com status, payload JSON, histórico e índices; gerar migration (`CatalogSource` já existe desde T014)
-- [ ] T070 [US4] Implementar parser/validador de catálogo em `apps/catalog/services/importers.py` conforme `contracts/import-formats.md` §2; não implementar scraping do GameTora no MVP
-- [ ] T071 [US4] Implementar `sync_from_file` em `apps/catalog/services/sync.py` com nova personagem `auto_applied`, alterações `pending`, transação e `SyncRun`; não substituir imagens válidas
-- [ ] T072 [US4] Implementar `approve_change` e `reject_change` em `apps/catalog/services/sync.py` com revisão, transação e histórico
-- [ ] T073 [US4] Implementar consultas de elegibilidade e consolidação por cutoff em `apps/catalog/services/queries.py`
-- [ ] T074 [US4] Implementar comandos `import_catalog`, `sync_catalog`, `approve_catalog_change` e `reject_catalog_change` em `apps/catalog/management/commands/`
-- [ ] T075 [US4] Implementar views/urls do admin de catálogo (status, sincronização, prévia, aprovação/rejeição, personagens, imagens, validação) em `apps/catalog/views.py` e `apps/catalog/urls.py`
-- [ ] T076 [US4] Criar templates `templates/admin/catalog/status.html`, `sync_detail.html`, `characters.html` e `images.html`
-- [ ] T077 [US4] Implementar `validate_image_asset`, `validate_all_images` e `import_images` em `apps/catalog/services/images.py` com Pillow, limite de pixels/tamanho, WebP 256×256, `ImageOps.pad`, checksum, caminho `media/characters/<stable_id>/<sha256>.webp`, detecção de órfãos/referências quebradas/checksums duplicados, registro de `source`, `source_url` e `license_note`, e revisão manual obrigatória de licença externa antes de `--apply` (sem gate técnico no MVP)
-- [ ] T078 [US4] Implementar comandos `import_images` e `validate_images` em `apps/catalog/management/commands/`
-- [ ] T079 [US4] Implementar template tag `character_image` e placeholder em `apps/catalog/templatetags/catalog_tags.py` e `static/img/character-placeholder.webp`
-- [ ] T080 [US4] Exibir estado das imagens e personagens sem imagem no admin em `templates/admin/catalog/images.html` e `static/js/app.js`
-- [ ] T081 [US4] Adicionar testes de que atualizações de catálogo/imagem não alteram snapshots em `apps/catalog/tests/test_snapshots.py`
-- [ ] T082 [US4] Executar os cenários do quickstart §5.3/§5.9 e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
+- [X] T069 [US4] Criar `SyncRun` e `SyncChange` em `apps/catalog/models.py` com status, payload JSON, histórico e índices; gerar migration (`CatalogSource` já existe desde T014)
+- [X] T070 [US4] Implementar parser/validador de catálogo em `apps/catalog/services/importers.py` conforme `contracts/import-formats.md` §2; não implementar scraping do GameTora no MVP
+- [X] T071 [US4] Implementar `sync_from_file` em `apps/catalog/services/sync.py` com nova personagem `auto_applied`, alterações `pending`, transação e `SyncRun`; não substituir imagens válidas
+- [X] T072 [US4] Implementar `approve_change` e `reject_change` em `apps/catalog/services/sync.py` com revisão, transação e histórico
+- [X] T073 [US4] Implementar consultas de elegibilidade e consolidação por cutoff em `apps/catalog/services/queries.py`
+- [X] T074 [US4] Implementar comandos `import_catalog`, `sync_catalog`, `approve_catalog_change` e `reject_catalog_change` em `apps/catalog/management/commands/`
+- [X] T075 [US4] Implementar views/urls do admin de catálogo (status, sincronização, prévia, aprovação/rejeição, personagens, imagens, validação) em `apps/catalog/views.py` e `apps/catalog/urls.py`
+- [X] T076 [US4] Criar templates `templates/admin/catalog/status.html`, `sync_detail.html`, `characters.html` e `images.html`
+- [X] T077 [US4] Implementar `validate_image_asset`, `validate_all_images` e `import_images` em `apps/catalog/services/images.py` com Pillow, limite de pixels/tamanho, WebP 256×256, `ImageOps.pad`, checksum, caminho `media/characters/<stable_id>/<sha256>.webp`, detecção de órfãos/referências quebradas/checksums duplicados, registro de `source`, `source_url` e `license_note`, e revisão manual obrigatória de licença externa antes de `--apply` (sem gate técnico no MVP)
+- [X] T078 [US4] Implementar comandos `import_images` e `validate_images` em `apps/catalog/management/commands/`
+- [X] T079 [US4] Implementar template tag `character_image` e placeholder em `apps/catalog/templatetags/catalog_tags.py` e `static/img/character-placeholder.webp`
+- [X] T080 [US4] Exibir estado das imagens e personagens sem imagem no admin em `templates/admin/catalog/images.html` e `static/js/app.js`
+- [X] T081 [US4] Adicionar testes de que atualizações de catálogo/imagem não alteram snapshots em `apps/catalog/tests/test_snapshots.py`
+- [X] T082 [US4] Executar os cenários do quickstart §5.3/§5.9 e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
 
 **Checkpoint**: catálogo e imagens gerenciáveis; snapshots históricos preservados.
 

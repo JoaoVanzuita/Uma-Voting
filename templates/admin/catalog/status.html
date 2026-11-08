@@ -1,0 +1,154 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Catálogo — Uma Voting{% endblock %}
+
+{% block page_title %}Catálogo{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Personagens</a>
+  <a class="btn btn-secondary" href="{% url 'admin:catalog_images' %}">Imagens</a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid grid--stats">
+    <section class="card stat">
+      <p class="stat__label">Personagens</p>
+      <p class="stat__value">{{ character_count }}</p>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Mudanças pendentes</p>
+      <p class="stat__value">{{ pending_count }}</p>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Imagens válidas</p>
+      <p class="stat__value">{{ image_stats.valid }}</p>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Sem imagem válida</p>
+      <p class="stat__value">{{ characters_without_image }}</p>
+    </section>
+  </div>
+
+  <section class="panel stack" aria-labelledby="sync-title">
+    <h2 id="sync-title">Sincronização manual</h2>
+    <p class="text-muted">
+      A importação de arquivo é o caminho operacional do MVP. Personagens novas são
+      aplicadas automaticamente; alterações em personagens existentes ficam pendentes.
+    </p>
+    <form method="post" action="{% url 'admin:catalog_sync' %}" enctype="multipart/form-data" data-submit-once>
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label" for="{{ sync_form.source.id_for_label }}">Fonte</label>
+        {{ sync_form.source }}
+        {% for error in sync_form.source.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="{{ sync_form.file.id_for_label }}">Arquivo CSV</label>
+        {{ sync_form.file }}
+        {% for error in sync_form.file.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Sincronizar catálogo</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel stack" aria-labelledby="last-sync-title">
+    <h2 id="last-sync-title">Última sincronização</h2>
+    {% if last_sync %}
+      <p>
+        {% status_badge last_sync.status %}
+        <strong>{{ last_sync.source.name }}</strong>
+        em {{ last_sync.started_at|datetime_br }}
+      </p>
+      <p class="text-muted">{{ last_sync.summary|default:"—" }}</p>
+      {% if last_sync.error_message %}
+        <div class="alert alert-danger" role="alert">{{ last_sync.error_message }}</div>
+      {% endif %}
+      <p>
+        <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' last_sync.pk %}">
+          Ver detalhes
+        </a>
+      </p>
+    {% else %}
+      <div class="empty-state">
+        <p>Nenhuma sincronização executada ainda.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel stack" aria-labelledby="pending-title">
+    <h2 id="pending-title">Mudanças pendentes</h2>
+    {% if pending_changes %}
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Mudanças pendentes de aprovação</caption>
+          <thead>
+            <tr>
+              <th scope="col">Tipo</th>
+              <th scope="col">Personagem</th>
+              <th scope="col">Criada em</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for change in pending_changes %}
+              <tr>
+                <td>{{ change.get_change_type_display }}</td>
+                <td>{{ change.character.display_name|default:"—" }}</td>
+                <td>{{ change.created_at|datetime_br }}</td>
+                <td>
+                  <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' change.sync_run_id %}">
+                    Revisar
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>Nenhuma mudança pendente de aprovação.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel stack" aria-labelledby="runs-title">
+    <h2 id="runs-title">Histórico recente</h2>
+    {% if recent_runs %}
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Histórico de sincronizações</caption>
+          <thead>
+            <tr>
+              <th scope="col">Execução</th>
+              <th scope="col">Fonte</th>
+              <th scope="col">Situação</th>
+              <th scope="col">Início</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for run in recent_runs %}
+              <tr>
+                <td>#{{ run.pk }}</td>
+                <td>{{ run.source.name }}</td>
+                <td>{% status_badge run.status %}</td>
+                <td>{{ run.started_at|datetime_br }}</td>
+                <td>
+                  <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' run.pk %}">
+                    Detalhes
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-muted">Sem histórico.</p>
+    {% endif %}
+  </section>
+{% endblock %}

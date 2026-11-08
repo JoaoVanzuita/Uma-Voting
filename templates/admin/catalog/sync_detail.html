@@ -1,0 +1,102 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Sincronização #{{ run.pk }} — Uma Voting{% endblock %}
+
+{% block page_title %}Sincronização #{{ run.pk }}{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:catalog_status' %}">Voltar ao catálogo</a>
+{% endblock %}
+
+{% block content %}
+  <section class="panel stack" aria-labelledby="run-title">
+    <h2 id="run-title">Resumo</h2>
+    <dl class="definition-list">
+      <dt>Fonte</dt><dd>{{ run.source.name }}</dd>
+      <dt>Situação</dt><dd>{% status_badge run.status %}</dd>
+      <dt>Início</dt><dd>{{ run.started_at|datetime_br }}</dd>
+      <dt>Fim</dt><dd>{{ run.finished_at|datetime_br }}</dd>
+      <dt>Disparada por</dt><dd>{{ run.triggered_by.username|default:"Agendador" }}</dd>
+    </dl>
+    <p class="text-muted">{{ run.summary|default:"—" }}</p>
+    {% if run.error_message %}
+      <div class="alert alert-danger" role="alert">{{ run.error_message }}</div>
+    {% endif %}
+  </section>
+
+  <section class="panel stack" aria-labelledby="changes-title">
+    <h2 id="changes-title">Mudanças detectadas</h2>
+    {% if changes %}
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Mudanças da sincronização</caption>
+          <thead>
+            <tr>
+              <th scope="col">Tipo</th>
+              <th scope="col">Personagem</th>
+              <th scope="col">Versão</th>
+              <th scope="col">Situação</th>
+              <th scope="col">Revisão</th>
+              <th scope="col">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for change in changes %}
+              <tr>
+                <td>{{ change.get_change_type_display }}</td>
+                <td>{{ change.character.display_name|default:"—" }}</td>
+                <td>{{ change.version.display_name|default:"—" }}</td>
+                <td>{% status_badge change.status %}</td>
+                <td>
+                  {% if change.reviewed_by %}
+                    {{ change.reviewed_by.username }} em {{ change.reviewed_at|datetime_br }}
+                    {% if change.review_note %}<br><span class="text-muted">{{ change.review_note }}</span>{% endif %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td>
+                  {% if change.status == "pending" %}
+                    <div class="table__actions">
+                      <form class="inline-form" method="post" action="{% url 'admin:catalog_approve' change.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary" type="submit">Aprovar</button>
+                      </form>
+                      <form class="inline-form" method="post" action="{% url 'admin:catalog_reject' change.pk %}">
+                        {% csrf_token %}
+                        <label class="visually-hidden" for="note-{{ change.pk }}">Nota de rejeição</label>
+                        <input
+                          id="note-{{ change.pk }}"
+                          class="form-control"
+                          type="text"
+                          name="note"
+                          placeholder="Nota (opcional)"
+                        >
+                        <button class="btn btn-danger" type="submit">Rejeitar</button>
+                      </form>
+                    </div>
+                  {% else %}
+                    <span class="text-muted text-small">Sem ação</span>
+                  {% endif %}
+                </td>
+              </tr>
+              <tr>
+                <td colspan="6">
+                  <details>
+                    <summary>Prévia dos dados propostos</summary>
+                    <pre class="code-block">{{ change.payload }}</pre>
+                  </details>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>Nenhuma mudança registrada nesta sincronização.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

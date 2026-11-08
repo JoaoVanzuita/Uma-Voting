@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from django.conf import settings
 from django.db import models
 
 
@@ -218,3 +219,123 @@ class ImageAsset(models.Model):
 
     def __str__(self) -> str:
         return self.file_path
+
+
+class SyncRun(models.Model):
+    """Execução de sincronização do catálogo; histórico imutável."""
+
+    class Status(models.TextChoices):
+        RUNNING = "running", "Em execução"
+        SUCCESS = "success", "Sucesso"
+        PARTIAL = "partial", "Parcial"
+        FAILED = "failed", "Falhou"
+
+    source = models.ForeignKey(
+        CatalogSource,
+        on_delete=models.PROTECT,
+        related_name="sync_runs",
+        verbose_name="fonte",
+    )
+    started_at = models.DateTimeField("iniciada em", auto_now_add=True)
+    finished_at = models.DateTimeField("finalizada em", null=True, blank=True)
+    status = models.CharField(
+        "situação",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.RUNNING,
+    )
+    summary = models.TextField("resumo", blank=True)
+    error_message = models.TextField("mensagem de erro", blank=True)
+    triggered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="catalog_sync_runs",
+        verbose_name="disparada por",
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField("criada em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "execução de sincronização"
+        verbose_name_plural = "execuções de sincronização"
+        ordering = ["-started_at"]
+        indexes = [
+            models.Index(fields=["status", "started_at"], name="catalog_sync_status_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"{self.source.name} — {self.get_status_display()} "
+            f"({self.started_at:%d/%m/%Y %H:%M})"
+        )
+
+
+class SyncChange(models.Model):
+    """Mudança detectada por uma sincronização, pendente de revisão ou aplicada."""
+
+    class ChangeType(models.TextChoices):
+        NEW_CHARACTER = "new_character", "Nova personagem"
+        UPDATE_CHARACTER = "update_character", "Atualização de personagem"
+        NEW_VERSION = "new_version", "Nova versão"
+        UPDATE_VERSION = "update_version", "Atualização de versão"
+        APTITUDE_CHANGE = "aptitude_change", "Mudança de aptidões"
+
+    class Status(models.TextChoices):
+        AUTO_APPLIED = "auto_applied", "Aplicada automaticamente"
+        PENDING = "pending", "Pendente"
+        APPROVED = "approved", "Aprovada"
+        REJECTED = "rejected", "Rejeitada"
+
+    sync_run = models.ForeignKey(
+        SyncRun,
+        on_delete=models.PROTECT,
+        related_name="changes",
+        verbose_name="execução",
+    )
+    change_type = models.CharField("tipo", max_length=30, choices=ChangeType.choices)
+    character = models.ForeignKey(
+        Character,
+        on_delete=models.PROTECT,
+        related_name="sync_changes",
+        verbose_name="personagem",
+        null=True,
+        blank=True,
+    )
+    version = models.ForeignKey(
+        CharacterVersion,
+        on_delete=models.PROTECT,
+        related_name="sync_changes",
+        verbose_name="versão",
+        null=True,
+        blank=True,
+    )
+    payload = models.JSONField("dados propostos", default=dict)
+    status = models.CharField(
+        "situação",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="catalog_sync_reviews",
+        verbose_name="revisada por",
+        null=True,
+        blank=True,
+    )
+    reviewed_at = models.DateTimeField("revisada em", null=True, blank=True)
+    review_note = models.TextField("nota de revisão", blank=True)
+    created_at = models.DateTimeField("criada em", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "mudança de catálogo"
+        verbose_name_plural = "mudanças de catálogo"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "created_at"], name="catalog_change_status_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.get_change_type_display()} — {self.get_status_display()}"

@@ -1,0 +1,165 @@
+{% extends "admin/base.html" %}
+{% load ui_tags catalog_tags %}
+
+{% block title %}Imagens do catálogo — Uma Voting{% endblock %}
+
+{% block page_title %}Imagens do catálogo{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Personagens</a>
+  <a class="btn btn-secondary" href="{% url 'admin:catalog_status' %}">Voltar ao catálogo</a>
+{% endblock %}
+
+{% block content %}
+  <div class="grid grid--stats">
+    <section class="card stat">
+      <p class="stat__label">Válidas</p>
+      <p class="stat__value">{{ stats.valid }}</p>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Inválidas</p>
+      <p class="stat__value">{{ stats.invalid }}</p>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Ausentes</p>
+      <p class="stat__value">{{ stats.missing }}</p>
+    </section>
+    <section class="card stat">
+      <p class="stat__label">Personagens sem imagem válida</p>
+      <p class="stat__value">{{ characters_without_image|length }}</p>
+    </section>
+  </div>
+
+  <section class="panel stack">
+    <form method="post" action="{% url 'admin:catalog_images_validate' %}" data-submit-once>
+      {% csrf_token %}
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Validar acervo agora</button>
+      </div>
+    </form>
+  </section>
+
+  {% if report %}
+    <section class="panel stack" aria-labelledby="report-title">
+      <h2 id="report-title">Relatório de validação</h2>
+      <p>
+        {{ report.checked }} asset(s) verificado(s); {{ report.valid }} válido(s);
+        {{ report.invalid }} inválido(s); {{ report.missing }} ausente(s).
+      </p>
+      {% if report.issues %}
+        <div class="alert alert-warning" role="alert">
+          Foram encontrados problemas em imagens do acervo.
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th scope="col">Personagem</th><th scope="col">Arquivo</th><th scope="col">Problema</th></tr>
+            </thead>
+            <tbody>
+              {% for issue in report.issues %}
+                <tr>
+                  <td>{{ issue.character|default:"—" }}</td>
+                  <td><code>{{ issue.file }}</code></td>
+                  <td>{{ issue.message }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+      {% if report.orphans %}
+        <h3>Arquivos órfãos</h3>
+        <ul class="plain-list">
+          {% for orphan in report.orphans %}<li><code>{{ orphan }}</code></li>{% endfor %}
+        </ul>
+      {% endif %}
+      {% if report.duplicate_checksums %}
+        <h3>Checksums duplicados</h3>
+        <ul class="plain-list">
+          {% for checksum in report.duplicate_checksums %}<li><code>{{ checksum }}</code></li>{% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section class="panel stack" aria-labelledby="assets-title">
+    <h2 id="assets-title">Assets de imagem</h2>
+    <form class="filters" method="get">
+      <div class="filters__row">
+        <div class="form-group">
+          <label class="form-label" for="image-status">Situação</label>
+          <select id="image-status" class="form-control" name="status" data-image-filter>
+            <option value="">Todas</option>
+            {% for value, label in status_choices %}
+              <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-secondary" type="submit">Filtrar</button>
+      </div>
+    </form>
+
+    {% if assets %}
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Assets de imagem</caption>
+          <thead>
+            <tr>
+              <th scope="col">Prévia</th>
+              <th scope="col">Personagem</th>
+              <th scope="col">Arquivo</th>
+              <th scope="col">Situação</th>
+              <th scope="col">Corrente</th>
+              <th scope="col">Fonte</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for asset in assets %}
+              <tr data-image-status="{{ asset.status }}">
+                <td>
+                  <img
+                    class="character-thumb"
+                    src="{% character_image asset %}"
+                    alt="Prévia de {{ asset.character.display_name }}"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    data-fallback-src="{% placeholder_url %}"
+                  >
+                </td>
+                <td>{{ asset.character.display_name }}</td>
+                <td><code>{{ asset.file_path }}</code></td>
+                <td>{% status_badge asset.status %}</td>
+                <td>{% if asset.is_current %}Sim{% else %}Não{% endif %}</td>
+                <td>{{ asset.source.name|default:"—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>Nenhum asset de imagem cadastrado.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel stack" aria-labelledby="without-title">
+    <h2 id="without-title">Personagens sem imagem válida</h2>
+    {% if characters_without_image %}
+      <ul class="plain-list">
+        {% for character in characters_without_image %}
+          <li>
+            <strong>{{ character.display_name }}</strong>
+            <code>{{ character.stable_id }}</code>
+            <span class="text-muted">{{ character.version_count }} versão(ões)</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="empty-state">
+        <p>Todas as personagens possuem imagem corrente válida.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
