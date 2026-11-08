@@ -1,6 +1,7 @@
 """Configurações compartilhadas por todos os ambientes."""
 
 from pathlib import Path
+from urllib.parse import quote
 
 import environ
 
@@ -18,7 +19,6 @@ env = environ.Env(
     DJANGO_CSRF_COOKIE_SECURE=(bool, False),
     DJANGO_DB_CONN_MAX_AGE=(int, 60),
     DJANGO_SESSION_COOKIE_AGE=(int, 43200),
-    DATABASE_URL=(str, "postgres://uma_voting:uma_voting@localhost:5432/uma_voting"),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -79,7 +79,24 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ---------------------------------------------------------------------------
 # Banco de dados
 # ---------------------------------------------------------------------------
-DATABASES = {"default": env.db("DATABASE_URL")}
+# As credenciais vivem apenas nas variáveis POSTGRES_* (as mesmas usadas pelo
+# container do Postgres no Compose). DATABASE_URL é opcional e, se definida,
+# tem precedência (útil em CI e plataformas que entregam a URL pronta).
+POSTGRES_DB = env("POSTGRES_DB", default="uma_voting")
+POSTGRES_USER = env("POSTGRES_USER", default="uma_voting")
+POSTGRES_PASSWORD = env("POSTGRES_PASSWORD", default="uma_voting")
+POSTGRES_HOST = env("POSTGRES_HOST", default="localhost")
+POSTGRES_PORT = env("POSTGRES_PORT", default="5432")
+
+DATABASES = {
+    "default": env.db_url(
+        "DATABASE_URL",
+        default=(
+            f"postgres://{quote(POSTGRES_USER, safe='')}:{quote(POSTGRES_PASSWORD, safe='')}"
+            f"@{POSTGRES_HOST}:{POSTGRES_PORT}/{quote(POSTGRES_DB, safe='')}"
+        ),
+    )
+}
 DATABASES["default"]["CONN_MAX_AGE"] = env("DJANGO_DB_CONN_MAX_AGE")
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
