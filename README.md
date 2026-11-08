@@ -72,6 +72,19 @@ uv run pytest -m e2e
 - Backup: `scripts/backup.sh`; restauração: `scripts/restore.sh`.
 - Limpeza de sessões: `python manage.py clearsessions` diariamente.
 
+Catálogo Global oficial (portal `umamusume.com`):
+
+```bash
+# baixa o elenco e os ícones oficiais para var/import/global/
+uv run python scripts/fetch_global_assets.py
+```
+
+O script gera `catalog.csv`, `images.csv` e `global-metadata.json`. Datas e
+aptidões vêm do GameTora; as personagens ainda não lançadas no Global ficam com
+data futura e são filtradas pela data de corte da votação. Registre a fonte
+`umamusume-global` antes da primeira importação (o docstring do script traz o
+comando pronto).
+
 Detalhes em `docs/operations.md`.
 
 ## Segurança e limitações
