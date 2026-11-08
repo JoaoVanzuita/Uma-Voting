@@ -268,6 +268,7 @@ class Ballot(models.Model):
         ]
         indexes = [
             models.Index(fields=["participant"], name="ballot_participant_idx"),
+            models.Index(fields=["voting", "created_at"], name="ballot_voting_created_idx"),
         ]
 
     def __str__(self) -> str:
@@ -301,6 +302,10 @@ class BallotChoice(models.Model):
             models.Index(
                 fields=["character_snapshot"],
                 name="ballot_choice_snapshot_idx",
+            ),
+            models.Index(
+                fields=["character_snapshot", "ballot"],
+                name="ballot_choice_snap_ballot_idx",
             ),
         ]
 

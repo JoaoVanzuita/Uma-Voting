@@ -16,6 +16,11 @@
       </div>
     </div>
     <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
+    {% if voting.status == "closed" %}
+      <a class="btn btn-primary" href="{% url 'participant:result' voting.pk %}">
+        Ver resultado
+      </a>
+    {% endif %}
   </div>
 
   {% if error %}

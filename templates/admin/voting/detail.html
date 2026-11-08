@@ -11,6 +11,14 @@
 
 {% block page_actions %}
   <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Voltar</a>
+  {% if voting.status == "open" or voting.status == "closed" %}
+    <a class="btn btn-secondary" href="{% url 'admin:voting_results' voting.pk %}">
+      Resultados
+    </a>
+    <a class="btn btn-secondary" href="{% url 'admin:voting_participation' voting.pk %}">
+      Participação
+    </a>
+  {% endif %}
   {% if can_edit %}
     <a class="btn btn-secondary" href="{% url 'admin:voting_edit' voting.pk %}">Editar</a>
     <a class="btn btn-secondary" href="{% url 'admin:voting_eligible' voting.pk %}">

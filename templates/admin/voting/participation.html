@@ -1,0 +1,58 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Participação — {{ voting.title }} — Uma Voting{% endblock %}
+
+{% block page_title %}Participação — {{ voting.title }}{% endblock %}
+
+{% block page_subtitle %}{% status_badge voting.status %}{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:voting_results' voting.pk %}">Resultados</a>
+  <a class="btn btn-secondary" href="{% url 'admin:voting_detail' voting.pk %}">Voltar</a>
+{% endblock %}
+
+{% block content %}
+  <section class="panel stack" aria-labelledby="participation-title">
+    <h2 id="participation-title">Quem votou</h2>
+    <p>
+      {{ voted_count }} de {{ eligible_count }} participante(s) elegível(is) votaram.
+    </p>
+    <p class="text-muted">
+      Esta visão mostra apenas username e situação de voto; nenhuma escolha individual
+      é exibida.
+    </p>
+
+    {% if rows %}
+      <div class="table-wrap">
+        <table class="table">
+          <caption class="visually-hidden">Participação dos elegíveis</caption>
+          <thead>
+            <tr>
+              <th scope="col">Username</th>
+              <th scope="col">Situação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in rows %}
+              <tr>
+                <td>{{ row.username }}</td>
+                <td>
+                  {% if row.voted %}
+                    <span class="badge badge--success">Votou</span>
+                  {% else %}
+                    <span class="badge badge--neutral">Não votou</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <p>Nenhum participante elegível.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

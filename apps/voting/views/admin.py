@@ -34,6 +34,11 @@ from apps.voting.services.lifecycle import (
     schedule_voting,
     update_voting,
 )
+from apps.voting.services.results import (
+    aggregate_results,
+    final_results,
+    participation,
+)
 
 
 class AdminDashboardView(AdminRequiredMixin, TemplateView):
@@ -261,3 +266,39 @@ def ballot_delete(request, voting_id: int, user_id: int):
         else:
             messages.info(request, "Não havia cédula para este participante.")
     return redirect("admin:voting_detail", voting_id=voting.pk)
+
+
+@admin_required
+def voting_results(request, voting_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+    rows = aggregate_results(voting)
+    ranked = final_results(voting) if voting.status == VotingStatus.CLOSED else []
+
+    return render(
+        request,
+        "admin/voting/results.html",
+        {
+            "voting": voting,
+            "results": rows,
+            "ranked": ranked,
+            "official": voting.status == VotingStatus.CLOSED,
+        },
+    )
+
+
+@admin_required
+def voting_participation(request, voting_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+    rows = participation(voting)
+    voted_count = sum(1 for row in rows if row.voted)
+
+    return render(
+        request,
+        "admin/voting/participation.html",
+        {
+            "voting": voting,
+            "rows": rows,
+            "voted_count": voted_count,
+            "eligible_count": len(rows),
+        },
+    )

@@ -289,19 +289,19 @@ bloquear resultados para participante durante a votação, encerrar e conferir r
 
 ### Tests for User Story 7
 
-- [ ] T110 [P] [US7] Testes de agregação, dense rank, empates, exclusão de zero votos e reprodutibilidade após mutação de catálogo em `apps/voting/tests/test_results.py` e `apps/voting/tests/test_results_reproducibility.py`
-- [ ] T111 [P] [US7] Testes de privacidade (admin sem escolhas de outros; admin no modo participante vê somente a própria cédula; participante sem parciais; própria cédula) em `apps/voting/tests/test_privacy.py`
-- [ ] T112 [P] [US7] Testes de integração de resultados/participação no admin e resultado/cedula no participante em `apps/voting/tests/test_results_views.py`
+- [X] T110 [P] [US7] Testes de agregação, dense rank, empates, exclusão de zero votos e reprodutibilidade após mutação de catálogo em `apps/voting/tests/test_results.py` e `apps/voting/tests/test_results_reproducibility.py`
+- [X] T111 [P] [US7] Testes de privacidade (admin sem escolhas de outros; admin no modo participante vê somente a própria cédula; participante sem parciais; própria cédula) em `apps/voting/tests/test_privacy.py`
+- [X] T112 [P] [US7] Testes de integração de resultados/participação no admin e resultado/cedula no participante em `apps/voting/tests/test_results_views.py`
 
 ### Implementation for User Story 7
 
-- [ ] T113 [US7] Implementar `aggregate_results`, `participation` e `rank_results` em `apps/voting/services/results.py` com `Count`, `EXISTS`, `DENSE_RANK` (ou cálculo equivalente), filtro `votes > 0` e sem `participant_id` no resultado
-- [ ] T114 [P] [US7] Implementar views/urls/templates de resultados e participação administrativos em `apps/voting/views/admin.py` e `templates/admin/voting/{results,participation}.html`
-- [ ] T115 [P] [US7] Implementar view/url/template de resultado final do participante em `apps/voting/views/participant.py` e `templates/participant/result.html`
-- [ ] T116 [US7] Integrar consulta da própria cédula após encerramento em `apps/voting/views/participant.py` e `templates/participant/ballot.html`
-- [ ] T117 [US7] Adicionar guarda de privacidade: views administrativas importam apenas serviços de agregados; rota de participante filtra a cédula por `request.user` inclusive para admin; logs sem escolhas; sem diff de agregados antes/depois da exclusão em `apps/voting/views/admin.py` e `apps/voting/services/results.py`
-- [ ] T118 [US7] Adicionar índices de agregação/consulta em `apps/voting/models.py` e migration correspondente
-- [ ] T119 [US7] Executar os cenários do quickstart §5.5/§5.8 e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
+- [X] T113 [US7] Implementar `aggregate_results`, `participation` e `rank_results` em `apps/voting/services/results.py` com `Count`, `EXISTS`, `DENSE_RANK` (ou cálculo equivalente), filtro `votes > 0` e sem `participant_id` no resultado
+- [X] T114 [P] [US7] Implementar views/urls/templates de resultados e participação administrativos em `apps/voting/views/admin.py` e `templates/admin/voting/{results,participation}.html`
+- [X] T115 [P] [US7] Implementar view/url/template de resultado final do participante em `apps/voting/views/participant.py` e `templates/participant/result.html`
+- [X] T116 [US7] Integrar consulta da própria cédula após encerramento em `apps/voting/views/participant.py` e `templates/participant/ballot.html`
+- [X] T117 [US7] Adicionar guarda de privacidade: views administrativas importam apenas serviços de agregados; rota de participante filtra a cédula por `request.user` inclusive para admin; logs sem escolhas; sem diff de agregados antes/depois da exclusão em `apps/voting/views/admin.py` e `apps/voting/services/results.py`
+- [X] T118 [US7] Adicionar índices de agregação/consulta em `apps/voting/models.py` e migration correspondente
+- [X] T119 [US7] Executar os cenários do quickstart §5.5/§5.8 e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
 
 **Checkpoint**: resultados corretos, empates densos e privacidade validada.
 

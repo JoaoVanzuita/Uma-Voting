@@ -25,6 +25,7 @@ from apps.voting.services.ballots import (
     submit_ballot,
 )
 from apps.voting.services.filters import FILTER_CATEGORIES, search_characters
+from apps.voting.services.results import final_results
 
 FILTER_LABELS = {
     "strategy": "Estratégia",
@@ -323,4 +324,24 @@ def ballot(request, voting_id: int):
         request,
         "participant/ballot.html",
         {"voting": voting, "ballot": own_ballot},
+    )
+
+
+@login_required
+def result(request, voting_id: int):
+    """Resultado final, disponível ao participante elegível somente após o encerramento."""
+    voting = _get_voting(voting_id)
+    require_eligible(request.user, voting)
+
+    if voting.status != VotingStatus.CLOSED:
+        raise Http404("O resultado estará disponível após o encerramento.")
+
+    return render(
+        request,
+        "participant/result.html",
+        {
+            "voting": voting,
+            "results": final_results(voting),
+            "own_ballot": get_own_ballot(voting, request.user),
+        },
     )

@@ -34,6 +34,11 @@ participant_patterns = [
         participant_views.ballot,
         name="ballot",
     ),
+    path(
+        "votacoes/<int:voting_id>/resultado/",
+        participant_views.result,
+        name="result",
+    ),
 ]
 
 admin_patterns = [
@@ -74,6 +79,16 @@ admin_patterns = [
         "admin/votacoes/<int:voting_id>/cancelar/",
         admin_views.voting_cancel,
         name="voting_cancel",
+    ),
+    path(
+        "admin/votacoes/<int:voting_id>/resultados/",
+        admin_views.voting_results,
+        name="voting_results",
+    ),
+    path(
+        "admin/votacoes/<int:voting_id>/participacao/",
+        admin_views.voting_participation,
+        name="voting_participation",
     ),
     path(
         "admin/votacoes/<int:voting_id>/cedulas/<int:user_id>/excluir/",

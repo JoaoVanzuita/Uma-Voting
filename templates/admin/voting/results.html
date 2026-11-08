@@ -1,0 +1,119 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Resultados — {{ voting.title }} — Uma Voting{% endblock %}
+
+{% block page_title %}Resultados — {{ voting.title }}{% endblock %}
+
+{% block page_subtitle %}{% status_badge voting.status %}{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:voting_participation' voting.pk %}">
+    Participação
+  </a>
+  <a class="btn btn-secondary" href="{% url 'admin:voting_detail' voting.pk %}">Voltar</a>
+{% endblock %}
+
+{% block content %}
+  {% if voting.status == "cancelled" %}
+    <div class="empty-state">
+      <h2>Votação cancelada</h2>
+      <p>Votações canceladas não possuem resultado oficial.</p>
+    </div>
+  {% elif voting.status == "closed" %}
+    <section class="panel stack" aria-labelledby="ranking-title">
+      <h2 id="ranking-title">Ranking final</h2>
+      <p class="text-muted">
+        Personagens sem votos não aparecem. Empates ocupam a mesma posição.
+      </p>
+      {% if ranked %}
+        <div class="table-wrap">
+          <table class="table">
+            <caption class="visually-hidden">Ranking final da votação</caption>
+            <thead>
+              <tr>
+                <th scope="col">Posição</th>
+                <th scope="col">Personagem</th>
+                <th scope="col">Votos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in ranked %}
+                <tr>
+                  <td>{{ row.position }}º</td>
+                  <td>
+                    <span class="result-character">
+                      {% image_url row.image_asset as image_src %}
+                      <img
+                        class="character-thumb"
+                        src="{{ image_src }}"
+                        data-fallback-src="{% placeholder_url %}"
+                        alt="Retrato de {{ row.display_name }}"
+                        width="40"
+                        height="40"
+                        loading="lazy"
+                      >
+                      {{ row.display_name }}
+                    </span>
+                  </td>
+                  <td>{{ row.votes }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>Nenhum voto registrado nesta votação.</p>
+        </div>
+      {% endif %}
+    </section>
+  {% else %}
+    <section class="panel stack" aria-labelledby="partial-title">
+      <h2 id="partial-title">Resultados parciais</h2>
+      <p class="text-muted">
+        Visão exclusiva de administradores durante a votação. Nenhuma escolha individual
+        ou associação participante–personagem é exibida.
+      </p>
+      {% if results %}
+        <div class="table-wrap">
+          <table class="table">
+            <caption class="visually-hidden">Agregados parciais da votação</caption>
+            <thead>
+              <tr>
+                <th scope="col">Personagem</th>
+                <th scope="col">Votos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in results %}
+                <tr>
+                  <td>
+                    <span class="result-character">
+                      {% image_url row.image_asset as image_src %}
+                      <img
+                        class="character-thumb"
+                        src="{{ image_src }}"
+                        data-fallback-src="{% placeholder_url %}"
+                        alt="Retrato de {{ row.display_name }}"
+                        width="40"
+                        height="40"
+                        loading="lazy"
+                      >
+                      {{ row.display_name }}
+                    </span>
+                  </td>
+                  <td>{{ row.votes }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>Nenhuma personagem no snapshot desta votação.</p>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+{% endblock %}
