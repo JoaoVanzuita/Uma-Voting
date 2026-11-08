@@ -47,15 +47,12 @@ python manage.py import_catalog --file catalog.csv --source curadoria-local --ap
 ## 4. Backups e restauração
 
 ```bash
-# banco
-pg_dump -Fc -d "$DATABASE_URL" -f backup-$(date +%F).dump
-
-# mídia
-tar -czf media-$(date +%F).tar.gz media/
+# banco e mídia (usa POSTGRES_* do ambiente)
+./scripts/backup.sh
 
 # restauração (ambiente limpo)
-pg_restore -d "$DATABASE_URL" backup-YYYY-MM-DD.dump
-tar -xzf media-YYYY-MM-DD.tar.gz
+RESTORE_CONFIRM=sim ./scripts/restore.sh \
+  /backups/db-AAAAMMDDTHHMMSSZ.dump /backups/media-AAAAMMDDTHHMMSSZ.tar.gz
 ```
 
 - Retenção: 30 backups diários + 12 mensais, fora do host.
