@@ -1,0 +1,91 @@
+{% extends "admin/base.html" %}
+
+{% block title %}
+  {% if voting %}Editar votação{% else %}Nova votação{% endif %} — Uma Voting
+{% endblock %}
+
+{% block page_title %}
+  {% if voting %}Editar votação{% else %}Nova votação{% endif %}
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Voltar</a>
+  {% if voting %}
+    <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">Detalhes</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <form class="panel stack" method="post" data-submit-once>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger" role="alert">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.title.id_for_label }}">Título</label>
+      {{ form.title }}
+      {% for error in form.title.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.description.id_for_label }}">Descrição</label>
+      {{ form.description }}
+      {% for error in form.description.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.choices_count.id_for_label }}">
+        Quantidade de escolhas por participante
+      </label>
+      {{ form.choices_count }}
+      <p class="form-help">{{ form.choices_count.help_text }}</p>
+      {% for error in form.choices_count.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.catalog_cutoff_date.id_for_label }}">
+        Data de corte do catálogo
+      </label>
+      {{ form.catalog_cutoff_date }}
+      <p class="form-help">{{ form.catalog_cutoff_date.help_text }}</p>
+      {% for error in form.catalog_cutoff_date.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.open_mode.id_for_label }}">Modo de abertura</label>
+      {{ form.open_mode }}
+      <p class="form-help">{{ form.open_mode.help_text }}</p>
+      {% for error in form.open_mode.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.opens_at.id_for_label }}">Abertura</label>
+      {{ form.opens_at }}
+      <p class="form-help">{{ form.opens_at.help_text }}</p>
+      {% for error in form.opens_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.close_mode.id_for_label }}">Modo de encerramento</label>
+      {{ form.close_mode }}
+      <p class="form-help">{{ form.close_mode.help_text }}</p>
+      {% for error in form.close_mode.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="{{ form.closes_at.id_for_label }}">Encerramento</label>
+      {{ form.closes_at }}
+      <p class="form-help">{{ form.closes_at.help_text }}</p>
+      {% for error in form.closes_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">
+        {% if voting %}Salvar alterações{% else %}Criar votação{% endif %}
+      </button>
+      <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Cancelar</a>
+    </div>
+  </form>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Votações — Uma Voting{% endblock %}
+
+{% block page_title %}Votações{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-primary" href="{% url 'admin:voting_create' %}">Nova votação</a>
+{% endblock %}
+
+{% block content %}
+  <form class="filters" method="get" role="search">
+    <div class="filters__row">
+      <div class="filters__search form-group">
+        <label class="form-label" for="voting-search">Pesquisar por título</label>
+        <input
+          id="voting-search"
+          class="form-control"
+          type="search"
+          name="q"
+          value="{{ query }}"
+          placeholder="Digite parte do título"
+          autocomplete="off"
+        >
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="voting-status">Estado</label>
+        <select id="voting-status" class="form-control" name="status">
+          <option value="">Todos</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-secondary" type="submit">Filtrar</button>
+      {% if query or status %}
+        <a class="filters__clear" href="{% url 'admin:voting_list' %}">Limpar</a>
+      {% endif %}
+    </div>
+  </form>
+
+  {% if votings %}
+    <div class="table-wrap">
+      <table class="table">
+        <caption class="visually-hidden">Lista de votações</caption>
+        <thead>
+          <tr>
+            <th scope="col">Título</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Escolhas</th>
+            <th scope="col">Corte</th>
+            <th scope="col">Abertura</th>
+            <th scope="col">Encerramento</th>
+            <th scope="col" class="table__actions">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for voting in votings %}
+            <tr>
+              <td>
+                <a href="{% url 'admin:voting_detail' voting.pk %}">{{ voting.title }}</a>
+              </td>
+              <td>{% status_badge voting.status %}</td>
+              <td>{{ voting.choices_count }}</td>
+              <td>{{ voting.catalog_cutoff_date|date_br }}</td>
+              <td>
+                {{ voting.get_open_mode_display }}
+                {% if voting.opens_at %}<br>{{ voting.opens_at|datetime_br }}{% endif %}
+              </td>
+              <td>
+                {{ voting.get_close_mode_display }}
+                {% if voting.closes_at %}<br>{{ voting.closes_at|datetime_br }}{% endif %}
+              </td>
+              <td>
+                <div class="table__actions">
+                  <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
+                    Detalhes
+                  </a>
+                  {% if voting.status == "draft" %}
+                    <a class="btn btn-secondary" href="{% url 'admin:voting_edit' voting.pk %}">
+                      Editar
+                    </a>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h2>Nenhuma votação encontrada</h2>
+      <p>Crie a primeira votação ou ajuste os filtros.</p>
+    </div>
+  {% endif %}
+{% endblock %}

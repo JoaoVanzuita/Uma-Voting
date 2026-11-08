@@ -38,6 +38,28 @@ participant_patterns = [
 
 admin_patterns = [
     path("admin/", admin_views.dashboard, name="dashboard"),
+    path("admin/votacoes/", admin_views.voting_list, name="voting_list"),
+    path("admin/votacoes/nova/", admin_views.voting_create, name="voting_create"),
+    path(
+        "admin/votacoes/<int:voting_id>/",
+        admin_views.voting_detail,
+        name="voting_detail",
+    ),
+    path(
+        "admin/votacoes/<int:voting_id>/editar/",
+        admin_views.voting_edit,
+        name="voting_edit",
+    ),
+    path(
+        "admin/votacoes/<int:voting_id>/elegiveis/",
+        admin_views.voting_eligible,
+        name="voting_eligible",
+    ),
+    path(
+        "admin/votacoes/<int:voting_id>/agendar/",
+        admin_views.voting_schedule,
+        name="voting_schedule",
+    ),
 ]
 
 urlpatterns = [*participant_patterns, *admin_patterns]

@@ -68,6 +68,10 @@ Antes de aplicar um manifesto externo:
 
 Registrar data, operador, ambiente e duração neste documento.
 
+- **2026-11-07 — SC-001 (pré-validação)**: fluxo automatizado de criação, edição, ajuste de
+  elegíveis e agendamento executado no ambiente de teste em 0,6 s. A medição manual de UX com
+  operador será registrada na validação final (T134).
+
 ## 7. Saúde, logs e monitoramento
 
 - Healthcheck: `GET /health/` (aplicação + banco).

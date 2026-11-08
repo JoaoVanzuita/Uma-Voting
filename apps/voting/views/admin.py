@@ -1,10 +1,34 @@
-"""Painel administrativo (esqueleto até a Fase 10)."""
+"""Views administrativas de configuração de votações (Fase 7)."""
 
 from __future__ import annotations
 
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 
-from apps.core.permissions import AdminRequiredMixin
+from apps.core.exceptions import PreconditionError
+from apps.core.permissions import AdminRequiredMixin, admin_required
+from apps.voting.forms import EligibleAddForm, VotingForm
+from apps.voting.models import (
+    Ballot,
+    Voting,
+    VotingEligibility,
+    VotingStatus,
+)
+from apps.voting.services.eligibility import (
+    EligibilityError,
+    add_eligible,
+    remove_eligible,
+)
+from apps.voting.services.lifecycle import (
+    VotingConfigError,
+    VotingStateError,
+    create_voting,
+    evaluate_open_preconditions,
+    schedule_voting,
+    update_voting,
+)
 
 
 class AdminDashboardView(AdminRequiredMixin, TemplateView):
@@ -12,3 +36,156 @@ class AdminDashboardView(AdminRequiredMixin, TemplateView):
 
 
 dashboard = AdminDashboardView.as_view()
+
+
+@admin_required
+def voting_list(request):
+    status = request.GET.get("status", "")
+    query = request.GET.get("q", "").strip()
+
+    votings = Voting.objects.select_related("created_by")
+    if status in VotingStatus.values:
+        votings = votings.filter(status=status)
+    if query:
+        votings = votings.filter(title__icontains=query)
+
+    return render(
+        request,
+        "admin/voting/list.html",
+        {
+            "votings": votings.order_by("-created_at"),
+            "status": status,
+            "query": query,
+            "status_choices": VotingStatus.choices,
+        },
+    )
+
+
+@admin_required
+def voting_create(request):
+    form = VotingForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            voting = create_voting(form.cleaned_data, request.user)
+        except VotingConfigError as exc:
+            form.add_error(None, exc.message)
+        else:
+            messages.success(request, f"Votação '{voting.title}' criada em rascunho.")
+            return redirect("admin:voting_detail", voting_id=voting.pk)
+
+    return render(
+        request,
+        "admin/voting/form.html",
+        {"form": form, "voting": None},
+    )
+
+
+@admin_required
+def voting_edit(request, voting_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+
+    if voting.status != VotingStatus.DRAFT:
+        messages.error(
+            request,
+            "A configuração só pode ser editada enquanto a votação está em rascunho.",
+        )
+        return redirect("admin:voting_detail", voting_id=voting.pk)
+
+    form = VotingForm(request.POST or None, instance=voting)
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            voting = update_voting(voting, form.cleaned_data)
+        except (VotingConfigError, VotingStateError) as exc:
+            form.add_error(None, exc.message)
+        else:
+            messages.success(request, "Configuração da votação atualizada.")
+            return redirect("admin:voting_detail", voting_id=voting.pk)
+
+    return render(
+        request,
+        "admin/voting/form.html",
+        {"form": form, "voting": voting},
+    )
+
+
+@admin_required
+def voting_detail(request, voting_id: int):
+    voting = get_object_or_404(
+        Voting.objects.select_related("created_by"),
+        pk=voting_id,
+    )
+    preconditions = evaluate_open_preconditions(voting)
+    eligible_count = VotingEligibility.objects.filter(voting=voting).count()
+    ballot_count = Ballot.objects.filter(voting=voting).count()
+
+    return render(
+        request,
+        "admin/voting/detail.html",
+        {
+            "voting": voting,
+            "preconditions": preconditions,
+            "eligible_count": eligible_count,
+            "ballot_count": ballot_count,
+            "can_edit": voting.status == VotingStatus.DRAFT,
+        },
+    )
+
+
+@admin_required
+def voting_eligible(request, voting_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+
+    if voting.status != VotingStatus.DRAFT:
+        messages.error(
+            request,
+            "Elegíveis só podem ser alterados enquanto a votação está em rascunho.",
+        )
+        return redirect("admin:voting_detail", voting_id=voting.pk)
+
+    add_form = EligibleAddForm(voting=voting)
+
+    if request.method == "POST":
+        action = request.POST.get("action", "add")
+        try:
+            if action == "remove":
+                user_id = request.POST.get("user_id")
+                removed = remove_eligible(voting, [user_id])
+                messages.success(request, f"{removed} elegível(is) removido(s).")
+            else:
+                add_form = EligibleAddForm(request.POST, voting=voting)
+                if add_form.is_valid():
+                    added = add_eligible(voting, add_form.cleaned_data["users"])
+                    messages.success(request, f"{added} elegível(is) adicionado(s).")
+        except EligibilityError as exc:
+            messages.error(request, exc.message)
+        return redirect("admin:voting_eligible", voting_id=voting.pk)
+
+    eligibilities = (
+        VotingEligibility.objects.filter(voting=voting)
+        .select_related("user")
+        .order_by("user__username")
+    )
+    return render(
+        request,
+        "admin/voting/eligible.html",
+        {
+            "voting": voting,
+            "eligibilities": eligibilities,
+            "add_form": add_form,
+        },
+    )
+
+
+@admin_required
+@require_POST
+def voting_schedule(request, voting_id: int):
+    voting = get_object_or_404(Voting, pk=voting_id)
+    try:
+        schedule_voting(voting)
+    except (VotingConfigError, VotingStateError, PreconditionError) as exc:
+        messages.error(request, exc.message)
+    else:
+        messages.success(request, "Votação agendada. A configuração ficou bloqueada.")
+    return redirect("admin:voting_detail", voting_id=voting.pk)

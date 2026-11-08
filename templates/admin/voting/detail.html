@@ -1,0 +1,120 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}{{ voting.title }} — Uma Voting{% endblock %}
+
+{% block page_title %}{{ voting.title }}{% endblock %}
+
+{% block page_subtitle %}
+  {% status_badge voting.status %}
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Voltar</a>
+  {% if can_edit %}
+    <a class="btn btn-secondary" href="{% url 'admin:voting_edit' voting.pk %}">Editar</a>
+    <a class="btn btn-secondary" href="{% url 'admin:voting_eligible' voting.pk %}">
+      Gerenciar elegíveis
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+  <section class="panel stack" aria-labelledby="config-title">
+    <h2 id="config-title">Configuração</h2>
+    <dl class="definition-list">
+      <dt>Descrição</dt><dd>{{ voting.description|default:"—"|linebreaksbr }}</dd>
+      <dt>Escolhas por participante</dt><dd>{{ voting.choices_count }}</dd>
+      <dt>Data de corte do catálogo</dt><dd>{{ voting.catalog_cutoff_date|date_br }}</dd>
+      <dt>Modo de abertura</dt><dd>{{ voting.get_open_mode_display }}</dd>
+      <dt>Abertura</dt><dd>{{ voting.opens_at|datetime_br }}</dd>
+      <dt>Modo de encerramento</dt><dd>{{ voting.get_close_mode_display }}</dd>
+      <dt>Encerramento</dt><dd>{{ voting.closes_at|datetime_br }}</dd>
+      <dt>Criada por</dt><dd>{{ voting.created_by.username }}</dd>
+      <dt>Criada em</dt><dd>{{ voting.created_at|datetime_br }}</dd>
+    </dl>
+  </section>
+
+  <section class="panel stack" aria-labelledby="preconditions-title">
+    <h2 id="preconditions-title">Pré-condições de abertura</h2>
+    <ul class="plain-list">
+      <li>
+        Participantes elegíveis:
+        <strong>{{ preconditions.eligible_count }}</strong>
+        {% if preconditions.has_eligible %}
+          <span class="badge badge--success">OK</span>
+        {% else %}
+          <span class="badge badge--danger">Insuficiente</span>
+        {% endif %}
+      </li>
+      <li>
+        Personagens elegíveis no catálogo:
+        <strong>{{ preconditions.catalog_count }}</strong>
+        de <strong>{{ preconditions.choices_count }}</strong> necessária(s)
+        {% if preconditions.has_catalog %}
+          <span class="badge badge--success">OK</span>
+        {% else %}
+          <span class="badge badge--danger">Insuficiente</span>
+        {% endif %}
+      </li>
+      <li>
+        Janela de encerramento:
+        {% if preconditions.window_open %}
+          <span class="badge badge--success">Disponível</span>
+        {% else %}
+          <span class="badge badge--danger">Expirada</span>
+        {% endif %}
+      </li>
+    </ul>
+    {% if not preconditions.ok %}
+      <div class="alert alert-warning" role="alert">
+        A votação não pode ser aberta enquanto as pré-condições não forem atendidas.
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="panel stack" aria-labelledby="participation-title">
+    <h2 id="participation-title">Participação</h2>
+    <p>
+      {{ eligible_count }} participante(s) elegível(is);
+      {{ ballot_count }} cédula(s) registrada(s).
+    </p>
+    {% if can_edit %}
+      <p>
+        <a class="btn btn-secondary" href="{% url 'admin:voting_eligible' voting.pk %}">
+          Ajustar elegíveis
+        </a>
+      </p>
+    {% endif %}
+  </section>
+
+  <section class="panel stack" aria-labelledby="actions-title">
+    <h2 id="actions-title">Ações</h2>
+
+    {% if can_edit and voting.open_mode == "automatic" %}
+      <p>
+        Esta votação abre automaticamente em
+        <strong>{{ voting.opens_at|datetime_br }}</strong>. Ao agendar, a configuração
+        e os elegíveis ficam bloqueados.
+      </p>
+      <form method="post" action="{% url 'admin:voting_schedule' voting.pk %}" data-submit-once>
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit" {% if not preconditions.ok %}disabled{% endif %}>
+          Agendar votação
+        </button>
+        {% if not preconditions.ok %}
+          <span class="text-muted">Atenda às pré-condições para agendar.</span>
+        {% endif %}
+      </form>
+    {% elif can_edit %}
+      <p class="text-muted">
+        Abertura manual: a configuração pode ser editada e os elegíveis ajustados até a
+        abertura explícita.
+      </p>
+    {% else %}
+      <p class="text-muted">
+        A configuração está bloqueada porque a votação não está em rascunho.
+      </p>
+    {% endif %}
+  </section>
+{% endblock %}

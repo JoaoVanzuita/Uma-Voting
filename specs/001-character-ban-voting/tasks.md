@@ -224,20 +224,20 @@ elegíveis, validar bloqueio de abertura sem elegíveis/catálogo e agendar uma 
 
 ### Tests for User Story 5
 
-- [ ] T083 [P] [US5] Testes de modelos/forms de votação (3 escolhas padrão, datas obrigatórias em modos automáticos e informativas/opcionais em modos manuais, corte, modos) em `apps/voting/tests/test_voting_config.py`
-- [ ] T084 [P] [US5] Testes de integração de criação/edição em rascunho, elegíveis, agendamento e bloqueio de edição em `apps/voting/tests/test_admin_voting_config.py`
+- [X] T083 [P] [US5] Testes de modelos/forms de votação (3 escolhas padrão, datas obrigatórias em modos automáticos e informativas/opcionais em modos manuais, corte, modos) em `apps/voting/tests/test_voting_config.py`
+- [X] T084 [P] [US5] Testes de integração de criação/edição em rascunho, elegíveis, agendamento e bloqueio de edição em `apps/voting/tests/test_admin_voting_config.py`
 
 ### Implementation for User Story 5
 
-- [ ] T085 [US5] Implementar `create_voting`, `update_voting` e `schedule_voting` em `apps/voting/services/lifecycle.py`, com `create_voting` chamando `add_default_eligible` e validações de `choices_count > 0`, datas obrigatórias conforme o modo, modos e corte
-- [ ] T086 [P] [US5] Criar formulários de votação em `apps/voting/forms.py`
-- [ ] T087 [P] [US5] Implementar adição/remoção de elegíveis apenas em rascunho em `apps/voting/services/eligibility.py`
-- [ ] T088 [US5] Implementar views/urls do admin de votações (lista, criação, edição, detalhe, elegíveis) em `apps/voting/views/admin.py` e `apps/voting/urls.py`
-- [ ] T089 [US5] Criar templates `templates/admin/voting/list.html`, `form.html`, `detail.html` e `eligible.html`
-- [ ] T090 [US5] Implementar UI de agendamento, bloqueio de edição e helper de pré-condições de abertura em `apps/voting/services/lifecycle.py` e templates
-- [ ] T091 [US5] Adicionar testes de validação de datas invertidas, modos automáticos sem data, modos manuais com datas informativas/ausentes, catálogo insuficiente e ausência de elegíveis em `apps/voting/tests/test_voting_config.py`
-- [ ] T092 [US5] Adicionar links de navegação para a área de votações em `templates/admin/base.html`
-- [ ] T093 [US5] Executar os cenários do quickstart §5.3/§5.7 (parte de configuração), incluindo medição de SC-001 (<5 min), e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
+- [X] T085 [US5] Implementar `create_voting`, `update_voting` e `schedule_voting` em `apps/voting/services/lifecycle.py`, com `create_voting` chamando `add_default_eligible` e validações de `choices_count > 0`, datas obrigatórias conforme o modo, modos e corte
+- [X] T086 [P] [US5] Criar formulários de votação em `apps/voting/forms.py`
+- [X] T087 [P] [US5] Implementar adição/remoção de elegíveis apenas em rascunho em `apps/voting/services/eligibility.py`
+- [X] T088 [US5] Implementar views/urls do admin de votações (lista, criação, edição, detalhe, elegíveis) em `apps/voting/views/admin.py` e `apps/voting/urls.py`
+- [X] T089 [US5] Criar templates `templates/admin/voting/list.html`, `form.html`, `detail.html` e `eligible.html`
+- [X] T090 [US5] Implementar UI de agendamento, bloqueio de edição e helper de pré-condições de abertura em `apps/voting/services/lifecycle.py` e templates
+- [X] T091 [US5] Adicionar testes de validação de datas invertidas, modos automáticos sem data, modos manuais com datas informativas/ausentes, catálogo insuficiente e ausência de elegíveis em `apps/voting/tests/test_voting_config.py`
+- [X] T092 [US5] Adicionar links de navegação para a área de votações em `templates/admin/base.html`
+- [X] T093 [US5] Executar os cenários do quickstart §5.3/§5.7 (parte de configuração), incluindo medição de SC-001 (<5 min), e corrigir divergências em `specs/001-character-ban-voting/quickstart.md`
 
 **Checkpoint**: votações configuráveis e agendáveis; configuração bloqueada após agendamento.
 
