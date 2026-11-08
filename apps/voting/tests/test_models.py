@@ -10,12 +10,14 @@ from apps.voting.models import (
     Ballot,
     BallotChoice,
     Mode,
+    Voting,
     VotingCharacterSnapshot,
     VotingEligibility,
     VotingStatus,
     VotingVersionSnapshot,
 )
 from tests.factories import (
+    AdminUserFactory,
     BallotFactory,
     CharacterFactory,
     OpenVotingFactory,
@@ -30,10 +32,10 @@ pytestmark = pytest.mark.django_db
 
 
 def test_valores_padrao_da_votacao():
-    voting = VotingFactory()
+    voting = Voting.objects.create(title="Voto padrão", created_by=AdminUserFactory())
 
     assert voting.choices_count == 3
-    assert voting.catalog_cutoff_date == date(2026, 12, 1)
+    assert voting.catalog_cutoff_date == timezone.localdate()
     assert voting.status == VotingStatus.DRAFT
     assert voting.open_mode == Mode.MANUAL
     assert voting.close_mode == Mode.MANUAL

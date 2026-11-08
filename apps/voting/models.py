@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 from django.conf import settings
 from django.db import models
 from django.db.models import F, Q
+from django.utils import timezone
 
 
 class Mode(models.TextChoices):
@@ -22,16 +21,13 @@ class VotingStatus(models.TextChoices):
     CANCELLED = "cancelled", "Cancelada"
 
 
-DEFAULT_CATALOG_CUTOFF = date(2026, 12, 1)
-
-
 class Voting(models.Model):
     title = models.CharField("título", max_length=200)
     description = models.TextField("descrição", blank=True)
     choices_count = models.PositiveSmallIntegerField("quantidade de escolhas", default=3)
     catalog_cutoff_date = models.DateField(
         "data de corte do catálogo",
-        default=DEFAULT_CATALOG_CUTOFF,
+        default=timezone.localdate,
     )
     opens_at = models.DateTimeField("abertura", null=True, blank=True)
     closes_at = models.DateTimeField("encerramento", null=True, blank=True)

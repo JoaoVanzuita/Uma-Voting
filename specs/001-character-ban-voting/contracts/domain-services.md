@@ -198,7 +198,7 @@ reforça invariantes críticos.
   votar.
 - Valida `choices_count > 0`, datas e modos; datas são obrigatórias nos modos automáticos e
   informativas/opcionais nos modos manuais.
-- `catalog_cutoff_date` default `2026-12-01`.
+- `catalog_cutoff_date` default: data atual no momento da criação.
 
 ### 6.2 `voting.services.update_voting(voting, data) -> Voting`
 

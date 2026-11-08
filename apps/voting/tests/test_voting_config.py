@@ -167,6 +167,12 @@ def test_update_nao_altera_created_by():
     assert voting.title == "Novo título"
 
 
+def test_formulario_usa_data_atual_como_padrao():
+    form = VotingForm()
+
+    assert form.initial["catalog_cutoff_date"] == timezone.localdate()
+
+
 def test_form_valida_modos_e_datas():
     automatic_without_dates = VotingForm(
         data={

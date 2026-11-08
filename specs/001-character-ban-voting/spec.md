@@ -18,6 +18,7 @@
 - Q: Na tela de resultado final, quais personagens devem ser listadas? → A: Somente personagens com pelo menos 1 voto; empates entre votados são todos exibidos e, sem votos, o resultado fica vazio.
 - Q: Se a data de corte deixar menos personagens elegíveis do que a quantidade de escolhas exigida, a votação pode abrir? → A: Não. A abertura manual é bloqueada; a automática é cancelada, como na ausência de elegíveis.
 - Q: As datas de abertura e encerramento são obrigatórias em todos os modos? → A: São obrigatórias nos modos automáticos; nos modos manuais, são informativas e podem ser omitidas.
+- Q: Qual deve ser a data de corte padrão ao criar uma votação? → A: A data atual no momento da criação; o administrador pode alterá-la manualmente.
 - Q: O administrador que vota como participante pode consultar a própria cédula? → A: Sim, somente pela rota de participante; nenhuma visão administrativa expõe escolhas, inclusive as do próprio administrador.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -462,7 +463,8 @@ andamento e verificar o histórico de um participante após responder e após o 
 - **FR-092**: A referência principal de curadoria do catálogo MUST ser o GameTora. A importação
   de arquivo MUST ser o caminho operacional do MVP até que a viabilidade técnica e as condições de
   uso do GameTora sejam verificadas e autorizadas.
-- **FR-093**: A data de corte padrão do catálogo MUST ser 2026-12-01, configurável por votação.
+- **FR-093**: A data de corte padrão do catálogo MUST ser a data atual no momento da criação da
+  votação, configurável por votação.
 - **FR-094**: Somente personagens efetivamente lançadas no servidor Global até a data de corte
   MUST ser elegíveis.
 - **FR-095**: Personagens anunciadas ou previstas, mas não lançadas até o corte, MUST ficar de

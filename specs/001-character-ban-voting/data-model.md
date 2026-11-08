@@ -273,7 +273,7 @@ Mudança detectada por uma sincronização.
 | `title` | CharField(200) | Obrigatório |
 | `description` | TextField | Opcional |
 | `choices_count` | PositiveSmallIntegerField | Default 3; `CHECK > 0` |
-| `catalog_cutoff_date` | DateField | Default `2026-12-01`; configurável |
+| `catalog_cutoff_date` | DateField | Default: data atual na criação; configurável |
 | `opens_at` | DateTimeField | Nullable; obrigatório se `open_mode='automatic'`; informativo e opcional se manual |
 | `closes_at` | DateTimeField | Nullable; obrigatório se `close_mode='automatic'`; informativo e opcional se manual |
 | `open_mode` | CharField(10) | `manual`, `automatic` |

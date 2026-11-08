@@ -73,6 +73,17 @@ def test_lista_exibe_votacoes(client):
     assert "Banimento de verão" in response.content.decode()
 
 
+def test_formulario_de_criacao_usa_data_atual(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    response = client.get(reverse("admin:voting_create"))
+
+    assert response.status_code == 200
+    assert response.context["form"].initial["catalog_cutoff_date"] == timezone.localdate()
+    assert f'value="{timezone.localdate().isoformat()}"' in response.content.decode()
+
+
 def test_criacao_manual_sem_datas(client):
     admin = AdminUserFactory()
     participant = ParticipantFactory()
@@ -83,6 +94,7 @@ def test_criacao_manual_sem_datas(client):
     voting = Voting.objects.get()
     assert response.status_code == 302
     assert voting.status == VotingStatus.DRAFT
+    assert voting.catalog_cutoff_date == date(2026, 12, 1)
     assert voting.opens_at is None
     assert voting.closes_at is None
     assert VotingEligibility.objects.filter(voting=voting, user=admin).exists()
