@@ -240,3 +240,35 @@ def test_worker_once_sem_jobs_emite_json(adapter, enabled):
     payload = json.loads(output.getvalue())
     assert payload["processed"] == []
     assert payload["stale_jobs"] == 0
+
+
+@pytest.mark.django_db
+def test_repeticao_de_sucesso_e_bloqueada(adapter, enabled):
+    job = ImportJobFactory(
+        source=CatalogSourceFactory(adapter=FakeAdapter.key),
+        status=ImportJob.Status.SUCCESS,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+    )
+
+    with pytest.raises(ImportJobStateError, match="parciais|falha|canceladas"):
+        request_retry(job, AdminUserFactory())
+
+
+@pytest.mark.django_db
+def test_repeticao_nao_altera_execucao_original(adapter, enabled):
+    original = ImportJobFactory(
+        source=CatalogSourceFactory(adapter=FakeAdapter.key),
+        status=ImportJob.Status.FAILED,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+        error_message="falha original",
+        attempts=2,
+    )
+
+    request_retry(original, AdminUserFactory())
+
+    original.refresh_from_db()
+    assert original.status == ImportJob.Status.FAILED
+    assert original.error_message == "falha original"
+    assert original.attempts == 2

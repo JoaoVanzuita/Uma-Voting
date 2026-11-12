@@ -27,6 +27,8 @@
           {% csrf_token %}
           <button class="btn btn-danger" type="submit">Cancelar importação</button>
         </form>
+      {% elif job.status == "success" %}
+        <a class="btn btn-primary" href="{% url 'admin:catalog_import' %}">Nova importação</a>
       {% else %}
         <form method="post" action="{% url 'admin:catalog_import_retry' job.pk %}">
           {% csrf_token %}
@@ -35,6 +37,13 @@
       {% endif %}
     </div>
   </section>
+
+  <noscript>
+    <div class="alert alert-info" role="status">
+      A atualização automática do progresso requer JavaScript.
+      <a class="btn btn-tertiary" href="{{ request.path }}">Atualizar agora</a>
+    </div>
+  </noscript>
 
   {% if catalog_report %}
     <section class="panel stack" aria-labelledby="catalog-report-title">

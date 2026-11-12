@@ -430,7 +430,7 @@ def catalog_import_retry(request, job_id: int):
     try:
         new_job = request_retry(job, request.user)
     except ImportJobStateError:
-        return HttpResponse("A execução ainda está ativa.", status=409)
+        return HttpResponse("Execução não pode ser repetida.", status=409)
     except (ImportDisabledError, ImportSourceError) as exc:
         messages.error(request, str(exc))
         return redirect("admin:catalog_import_detail", job_id=job.pk)

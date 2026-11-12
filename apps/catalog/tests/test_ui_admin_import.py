@@ -54,6 +54,13 @@ def _login(client, user):
     return client
 
 
+def _terminal_job(**kwargs):
+    kwargs.setdefault("status", ImportJob.Status.SUCCESS)
+    kwargs.setdefault("phase", ImportJob.Phase.FINISHED)
+    kwargs.setdefault("finished_at", timezone.now())
+    return ImportJobFactory(**kwargs)
+
+
 def test_painel_exibe_todas_as_fontes_inclusive_inelegiveis(client, adapter, enabled):
     admin = AdminUserFactory()
     eligible = CatalogSourceFactory(name="fonte-elegivel", adapter=FakeAdapter.key)
@@ -393,3 +400,227 @@ def test_escopo_invalido_e_normalizado_para_missing(client, adapter, enabled):
 
     job = ImportJob.objects.get(source=source)
     assert job.options["image_scope"] == "missing"
+
+
+# ---------------------------------------------------------------------------
+# Endpoint de status (T053)
+# ---------------------------------------------------------------------------
+def test_status_json_traz_campos_e_percentual(client, adapter, enabled):
+    admin = AdminUserFactory()
+    job = ImportJobFactory(
+        source=CatalogSourceFactory(adapter=FakeAdapter.key),
+        status=ImportJob.Status.RUNNING,
+        phase=ImportJob.Phase.IMAGES,
+        progress_total=7,
+        progress_done=3,
+        current_step="Baixando imagem",
+    )
+    _login(client, admin)
+
+    payload = client.get(reverse("admin:catalog_import_status", args=[job.pk])).json()
+
+    assert set(payload) >= {
+        "id",
+        "status",
+        "status_label",
+        "phase",
+        "phase_label",
+        "progress",
+        "current_step",
+        "cancel_requested",
+        "error",
+        "started_at",
+        "finished_at",
+        "detail_url",
+    }
+    assert payload["progress"] == {"done": 3, "total": 7, "percent": 43}
+    assert payload["status_label"] == "Em execução"
+    assert payload["phase_label"] == "Imagens"
+    assert payload["terminal"] is False
+    assert payload["detail_url"] == reverse("admin:catalog_import_detail", args=[job.pk])
+
+
+def test_status_json_com_total_zero_e_terminal(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    empty = ImportJobFactory(source=source, progress_total=0, progress_done=0)
+    finished = ImportJobFactory(
+        source=source,
+        status=ImportJob.Status.SUCCESS,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+    )
+    _login(client, admin)
+
+    empty_payload = client.get(reverse("admin:catalog_import_status", args=[empty.pk])).json()
+    finished_response = client.get(reverse("admin:catalog_import_status", args=[finished.pk]))
+    finished_payload = finished_response.json()
+
+    assert empty_payload["progress"]["percent"] == 0
+    assert finished_payload["terminal"] is True
+    assert finished_payload["finished_at"] is not None
+    assert finished_response["Cache-Control"] == "no-store"
+
+
+# ---------------------------------------------------------------------------
+# Cancelamento e repetição pela interface (T054)
+# ---------------------------------------------------------------------------
+def test_cancelar_execucao_em_andamento_solicita(client, adapter, enabled):
+    admin = AdminUserFactory()
+    job = ImportJobFactory(
+        source=CatalogSourceFactory(adapter=FakeAdapter.key),
+        status=ImportJob.Status.RUNNING,
+        phase=ImportJob.Phase.IMAGES,
+    )
+    _login(client, admin)
+
+    response = client.post(reverse("admin:catalog_import_cancel", args=[job.pk]))
+
+    job.refresh_from_db()
+    assert response.status_code == 302
+    assert job.status == ImportJob.Status.RUNNING
+    assert job.cancel_requested is True
+    assert job.cancelled_by == admin
+
+
+def test_cancelar_execucao_na_fila_encerra_imediatamente(client, adapter, enabled):
+    admin = AdminUserFactory()
+    job = ImportJobFactory(
+        source=CatalogSourceFactory(adapter=FakeAdapter.key),
+        status=ImportJob.Status.QUEUED,
+    )
+    _login(client, admin)
+
+    response = client.post(reverse("admin:catalog_import_cancel", args=[job.pk]))
+
+    job.refresh_from_db()
+    assert response.status_code == 302
+    assert job.status == ImportJob.Status.CANCELLED
+    assert job.phase == ImportJob.Phase.FINISHED
+
+
+def test_repetir_execucao_ativa_retorna_409(client, adapter, enabled):
+    admin = AdminUserFactory()
+    job = ImportJobFactory(
+        source=CatalogSourceFactory(adapter=FakeAdapter.key),
+        status=ImportJob.Status.RUNNING,
+        phase=ImportJob.Phase.CATALOG,
+    )
+    _login(client, admin)
+
+    response = client.post(reverse("admin:catalog_import_retry", args=[job.pk]))
+
+    assert response.status_code == 409
+
+
+def test_repetir_execucao_com_falha_cria_novo_job(client, adapter, enabled):
+    admin = AdminUserFactory()
+    job = ImportJobFactory(
+        source=CatalogSourceFactory(adapter=FakeAdapter.key),
+        status=ImportJob.Status.FAILED,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+        error_message="falha",
+    )
+    _login(client, admin)
+
+    response = client.post(reverse("admin:catalog_import_retry", args=[job.pk]))
+
+    new_job = ImportJob.objects.exclude(pk=job.pk).get(source=job.source)
+    assert response.status_code == 302
+    assert response["Location"] == reverse("admin:catalog_import_detail", args=[new_job.pk])
+    assert new_job.retry_of == job
+    assert new_job.status == ImportJob.Status.QUEUED
+
+
+def test_repetir_execucao_bem_sucedida_retorna_409(client, adapter, enabled):
+    admin = AdminUserFactory()
+    job = ImportJobFactory(
+        source=CatalogSourceFactory(adapter=FakeAdapter.key),
+        status=ImportJob.Status.SUCCESS,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+    )
+    _login(client, admin)
+
+    response = client.post(reverse("admin:catalog_import_retry", args=[job.pk]))
+
+    assert response.status_code == 409
+    assert ImportJob.objects.filter(source=job.source).count() == 1
+
+
+# ---------------------------------------------------------------------------
+# Histórico, filtros e paginação (T056)
+# ---------------------------------------------------------------------------
+def test_historico_filtra_por_status_e_fonte(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source_a = CatalogSourceFactory(name="fonte-a", adapter=FakeAdapter.key)
+    source_b = CatalogSourceFactory(name="fonte-b", adapter=FakeAdapter.key)
+    failed_a = _terminal_job(source=source_a, status=ImportJob.Status.FAILED)
+    success_a = _terminal_job(source=source_a, status=ImportJob.Status.SUCCESS)
+    failed_b = _terminal_job(source=source_b, status=ImportJob.Status.FAILED)
+    _login(client, admin)
+
+    by_status = client.get(reverse("admin:catalog_import_list"), {"status": "failed"})
+    by_source = client.get(reverse("admin:catalog_import_list"), {"source": source_a.pk})
+
+    status_html = by_status.content.decode()
+    source_html = by_source.content.decode()
+
+    assert f"#{failed_a.pk}" in status_html
+    assert f"#{failed_b.pk}" in status_html
+    assert f"#{success_a.pk}" not in status_html
+
+    assert f"#{failed_a.pk}" in source_html
+    assert f"#{success_a.pk}" in source_html
+    assert f"#{failed_b.pk}" not in source_html
+
+
+def test_historico_pagina_resultados(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    for _ in range(27):
+        _terminal_job(source=source, status=ImportJob.Status.SUCCESS)
+    _login(client, admin)
+
+    first = client.get(reverse("admin:catalog_import_list"))
+    second = client.get(reverse("admin:catalog_import_list"), {"page": 2})
+
+    assert first.context["page"].paginator.num_pages == 2
+    assert first.context["page"].number == 1
+    assert second.status_code == 200
+    assert second.context["page"].number == 2
+    assert len(second.context["page"].object_list) == 2
+
+
+def test_acoes_do_detalhe_dependem_do_estado(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    running = ImportJobFactory(
+        source=source,
+        status=ImportJob.Status.RUNNING,
+        phase=ImportJob.Phase.IMAGES,
+    )
+    success = _terminal_job(source=source, status=ImportJob.Status.SUCCESS)
+    failed = _terminal_job(source=source, status=ImportJob.Status.FAILED)
+    _login(client, admin)
+
+    running_html = client.get(
+        reverse("admin:catalog_import_detail", args=[running.pk])
+    ).content.decode()
+    success_html = client.get(
+        reverse("admin:catalog_import_detail", args=[success.pk])
+    ).content.decode()
+    failed_html = client.get(
+        reverse("admin:catalog_import_detail", args=[failed.pk])
+    ).content.decode()
+
+    assert "Cancelar importação" in running_html
+    assert "Repetir importação" not in running_html
+
+    assert "Nova importação" in success_html
+    assert "Cancelar importação" not in success_html
+    assert "Repetir importação" not in success_html
+
+    assert "Repetir importação" in failed_html
+    assert "Cancelar importação" not in failed_html

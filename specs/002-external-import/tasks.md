@@ -151,21 +151,21 @@ falho; simular worker interrompido e verificar stale recovery.
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T053 [P] [US3] Testar endpoint de status em `apps/catalog/tests/test_ui_admin_import.py`: campos, percentual, terminal e `no-store`
-- [ ] T054 [P] [US3] Testar cancelamento, repetição e 409 em `apps/catalog/tests/test_import_jobs.py`
-- [ ] T055 [P] [US3] Testar stale recovery e heartbeat em `apps/catalog/tests/test_import_worker.py`
-- [ ] T056 [US3] Testar histórico, filtros e paginação em `apps/catalog/tests/test_ui_admin_import.py`
+- [X] T053 [P] [US3] Testar endpoint de status em `apps/catalog/tests/test_ui_admin_import.py`: campos, percentual, terminal e `no-store`
+- [X] T054 [P] [US3] Testar cancelamento, repetição e 409 em `apps/catalog/tests/test_import_jobs.py`
+- [X] T055 [P] [US3] Testar stale recovery e heartbeat em `apps/catalog/tests/test_import_worker.py`
+- [X] T056 [US3] Testar histórico, filtros e paginação em `apps/catalog/tests/test_ui_admin_import.py`
 
 ### Implementation for User Story 3
 
-- [ ] T057 [US3] Implementar `catalog_import_status` em `apps/catalog/views.py` retornando o JSON de `contracts/http-routes.md` §4
-- [ ] T058 [US3] Implementar `catalog_import_cancel` e `catalog_import_retry` com validação de estado
-- [ ] T059 [US3] Implementar `catalog_import_list` com filtros por status e fonte
-- [ ] T060 [US3] Implementar `mark_stale_jobs` no início de cada ciclo do worker, definindo `phase=finished` e registrando log
-- [ ] T061 [US3] Implementar checagem de `cancel_requested` entre itens nas imagens e antes da aplicação no catálogo, preservando o que já foi aplicado
-- [ ] T062 [US3] Implementar polling em `static/js/catalog-import.js` com parada em estado terminal e fallback sem JavaScript
-- [ ] T063 [US3] Adicionar ações de cancelar/repetir no template apenas quando aplicáveis
-- [ ] T064 [US3] Garantir que execuções terminais não sejam alteradas e que repetição crie novo job
+- [X] T057 [US3] Implementar `catalog_import_status` em `apps/catalog/views.py` retornando o JSON de `contracts/http-routes.md` §4
+- [X] T058 [US3] Implementar `catalog_import_cancel` e `catalog_import_retry` com validação de estado
+- [X] T059 [US3] Implementar `catalog_import_list` com filtros por status e fonte
+- [X] T060 [US3] Implementar `mark_stale_jobs` no início de cada ciclo do worker, definindo `phase=finished` e registrando log
+- [X] T061 [US3] Implementar checagem de `cancel_requested` entre itens nas imagens e antes da aplicação no catálogo, preservando o que já foi aplicado
+- [X] T062 [US3] Implementar polling em `static/js/catalog-import.js` com parada em estado terminal e fallback sem JavaScript
+- [X] T063 [US3] Adicionar ações de cancelar/repetir no template apenas quando aplicáveis
+- [X] T064 [US3] Garantir que execuções terminais não sejam alteradas e que repetição crie novo job
 
 **Checkpoint**: operação completa de execuções.
 

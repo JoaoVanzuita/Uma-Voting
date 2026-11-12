@@ -4,6 +4,7 @@
   data-import-status
   data-status-url="{% url 'admin:catalog_import_status' job.pk %}"
   data-terminal="{% if job.is_terminal %}true{% else %}false{% endif %}"
+  aria-live="polite"
 >
   <div class="catalog-section-header">
     <h2 id="import-progress-title" class="catalog-section-title">Progresso</h2>

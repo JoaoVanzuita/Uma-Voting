@@ -488,3 +488,31 @@ def test_progresso_e_heartbeat_da_fase_de_imagens(monkeypatch, source):
     assert result.progress_total == 1
     assert result.progress_done == 1
     assert result.heartbeat_at is not None
+
+
+def test_worker_marca_execucao_stale_no_ciclo(monkeypatch):
+    import json
+    from datetime import timedelta
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from apps.catalog.models import ImportJob
+
+    source = CatalogSourceFactory(adapter="fake-source")
+    stale = ImportJobFactory(
+        source=source,
+        status=ImportJob.Status.RUNNING,
+        phase=ImportJob.Phase.IMAGES,
+        heartbeat_at=timezone.now() - timedelta(seconds=1200),
+    )
+    output = StringIO()
+
+    call_command("run_import_worker", "--once", "--json", stdout=output)
+
+    payload = json.loads(output.getvalue())
+    stale.refresh_from_db()
+    assert payload["stale_jobs"] == 1
+    assert stale.status == ImportJob.Status.FAILED
+    assert stale.phase == ImportJob.Phase.FINISHED
+    assert "sinal de vida" in stale.error_message

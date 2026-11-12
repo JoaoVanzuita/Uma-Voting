@@ -50,6 +50,7 @@
         cache: "no-store",
       });
       if (!response.ok) {
+        schedule();
         return;
       }
       const payload = await response.json();

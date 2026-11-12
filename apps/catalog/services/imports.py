@@ -142,8 +142,14 @@ def request_cancel(job: ImportJob, admin) -> ImportJob:
 
 def request_retry(job: ImportJob, admin) -> ImportJob:
     """Cria uma nova execução com os mesmos parâmetros de uma execução terminal."""
-    if not job.is_terminal:
-        raise ImportJobStateError("A execução ainda está ativa.")
+    if job.status not in {
+        ImportJob.Status.PARTIAL,
+        ImportJob.Status.FAILED,
+        ImportJob.Status.CANCELLED,
+    }:
+        raise ImportJobStateError(
+            "Somente execuções parciais, com falha ou canceladas podem ser repetidas."
+        )
 
     new_job = create_import_job(
         job.source,
