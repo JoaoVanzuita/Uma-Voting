@@ -5,150 +5,193 @@
 
 {% block page_title %}Catálogo{% endblock %}
 
+{% block page_subtitle %}
+  <p class="text-muted text-small">Acompanhe o acervo, sincronize a fonte e revise as alterações pendentes.</p>
+{% endblock %}
+
 {% block page_actions %}
   <a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Personagens</a>
   <a class="btn btn-secondary" href="{% url 'admin:catalog_images' %}">Imagens</a>
 {% endblock %}
 
 {% block content %}
-  <div class="grid grid--stats">
-    <section class="card stat">
-      <p class="stat__label">Personagens</p>
-      <p class="stat__value">{{ character_count }}</p>
+  <div class="stats-grid catalog-stats">
+    <section class="stat-card">
+      <p class="stat-card__label">Personagens</p>
+      <p class="stat-card__value">{{ character_count }}</p>
     </section>
-    <section class="card stat">
-      <p class="stat__label">Mudanças pendentes</p>
-      <p class="stat__value">{{ pending_count }}</p>
+    <section class="stat-card">
+      <p class="stat-card__label">Alterações pendentes</p>
+      <p class="stat-card__value">{{ pending_count }}</p>
     </section>
-    <section class="card stat">
-      <p class="stat__label">Imagens válidas</p>
-      <p class="stat__value">{{ image_stats.valid }}</p>
+    <section class="stat-card">
+      <p class="stat-card__label">Imagens válidas</p>
+      <p class="stat-card__value">{{ image_stats.valid }}</p>
     </section>
-    <section class="card stat">
-      <p class="stat__label">Sem imagem válida</p>
-      <p class="stat__value">{{ characters_without_image }}</p>
+    <section class="stat-card">
+      <p class="stat-card__label">Sem imagem válida</p>
+      <p class="stat-card__value">{{ characters_without_image }}</p>
     </section>
   </div>
 
-  <section class="panel stack" aria-labelledby="sync-title">
-    <h2 id="sync-title">Sincronização manual</h2>
-    <p class="text-muted">
-      A importação de arquivo é o caminho operacional do MVP. Personagens novas são
-      aplicadas automaticamente; alterações em personagens existentes ficam pendentes.
-    </p>
-    <form method="post" action="{% url 'admin:catalog_sync' %}" enctype="multipart/form-data" data-submit-once>
-      {% csrf_token %}
-      <div class="form-group">
-        <label class="form-label" for="{{ sync_form.source.id_for_label }}">Fonte</label>
-        {{ sync_form.source }}
-        {% for error in sync_form.source.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="{{ sync_form.file.id_for_label }}">Arquivo CSV</label>
-        {{ sync_form.file }}
-        {% for error in sync_form.file.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit">Sincronizar catálogo</button>
-      </div>
-    </form>
-  </section>
+  <div class="catalog-columns">
+    <div class="stack">
+      <section class="panel stack" aria-labelledby="sync-title">
+        <div class="catalog-section-header">
+          <div>
+            <h2 id="sync-title" class="catalog-section-title">Sincronização manual</h2>
+            <p class="text-muted text-small">
+              Personagens novas são aplicadas automaticamente; alterações em personagens
+              existentes ficam pendentes de revisão.
+            </p>
+          </div>
+        </div>
 
-  <section class="panel stack" aria-labelledby="last-sync-title">
-    <h2 id="last-sync-title">Última sincronização</h2>
-    {% if last_sync %}
-      <p>
-        {% status_badge last_sync.status %}
-        <strong>{{ last_sync.source.name }}</strong>
-        em {{ last_sync.started_at|datetime_br }}
-      </p>
-      <p class="text-muted">{{ last_sync.summary|default:"—" }}</p>
-      {% if last_sync.error_message %}
-        <div class="alert alert-danger" role="alert">{{ last_sync.error_message }}</div>
-      {% endif %}
-      <p>
-        <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' last_sync.pk %}">
-          Ver detalhes
-        </a>
-      </p>
-    {% else %}
-      <div class="empty-state">
-        <p>Nenhuma sincronização executada ainda.</p>
-      </div>
-    {% endif %}
-  </section>
+        <form
+          method="post"
+          action="{% url 'admin:catalog_sync' %}"
+          enctype="multipart/form-data"
+          data-submit-once
+        >
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label" for="{{ sync_form.source.id_for_label }}">Fonte</label>
+            {{ sync_form.source }}
+            {% for error in sync_form.source.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="{{ sync_form.file.id_for_label }}">Arquivo CSV</label>
+            {{ sync_form.file }}
+            <p class="form-help">O catálogo é atualizado em uma única transação.</p>
+            {% for error in sync_form.file.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Sincronizar catálogo</button>
+          </div>
+        </form>
+      </section>
 
-  <section class="panel stack" aria-labelledby="pending-title">
-    <h2 id="pending-title">Mudanças pendentes</h2>
-    {% if pending_changes %}
-      <div class="table-wrap">
-        <table class="table">
-          <caption class="visually-hidden">Mudanças pendentes de aprovação</caption>
-          <thead>
-            <tr>
-              <th scope="col">Tipo</th>
-              <th scope="col">Personagem</th>
-              <th scope="col">Criada em</th>
-              <th scope="col">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for change in pending_changes %}
-              <tr>
-                <td>{{ change.get_change_type_display }}</td>
-                <td>{{ change.character.display_name|default:"—" }}</td>
-                <td>{{ change.created_at|datetime_br }}</td>
-                <td>
-                  <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' change.sync_run_id %}">
-                    Revisar
-                  </a>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="empty-state">
-        <p>Nenhuma mudança pendente de aprovação.</p>
-      </div>
-    {% endif %}
-  </section>
+      <section class="panel stack" aria-labelledby="pending-title">
+        <div class="catalog-section-header">
+          <h2 id="pending-title" class="catalog-section-title">Alterações pendentes</h2>
+          {% if pending_count %}
+            <span class="badge badge--warning">{{ pending_count }} aguardando revisão</span>
+          {% endif %}
+        </div>
 
-  <section class="panel stack" aria-labelledby="runs-title">
-    <h2 id="runs-title">Histórico recente</h2>
-    {% if recent_runs %}
-      <div class="table-wrap">
-        <table class="table">
-          <caption class="visually-hidden">Histórico de sincronizações</caption>
-          <thead>
-            <tr>
-              <th scope="col">Execução</th>
-              <th scope="col">Fonte</th>
-              <th scope="col">Situação</th>
-              <th scope="col">Início</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for run in recent_runs %}
-              <tr>
-                <td>#{{ run.pk }}</td>
-                <td>{{ run.source.name }}</td>
-                <td>{% status_badge run.status %}</td>
-                <td>{{ run.started_at|datetime_br }}</td>
-                <td>
-                  <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' run.pk %}">
-                    Detalhes
-                  </a>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <p class="text-muted">Sem histórico.</p>
-    {% endif %}
-  </section>
+        {% if pending_changes %}
+          <div class="table-wrap admin-data-table-wrap">
+            <table class="table admin-data-table">
+              <caption class="visually-hidden">Alterações pendentes de aprovação</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Personagem</th>
+                  <th scope="col">Criada em</th>
+                  <th scope="col" class="table__actions">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for change in pending_changes %}
+                  <tr>
+                    <td data-label="Tipo">{{ change.get_change_type_display }}</td>
+                    <td data-label="Personagem">{{ change.character.display_name|default:"—" }}</td>
+                    <td data-label="Criada em">{{ change.created_at|datetime_br }}</td>
+                    <td data-label="Ações">
+                      <div class="table__actions">
+                        <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' change.sync_run_id %}">
+                          Revisar
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% if pending_count > pending_changes|length %}
+            <p class="text-muted text-small">
+              Exibindo as {{ pending_changes|length }} alterações mais recentes de {{ pending_count }}.
+            </p>
+          {% endif %}
+        {% else %}
+          <div class="empty-state">
+            <p>Nenhuma alteração pendente de aprovação.</p>
+          </div>
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="panel stack" aria-labelledby="last-sync-title">
+        <div class="catalog-section-header">
+          <h2 id="last-sync-title" class="catalog-section-title">Última sincronização</h2>
+          {% if last_sync %}{% status_badge last_sync.status %}{% endif %}
+        </div>
+
+        {% if last_sync %}
+          <dl class="detail-list">
+            <dt>Fonte</dt><dd>{{ last_sync.source.name }}</dd>
+            <dt>Início</dt><dd>{{ last_sync.started_at|datetime_br }}</dd>
+            <dt>Fim</dt><dd>{{ last_sync.finished_at|datetime_br }}</dd>
+          </dl>
+
+          <p class="text-muted text-small">{{ last_sync.summary|default:"—" }}</p>
+
+          {% if last_sync.error_message %}
+            <div class="alert alert-danger" role="alert">{{ last_sync.error_message }}</div>
+          {% endif %}
+
+          <div class="form-actions">
+            <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' last_sync.pk %}">
+              Ver detalhes
+            </a>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <p>Nenhuma sincronização executada ainda.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="panel stack" aria-labelledby="runs-title">
+        <h2 id="runs-title" class="catalog-section-title">Histórico recente</h2>
+        {% if recent_runs %}
+          <div class="table-wrap admin-data-table-wrap">
+            <table class="table admin-data-table">
+              <caption class="visually-hidden">Histórico de sincronizações</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Execução</th>
+                  <th scope="col">Fonte</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col">Início</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for run in recent_runs %}
+                  <tr>
+                    <td data-label="Execução">#{{ run.pk }}</td>
+                    <td data-label="Fonte">{{ run.source.name }}</td>
+                    <td data-label="Situação">{% status_badge run.status %}</td>
+                    <td data-label="Início">{{ run.started_at|datetime_br }}</td>
+                    <td data-label="Ações">
+                      <div class="table__actions">
+                        <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' run.pk %}">
+                          Detalhes
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="text-muted">Sem histórico.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
 {% endblock %}

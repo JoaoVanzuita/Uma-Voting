@@ -3,24 +3,26 @@
   class="selection-summary"
   {% if oob_summary %}hx-swap-oob="true"{% endif %}
 >
-  <span
-    class="selection-counter"
-    data-selection-counter
-    data-limit-reached="{% if selected_count >= voting.choices_count %}true{% else %}false{% endif %}"
-    aria-live="polite"
-  >
-    {{ selected_count }} de {{ voting.choices_count }} escolhas
-  </span>
+  <div class="selection-summary__info">
+    <span
+      class="selection-counter"
+      data-selection-counter
+      data-limit-reached="{% if selected_count >= voting.choices_count %}true{% else %}false{% endif %}"
+      aria-live="polite"
+    >
+      {{ selected_count }} de {{ voting.choices_count }} escolhas
+    </span>
 
-  <span class="selection-status" data-selection-status aria-live="polite">
-    {% if selected_count == 0 %}
-      Nenhuma personagem selecionada.
-    {% elif selected_count >= voting.choices_count %}
-      Limite de {{ voting.choices_count }} escolhas atingido. Desmarque uma opção para trocar.
-    {% else %}
-      {{ selected_count }} de {{ voting.choices_count }} escolhas selecionadas.
-    {% endif %}
-  </span>
+    <span class="selection-status" data-selection-status aria-live="polite">
+      {% if selected_count == 0 %}
+        Nenhuma personagem selecionada.
+      {% elif selected_count >= voting.choices_count %}
+        Limite de {{ voting.choices_count }} escolhas atingido. Desmarque uma opção para trocar.
+      {% else %}
+        {{ selected_count }} de {{ voting.choices_count }} escolhas selecionadas.
+      {% endif %}
+    </span>
+  </div>
 
-  <button class="btn btn-primary" type="submit">Revisar cédula</button>
+  <button class="btn btn-primary selection-summary__cta" type="submit">Revisar escolhas</button>
 </div>

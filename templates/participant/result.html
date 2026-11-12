@@ -4,41 +4,61 @@
 {% block title %}Resultado — {{ voting.title }} — Uma Voting{% endblock %}
 
 {% block content %}
-  <div class="page-header">
+  <div class="page-header result-header">
     <div>
       <p class="text-muted text-small">Resultado final</p>
       <h1>{{ voting.title }}</h1>
       <div class="voting-header__meta">
         {% status_badge voting.status %}
-        <span>Encerrada em {{ voting.closed_at|datetime_br }}</span>
+        {% if voting.closed_at %}
+          <span>Encerrada em {{ voting.closed_at|datetime_br }}</span>
+        {% endif %}
       </div>
     </div>
-    <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
+    <div class="cluster">
+      <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
+      {% if own_ballot %}
+        <a class="btn btn-secondary" href="{% url 'participant:ballot' voting.pk %}">
+          Meu voto
+        </a>
+      {% endif %}
+    </div>
   </div>
 
   {% if results %}
-    <section class="panel stack" aria-labelledby="result-title">
-      <h2 id="result-title">Ranking</h2>
-      <p class="text-muted">
-        Personagens com a mesma quantidade de votos ocupam a mesma posição. Personagens
-        sem votos não são exibidos.
-      </p>
+    <section class="panel result-panel" aria-labelledby="result-title">
+      <div class="result-panel__header">
+        <h2 id="result-title">Ranking final</h2>
+        <p class="text-muted">
+          Personagens com a mesma quantidade de votos ocupam a mesma posição. Personagens
+          sem votos não são exibidos.
+        </p>
+      </div>
+
       <ol class="result-list">
         {% for row in results %}
           <li class="result-item">
             <span class="result-item__position">{{ row.position }}º</span>
-            <span class="review-item__media">
+            <span class="result-item__media">
               {% image_url row.image_asset as image_src %}
               <img
                 src="{{ image_src }}"
                 data-fallback-src="{% placeholder_url %}"
                 alt="Retrato de {{ row.display_name }}"
-                width="56"
-                height="56"
+                width="48"
+                height="48"
               >
             </span>
             <span class="result-item__name">{{ row.display_name }}</span>
-            <span class="result-item__votes">{{ row.votes }} voto(s)</span>
+            <span class="result-item__votes">{{ row.votes }} voto{{ row.votes|pluralize }}</span>
+            <span class="result-item__bar-wrap">
+              <progress
+                class="result-item__bar"
+                max="{{ results.0.votes }}"
+                value="{{ row.votes }}"
+                aria-label="{{ row.votes }} de {{ results.0.votes }} votos do primeiro colocado"
+              >{{ row.votes }} de {{ results.0.votes }}</progress>
+            </span>
           </li>
         {% endfor %}
       </ol>
@@ -48,13 +68,5 @@
       <h2>Nenhum voto registrado</h2>
       <p>Esta votação foi encerrada sem votos válidos.</p>
     </div>
-  {% endif %}
-
-  {% if own_ballot %}
-    <p>
-      <a class="btn btn-secondary" href="{% url 'participant:ballot' voting.pk %}">
-        Consultar minha cédula
-      </a>
-    </p>
   {% endif %}
 {% endblock %}

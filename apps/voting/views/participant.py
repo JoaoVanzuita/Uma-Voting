@@ -305,7 +305,7 @@ def confirm(request, voting_id: int):
             selected_ids=_selected_ids(request),
         )
 
-    messages.success(request, "Cédula confirmada com sucesso.")
+    messages.success(request, "Voto registrado com sucesso.")
     return redirect("participant:ballot", voting_id=voting.pk)
 
 

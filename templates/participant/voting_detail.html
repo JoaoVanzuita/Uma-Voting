@@ -1,25 +1,29 @@
 {% extends "participant/base.html" %}
+{% load static %}
 {% load ui_tags %}
 
 {% block title %}{{ voting.title }} — Uma Voting{% endblock %}
 
 {% block content %}
-  <header class="voting-header">
-    <div>
-      <p class="text-muted text-small">Votação</p>
+  <header class="voting-header voting-header--compact">
+    <div class="voting-header__main">
+      <p class="text-muted text-small">
+        <a class="voting-header__back" href="{% url 'participant:home' %}">Votações</a>
+      </p>
       <h1>{{ voting.title }}</h1>
-      {% if voting.description %}
-        <p>{{ voting.description }}</p>
-      {% endif %}
       <div class="voting-header__meta">
         {% status_badge voting.status %}
         <span>{{ voting.choices_count }} escolhas por participante</span>
-        {% if voting.closes_at %}
+        {% if voting.status == "open" and voting.closes_at %}
           <span>Encerra em {{ voting.closes_at|datetime_br }}</span>
+        {% elif voting.status == "scheduled" and voting.opens_at %}
+          <span>Abre em {{ voting.opens_at|datetime_br }}</span>
         {% endif %}
       </div>
+      {% if voting.description %}
+        <p class="voting-header__description text-muted">{{ voting.description }}</p>
+      {% endif %}
     </div>
-    <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
   </header>
 
   {% if error %}
@@ -29,21 +33,27 @@
   {% if not_open %}
     <div class="empty-state">
       <h2>Esta votação ainda não está aberta</h2>
-      <p>Volte quando a votação for iniciada para registrar sua cédula.</p>
+      {% if voting.opens_at %}
+        <p>A abertura está prevista para {{ voting.opens_at|datetime_br }}.</p>
+      {% else %}
+        <p>Volte quando a votação for iniciada para registrar seu voto.</p>
+      {% endif %}
+      <a class="btn btn-secondary" href="{% url 'participant:home' %}">Voltar às votações</a>
     </div>
   {% else %}
     <form
       method="post"
       action="{% url 'participant:review' voting.id %}"
+      class="voting-selection"
       data-selection-form
       data-max-choices="{{ voting.choices_count }}"
       data-submit-once
     >
       {% csrf_token %}
 
-      <div class="filters">
-        <div class="filters__row">
-          <div class="filters__search form-group">
+      <div class="filters selection-toolbar">
+        <div class="filters__row selection-toolbar__row">
+          <div class="filters__search form-group selection-search">
             <label class="form-label" for="character-search">Buscar personagem</label>
             <input
               id="character-search"
@@ -60,32 +70,70 @@
               hx-include="closest form"
             >
           </div>
-
-          {% for group in filter_groups %}
-            <fieldset class="filters__chips">
-              <legend class="visually-hidden">{{ group.label }}</legend>
-              {% for option in group.options %}
-                <label class="chip">
-                  <input
-                    type="checkbox"
-                    name="{{ group.category }}"
-                    value="{{ option.value }}"
-                    {% if option.checked %}checked{% endif %}
-                    hx-get="{% url 'participant:character_grid' voting.id %}"
-                    hx-target="#character-grid"
-                    hx-swap="innerHTML"
-                    hx-include="closest form"
-                  >
-                  {{ option.label }}
-                </label>
-              {% endfor %}
-            </fieldset>
-          {% endfor %}
         </div>
 
-        <a class="filters__clear" href="{% url 'participant:voting_detail' voting.id %}">
-          Limpar busca e filtros
-        </a>
+        <details class="filter-panel">
+          <summary class="filter-panel__summary">
+            <span class="filter-panel__title">Filtros</span>
+            <span class="filter-panel__hint">Estratégia, distância e superfície</span>
+          </summary>
+          <div class="filter-panel__body">
+            {% for group in filter_groups %}
+              <fieldset class="filter-group">
+                <legend class="filter-group__legend">{{ group.label }}</legend>
+                <div class="filter-group__options">
+                  {% for option in group.options %}
+                    <label class="chip">
+                      <input
+                        type="checkbox"
+                        name="{{ group.category }}"
+                        value="{{ option.value }}"
+                        data-filter-category="{{ group.category }}"
+                        data-filter-value="{{ option.value }}"
+                        data-filter-label="{{ option.label }}"
+                        {% if option.checked %}checked{% endif %}
+                        hx-get="{% url 'participant:character_grid' voting.id %}"
+                        hx-target="#character-grid"
+                        hx-swap="innerHTML"
+                        hx-include="closest form"
+                      >
+                      {{ option.label }}
+                    </label>
+                  {% endfor %}
+                </div>
+              </fieldset>
+            {% endfor %}
+          </div>
+        </details>
+
+        <div class="selection-toolbar__footer">
+          <div class="active-filters" data-active-filters>
+            {% for group in filter_groups %}
+              {% for option in group.options %}
+                {% if option.checked %}
+                  <a
+                    class="chip chip--active"
+                    data-filter-chip
+                    data-filter-category="{{ group.category }}"
+                    data-filter-value="{{ option.value }}"
+                    href="?{% for other_group in filter_groups %}{% for other_option in other_group.options %}{% if other_option.checked and other_option.value != option.value %}{{ other_group.category }}={{ other_option.value }}&amp;{% endif %}{% endfor %}{% endfor %}{% if query %}q={{ query|urlencode }}&amp;{% endif %}{% for pk in selected_ids %}selected={{ pk }}&amp;{% endfor %}"
+                    aria-label="Remover filtro {{ option.label }}"
+                  >
+                    {{ option.label }} <span aria-hidden="true">×</span>
+                  </a>
+                {% endif %}
+              {% endfor %}
+            {% endfor %}
+          </div>
+
+          <a
+            class="filters__clear"
+            data-clear-filters
+            href="?{% for pk in selected_ids %}selected={{ pk }}&amp;{% endfor %}"
+          >
+            Limpar busca e filtros
+          </a>
+        </div>
       </div>
 
       <div
@@ -105,4 +153,8 @@
       {% include "participant/partials/selection_summary.html" %}
     </form>
   {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/participant.js' %}" defer></script>
 {% endblock %}

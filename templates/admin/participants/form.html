@@ -6,8 +6,16 @@
   {% if instance %}Editar participante{% else %}Novo participante{% endif %}
 {% endblock %}
 
+{% block page_subtitle %}
+  {% if instance %}
+    <p class="text-muted text-small">Atualize o username de um participante existente.</p>
+  {% else %}
+    <p class="text-muted text-small">Cadastre um username para liberar o acesso.</p>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
-  <section class="panel">
+  <section class="panel admin-form-panel">
     <form method="post" data-submit-once>
       {% csrf_token %}
 
@@ -15,22 +23,32 @@
         <div class="alert alert-danger" role="alert">{{ form.non_field_errors.0 }}</div>
       {% endif %}
 
-      <div class="form-group">
-        <label class="form-label" for="{{ form.username.id_for_label }}">
-          Username <span class="required" aria-hidden="true">*</span>
-        </label>
-        {{ form.username }}
-        <p class="form-help">
-          Apenas o username é armazenado. Participantes não possuem senha de acesso.
-        </p>
-        {% for error in form.username.errors %}
-          <p class="form-error">{{ error }}</p>
-        {% endfor %}
-      </div>
+      <fieldset class="fieldset">
+        <legend class="fieldset__legend">Dados do participante</legend>
+
+        <div class="form-group">
+          <label class="form-label" for="{{ form.username.id_for_label }}">
+            Username <span class="required" aria-hidden="true">*</span>
+          </label>
+          {{ form.username }}
+          <p class="form-help" id="username-help">
+            Apenas o username é armazenado. Participantes não possuem senha de acesso.
+          </p>
+          {% if form.username.errors %}
+            <div class="form-error-group" id="username-error" role="alert">
+              {% for error in form.username.errors %}
+                <p class="form-error">{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      </fieldset>
 
       <div class="form-actions">
-        <button class="btn btn-primary" type="submit">Salvar</button>
-        <a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Cancelar</a>
+        <button class="btn btn-primary" type="submit">
+          {% if instance %}Salvar alterações{% else %}Criar participante{% endif %}
+        </button>
+        <a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Voltar</a>
       </div>
     </form>
   </section>

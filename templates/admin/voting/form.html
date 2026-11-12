@@ -8,6 +8,10 @@
   {% if voting %}Editar votação{% else %}Nova votação{% endif %}
 {% endblock %}
 
+{% block page_subtitle %}
+  {% if voting %}{{ voting.title }}{% else %}Configure a votação e o agendamento.{% endif %}
+{% endblock %}
+
 {% block page_actions %}
   <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Voltar</a>
   {% if voting %}
@@ -16,70 +20,95 @@
 {% endblock %}
 
 {% block content %}
-  <form class="panel stack" method="post" data-submit-once>
+  <form class="panel stack av-form-panel" method="post" data-submit-once>
     {% csrf_token %}
 
     {% if form.non_field_errors %}
       <div class="alert alert-danger" role="alert">{{ form.non_field_errors.0 }}</div>
+    {% elif form.errors %}
+      <div class="alert alert-danger" role="alert">
+        Revise os campos destacados abaixo antes de salvar.
+      </div>
     {% endif %}
 
-    <div class="form-group">
-      <label class="form-label" for="{{ form.title.id_for_label }}">Título</label>
-      {{ form.title }}
-      {% for error in form.title.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-    </div>
+    <section class="av-form-section" aria-labelledby="general-title">
+      <fieldset class="fieldset">
+        <legend class="fieldset__legend" id="general-title">Informações gerais</legend>
+        <p class="form-help">Campos marcados com * são obrigatórios.</p>
 
-    <div class="form-group">
-      <label class="form-label" for="{{ form.description.id_for_label }}">Descrição</label>
-      {{ form.description }}
-      {% for error in form.description.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-    </div>
+        <div class="av-form-grid">
+          <div class="form-group form-group--full">
+            <label class="form-label" for="{{ form.title.id_for_label }}">
+              Título{% if form.title.field.required %} <span class="required" aria-hidden="true">*</span>{% endif %}
+            </label>
+            {{ form.title }}
+            {% for error in form.title.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
 
-    <div class="form-group">
-      <label class="form-label" for="{{ form.choices_count.id_for_label }}">
-        Quantidade de escolhas por participante
-      </label>
-      {{ form.choices_count }}
-      <p class="form-help">{{ form.choices_count.help_text }}</p>
-      {% for error in form.choices_count.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-    </div>
+          <div class="form-group form-group--full">
+            <label class="form-label" for="{{ form.description.id_for_label }}">Descrição</label>
+            {{ form.description }}
+            {% for error in form.description.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
 
-    <div class="form-group">
-      <label class="form-label" for="{{ form.catalog_cutoff_date.id_for_label }}">
-        Data de corte do catálogo
-      </label>
-      {{ form.catalog_cutoff_date }}
-      <p class="form-help">{{ form.catalog_cutoff_date.help_text }}</p>
-      {% for error in form.catalog_cutoff_date.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-    </div>
+          <div class="form-group">
+            <label class="form-label" for="{{ form.choices_count.id_for_label }}">
+              Quantidade de escolhas por participante
+              {% if form.choices_count.field.required %}<span class="required" aria-hidden="true">*</span>{% endif %}
+            </label>
+            {{ form.choices_count }}
+            <p class="form-help">{{ form.choices_count.help_text }}</p>
+            {% for error in form.choices_count.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
 
-    <div class="form-group">
-      <label class="form-label" for="{{ form.open_mode.id_for_label }}">Modo de abertura</label>
-      {{ form.open_mode }}
-      <p class="form-help">{{ form.open_mode.help_text }}</p>
-      {% for error in form.open_mode.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-    </div>
+          <div class="form-group">
+            <label class="form-label" for="{{ form.catalog_cutoff_date.id_for_label }}">
+              Data de corte do catálogo
+              {% if form.catalog_cutoff_date.field.required %}<span class="required" aria-hidden="true">*</span>{% endif %}
+            </label>
+            {{ form.catalog_cutoff_date }}
+            <p class="form-help">{{ form.catalog_cutoff_date.help_text }}</p>
+            {% for error in form.catalog_cutoff_date.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+      </fieldset>
+    </section>
 
-    <div class="form-group">
-      <label class="form-label" for="{{ form.opens_at.id_for_label }}">Abertura</label>
-      {{ form.opens_at }}
-      <p class="form-help">{{ form.opens_at.help_text }}</p>
-      {% for error in form.opens_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-    </div>
+    <section class="av-form-section" aria-labelledby="schedule-title">
+      <fieldset class="fieldset">
+        <legend class="fieldset__legend" id="schedule-title">Agendamento</legend>
 
-    <div class="form-group">
-      <label class="form-label" for="{{ form.close_mode.id_for_label }}">Modo de encerramento</label>
-      {{ form.close_mode }}
-      <p class="form-help">{{ form.close_mode.help_text }}</p>
-      {% for error in form.close_mode.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-    </div>
+        <div class="av-form-grid">
+          <div class="form-group">
+            <label class="form-label" for="{{ form.open_mode.id_for_label }}">Modo de abertura</label>
+            {{ form.open_mode }}
+            <p class="form-help">{{ form.open_mode.help_text }}</p>
+            {% for error in form.open_mode.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
 
-    <div class="form-group">
-      <label class="form-label" for="{{ form.closes_at.id_for_label }}">Encerramento</label>
-      {{ form.closes_at }}
-      <p class="form-help">{{ form.closes_at.help_text }}</p>
-      {% for error in form.closes_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-    </div>
+          <div class="form-group">
+            <label class="form-label" for="{{ form.opens_at.id_for_label }}">Abertura</label>
+            {{ form.opens_at }}
+            <p class="form-help">{{ form.opens_at.help_text }}</p>
+            {% for error in form.opens_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="{{ form.close_mode.id_for_label }}">Modo de encerramento</label>
+            {{ form.close_mode }}
+            <p class="form-help">{{ form.close_mode.help_text }}</p>
+            {% for error in form.close_mode.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="{{ form.closes_at.id_for_label }}">Encerramento</label>
+            {{ form.closes_at }}
+            <p class="form-help">{{ form.closes_at.help_text }}</p>
+            {% for error in form.closes_at.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+        </div>
+      </fieldset>
+    </section>
 
     <div class="form-actions">
       <button class="btn btn-primary" type="submit">

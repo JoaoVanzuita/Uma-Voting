@@ -1,20 +1,33 @@
 {% extends "admin/base.html" %}
+{% load ui_tags %}
 
-{% block title %}Elegíveis — {{ voting.title }} — Uma Voting{% endblock %}
+{% block title %}Participantes com acesso — {{ voting.title }} — Uma Voting{% endblock %}
 
-{% block page_title %}Elegíveis — {{ voting.title }}{% endblock %}
+{% block page_title %}Participantes com acesso — {{ voting.title }}{% endblock %}
+
+{% block page_subtitle %}
+  {% status_badge voting.status %}
+{% endblock %}
 
 {% block page_actions %}
   <a class="btn btn-secondary" href="{% url 'admin:voting_detail' voting.pk %}">Voltar</a>
 {% endblock %}
 
 {% block content %}
+  <section class="panel stack" aria-labelledby="summary-title">
+    <h2 id="summary-title" class="visually-hidden">Resumo</h2>
+    <p>
+      <strong>{{ eligibilities|length }}</strong> participante(s) com acesso.
+      A lista pode ser alterada somente enquanto a votação está em rascunho.
+    </p>
+    <p class="text-muted text-small">
+      Participantes cadastrados depois da criação não entram automaticamente. A inclusão
+      e a remoção são congeladas na abertura.
+    </p>
+  </section>
+
   <section class="panel stack" aria-labelledby="add-title">
     <h2 id="add-title">Adicionar elegíveis</h2>
-    <p class="text-muted">
-      Usuários ativos cadastrados depois da criação não entram automaticamente. A lista
-      só pode ser alterada enquanto a votação está em rascunho.
-    </p>
     <form method="post" data-submit-once>
       {% csrf_token %}
       <input type="hidden" name="action" value="add">
@@ -31,55 +44,47 @@
         </div>
       {% else %}
         <div class="empty-state">
-          <p>Todos os usuários ativos já são elegíveis.</p>
+          <p>Todos os participantes ativos já têm acesso.</p>
         </div>
       {% endif %}
     </form>
   </section>
 
   <section class="panel stack" aria-labelledby="current-title">
-    <h2 id="current-title">Elegíveis atuais</h2>
+    <div class="section-header">
+      <h2 id="current-title">Com acesso</h2>
+      <span class="text-small text-muted">{{ eligibilities|length }} participante(s)</span>
+    </div>
+
     {% if eligibilities %}
-      <div class="table-wrap">
-        <table class="table">
-          <caption class="visually-hidden">Participantes elegíveis</caption>
-          <thead>
-            <tr>
-              <th scope="col">Username</th>
-              <th scope="col">Situação</th>
-              <th scope="col" class="table__actions">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for eligibility in eligibilities %}
-              <tr>
-                <td>{{ eligibility.user.username }}</td>
-                <td>
-                  {% if eligibility.user.is_active %}
-                    <span class="badge badge--success">Ativo</span>
-                  {% else %}
-                    <span class="badge badge--danger">Inativo</span>
-                  {% endif %}
-                  {% if eligibility.user.is_admin %}
-                    <span class="badge badge--info">Administrador</span>
-                  {% endif %}
-                </td>
-                <td>
-                  <form class="inline-form" method="post" data-submit-once>
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="remove">
-                    <input type="hidden" name="user_id" value="{{ eligibility.user.pk }}">
-                    <button class="btn btn-danger" type="submit">Remover</button>
-                  </form>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+      <ul class="av-user-list">
+        {% for eligibility in eligibilities %}
+          <li class="av-user-item">
+            <div class="av-user-item__identity">
+              <span class="av-user-item__name">{{ eligibility.user.username }}</span>
+              {% if eligibility.user.is_active %}
+                <span class="badge badge--success">Ativo</span>
+              {% else %}
+                <span class="badge badge--danger">Inativo</span>
+              {% endif %}
+              {% if eligibility.user.is_admin %}
+                <span class="badge badge--info">Administrador</span>
+              {% endif %}
+            </div>
+            <div class="av-user-item__actions">
+              <form class="inline-form" method="post" data-submit-once>
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove">
+                <input type="hidden" name="user_id" value="{{ eligibility.user.pk }}">
+                <button class="btn btn-danger" type="submit">Remover</button>
+              </form>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
     {% else %}
       <div class="empty-state">
-        <p>Nenhum participante elegível. A votação não poderá ser aberta.</p>
+        <p>Nenhum participante com acesso. A votação não poderá ser aberta.</p>
       </div>
     {% endif %}
   </section>

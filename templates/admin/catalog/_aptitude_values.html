@@ -1,0 +1,2 @@
+<span class="text-muted text-small">{% if category == "strategy" %}Estratégia{% elif category == "distance" %}Distância{% elif category == "surface" %}Superfície{% else %}{{ category }}{% endif %}:</span>
+<span>{{ values|join:", " }}</span>

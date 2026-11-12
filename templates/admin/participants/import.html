@@ -4,9 +4,35 @@
 
 {% block page_title %}Importar participantes{% endblock %}
 
+{% block page_subtitle %}
+  <p class="text-muted text-small">Valide o arquivo CSV e confira a prévia antes de importar.</p>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Voltar aos participantes</a>
+{% endblock %}
+
 {% block content %}
-  <section class="panel stack">
-    <p>
+  <ol class="import-steps" aria-label="Etapas da importação">
+    <li
+      class="import-step{% if report and not report.errors %} is-complete{% else %} is-active{% endif %}"
+      {% if not report or report.errors %}aria-current="step"{% endif %}
+    >
+      <span class="import-step__number" aria-hidden="true">1</span>
+      <span class="import-step__label">Validar arquivo</span>
+    </li>
+    <li
+      class="import-step{% if report and report.applied %} is-complete{% elif report and not report.errors %} is-active{% endif %}"
+      {% if report and not report.errors and not report.applied %}aria-current="step"{% endif %}
+    >
+      <span class="import-step__number" aria-hidden="true">2</span>
+      <span class="import-step__label">Conferir prévia e importar</span>
+    </li>
+  </ol>
+
+  <section class="panel stack import-upload" aria-labelledby="upload-title">
+    <h2 id="upload-title" class="catalog-section-title">1. Validar arquivo</h2>
+    <p class="text-muted text-small">
       Envie um arquivo CSV em UTF-8 com uma coluna <code>username</code> e até 1 MB.
       O cabeçalho é opcional. A importação é atômica: qualquer erro impede a gravação.
     </p>
@@ -21,6 +47,7 @@
       <div class="form-group">
         <label class="form-label" for="{{ form.file.id_for_label }}">Arquivo CSV</label>
         {{ form.file }}
+        <p class="form-help">Uma linha por username, sem vírgulas dentro do valor.</p>
         {% for error in form.file.errors %}
           <p class="form-error">{{ error }}</p>
         {% endfor %}
@@ -28,60 +55,149 @@
 
       <div class="form-actions">
         <button class="btn btn-primary" type="submit">Validar arquivo</button>
-        <a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Cancelar</a>
       </div>
     </form>
+
+    {% if report and not report.errors %}
+      <div class="alert alert-success" role="status">
+        Arquivo validado. Nenhum participante foi gravado ainda.
+      </div>
+    {% endif %}
   </section>
 
   {% if report %}
-    <section class="panel stack" aria-labelledby="report-title">
-      <h2 id="report-title">Relatório</h2>
-      <p class="text-muted">
-        {{ report.total_lines }} linha(s) analisada(s);
-        {{ report.valid_rows|length }} válida(s);
-        {{ report.errors|length }} inconsistência(s).
-      </p>
+    {% if report.errors %}
+      <section class="panel stack import-report" aria-labelledby="report-title">
+        <div class="catalog-section-header">
+          <h2 id="report-title" class="catalog-section-title">2. Corrigir arquivo</h2>
+          <span class="badge badge--danger">Revisão necessária</span>
+        </div>
 
-      {% if report.errors %}
+        <div class="import-summary">
+          <div class="import-summary__item">
+            <span class="import-summary__value">{{ report.total_lines }}</span>
+            <span class="import-summary__label">linha(s) analisada(s)</span>
+          </div>
+          <div class="import-summary__item">
+            <span class="import-summary__value">{{ report.valid_rows|length }}</span>
+            <span class="import-summary__label">válida(s)</span>
+          </div>
+          <div class="import-summary__item import-summary__item--danger">
+            <span class="import-summary__value">{{ report.errors|length }}</span>
+            <span class="import-summary__label">inconsistência(s)</span>
+          </div>
+        </div>
+
         <div class="alert alert-danger" role="alert">
           A importação não foi aplicada. Corrija o arquivo e tente novamente.
         </div>
-        <div class="table-wrap">
-          <table class="table">
+
+        <div class="table-wrap admin-data-table-wrap">
+          <table class="table admin-data-table import-issues-table">
+            <caption class="visually-hidden">Linhas com erro na validação do CSV</caption>
             <thead>
               <tr>
                 <th scope="col">Linha</th>
                 <th scope="col">Valor</th>
-                <th scope="col">Erro</th>
+                <th scope="col">Problema</th>
+                <th scope="col">Classificação</th>
               </tr>
             </thead>
             <tbody>
               {% for issue in report.errors %}
                 <tr>
-                  <td>{{ issue.line|default:"—" }}</td>
-                  <td><code>{{ issue.value|default:"—" }}</code></td>
-                  <td>{{ issue.message }}</td>
+                  <td data-label="Linha">{{ issue.line|default:"—" }}</td>
+                  <td data-label="Valor"><code>{{ issue.value|default:"—" }}</code></td>
+                  <td data-label="Problema">{{ issue.message }}</td>
+                  <td data-label="Classificação">
+                    {% if "duplicado" in issue.message %}
+                      <span class="badge badge--warning">Duplicidade no arquivo</span>
+                    {% elif "já existe" in issue.message %}
+                      <span class="badge badge--info">Username já cadastrado</span>
+                    {% else %}
+                      <span class="badge badge--danger">Formato inválido</span>
+                    {% endif %}
+                  </td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
-      {% elif report.applied %}
-        <div class="alert alert-success" role="alert">
-          {{ report.imported_count }} participante(s) importado(s) com sucesso.
+
+        <div class="form-actions">
+          <a class="btn btn-secondary" href="{% url 'admin:participant_import' %}">
+            Enviar outro arquivo
+          </a>
         </div>
-        <p>
+      </section>
+    {% elif report.applied %}
+      <section class="panel stack import-report" aria-labelledby="report-title">
+        <div class="catalog-section-header">
+          <h2 id="report-title" class="catalog-section-title">2. Importação concluída</h2>
+          <span class="badge badge--success">Concluída</span>
+        </div>
+
+        <div class="import-summary">
+          <div class="import-summary__item">
+            <span class="import-summary__value">{{ report.total_lines }}</span>
+            <span class="import-summary__label">linha(s) analisada(s)</span>
+          </div>
+          <div class="import-summary__item import-summary__item--success">
+            <span class="import-summary__value">{{ report.imported_count }}</span>
+            <span class="import-summary__label">participante(s) importado(s)</span>
+          </div>
+        </div>
+
+        <p class="text-muted text-small">
+          Os usernames abaixo já estão disponíveis para acesso.
+        </p>
+        <ul class="plain-list import-preview-list">
+          {% for username in report.valid_rows %}
+            <li><code>{{ username }}</code></li>
+          {% endfor %}
+        </ul>
+
+        <div class="form-actions">
           <a class="btn btn-primary" href="{% url 'admin:participant_list' %}">
             Ver participantes
           </a>
-        </p>
-      {% else %}
-        <h3>Usernames válidos</h3>
-        <ul class="plain-list">
+          <a class="btn btn-secondary" href="{% url 'admin:participant_import' %}">
+            Importar outro arquivo
+          </a>
+        </div>
+      </section>
+    {% else %}
+      <section class="panel stack import-report" aria-labelledby="report-title">
+        <div class="catalog-section-header">
+          <h2 id="report-title" class="catalog-section-title">2. Conferir prévia e importar</h2>
+          <span class="badge badge--success">Pronto para importar</span>
+        </div>
+
+        <div class="import-summary">
+          <div class="import-summary__item">
+            <span class="import-summary__value">{{ report.total_lines }}</span>
+            <span class="import-summary__label">linha(s) analisada(s)</span>
+          </div>
+          <div class="import-summary__item import-summary__item--success">
+            <span class="import-summary__value">{{ report.valid_rows|length }}</span>
+            <span class="import-summary__label">username(s) válido(s)</span>
+          </div>
+          <div class="import-summary__item">
+            <span class="import-summary__value">0</span>
+            <span class="import-summary__label">inconsistência(s)</span>
+          </div>
+        </div>
+
+        <h3 class="catalog-subsection-title">Usernames que serão criados</h3>
+        <ul class="plain-list import-preview-list">
           {% for username in report.valid_rows %}
-            <li>{{ username }}</li>
+            <li><code>{{ username }}</code></li>
           {% endfor %}
         </ul>
+
+        <div class="alert alert-info" role="status">
+          A importação é atômica: todos os usernames acima serão gravados juntos ou nenhum será.
+        </div>
 
         <form method="post" data-submit-once>
           {% csrf_token %}
@@ -95,7 +211,7 @@
             </a>
           </div>
         </form>
-      {% endif %}
-    </section>
+      </section>
+    {% endif %}
   {% endif %}
 {% endblock %}

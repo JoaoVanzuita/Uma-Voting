@@ -6,7 +6,7 @@
 .auth-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
-  gap: var(--space-10, 40px);
+  gap: var(--space-10);
   align-items: center;
   width: min(100% - 2 * var(--space-4), 960px);
   min-height: 100vh;
@@ -54,7 +54,7 @@
   border-left: 3px solid var(--color-warning);
   border-radius: var(--radius-control);
   background-color: var(--color-warning-soft);
-  color: #6f4c17;
+  color: var(--color-warning-ink);
   font-size: var(--font-size-small);
 }
 
@@ -187,13 +187,13 @@
   width: 56px;
   height: 56px;
   border-radius: var(--radius-control);
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
 }
 
 .review-item__media img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .review-item__name {
@@ -247,43 +247,6 @@
 }
 
 /* Dashboard administrativo ------------------------------------------------ */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
-  gap: var(--space-3);
-  margin-bottom: var(--space-6);
-}
-
-.stat-card {
-  padding: var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  background-color: var(--color-white);
-}
-
-.stat-card__label {
-  color: var(--color-muted);
-  font-size: var(--font-size-small);
-  font-weight: var(--font-weight-medium);
-}
-
-.stat-card__value {
-  display: block;
-  margin-top: var(--space-1);
-  font-size: 1.75rem;
-  font-weight: var(--font-weight-bold);
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-
-.stat-card--warning .stat-card__value {
-  color: var(--color-warning);
-}
-
-.stat-card--danger .stat-card__value {
-  color: var(--color-danger);
-}
-
 .section-header {
   display: flex;
   flex-wrap: wrap;
@@ -313,7 +276,7 @@
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-control);
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
 }
 
 .image-thumb img {
@@ -328,7 +291,7 @@
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
 }
 
 .diff-list {

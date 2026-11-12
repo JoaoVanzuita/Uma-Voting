@@ -13,42 +13,59 @@
 {% endblock %}
 
 {% block content %}
+  {% regroup rows|dictsort:"voted" by voted as vote_groups %}
+
+  <section class="av-metrics" aria-labelledby="summary-title">
+    <h2 id="summary-title" class="visually-hidden">Resumo da participação</h2>
+    <div class="stats-grid">
+      <section class="stat-card">
+        <p class="stat-card__label">Participantes com acesso</p>
+        <p class="stat-card__value">{{ eligible_count }}</p>
+      </section>
+      <section class="stat-card">
+        <p class="stat-card__label">Votaram</p>
+        <p class="stat-card__value">{{ voted_count }}</p>
+      </section>
+      <section class="stat-card">
+        <p class="stat-card__label">Pendentes</p>
+        <p class="stat-card__value">
+          {% if voted_count == eligible_count %}
+            0
+          {% else %}
+            {% for group in vote_groups %}{% if not group.grouper %}{{ group.list|length }}{% endif %}{% endfor %}
+          {% endif %}
+        </p>
+      </section>
+    </div>
+    <p class="text-muted text-small">
+      Esta visão mostra apenas username e situação de voto; nenhuma escolha individual é
+      exibida.
+    </p>
+  </section>
+
   <section class="panel stack" aria-labelledby="participation-title">
-    <h2 id="participation-title">Quem votou</h2>
-    <p>
-      {{ voted_count }} de {{ eligible_count }} participante(s) elegível(is) votaram.
-    </p>
-    <p class="text-muted">
-      Esta visão mostra apenas username e situação de voto; nenhuma escolha individual
-      é exibida.
-    </p>
+    <div class="section-header">
+      <h2 id="participation-title">Quem votou</h2>
+      <span class="text-small text-muted">{{ voted_count }} de {{ eligible_count }} voto(s)</span>
+    </div>
 
     {% if rows %}
-      <div class="table-wrap">
-        <table class="table">
-          <caption class="visually-hidden">Participação dos elegíveis</caption>
-          <thead>
-            <tr>
-              <th scope="col">Username</th>
-              <th scope="col">Situação</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in rows %}
-              <tr>
-                <td>{{ row.username }}</td>
-                <td>
-                  {% if row.voted %}
-                    <span class="badge badge--success">Votou</span>
-                  {% else %}
-                    <span class="badge badge--neutral">Não votou</span>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+      <ul class="av-user-list">
+        {% for row in rows %}
+          <li class="av-user-item">
+            <div class="av-user-item__identity">
+              <span class="av-user-item__name">{{ row.username }}</span>
+            </div>
+            <div class="av-user-item__actions">
+              {% if row.voted %}
+                <span class="badge badge--success">Votou</span>
+              {% else %}
+                <span class="badge badge--neutral" aria-label="Não votou">Pendente</span>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
     {% else %}
       <div class="empty-state">
         <p>Nenhum participante elegível.</p>

@@ -16,33 +16,37 @@
     <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
   </div>
 
-  <section class="panel stack" aria-labelledby="answered-title">
-    <h2 id="answered-title">Respondidas</h2>
+  <section class="panel history-section" aria-labelledby="answered-title">
+    <div class="history-section__header">
+      <h2 id="answered-title">Respondidas</h2>
+      <span class="badge badge--neutral">{{ answered|length }}</span>
+    </div>
+
     {% if answered %}
-      <ul class="voting-list">
+      <ul class="voting-list voting-list--history">
         {% for voting in answered %}
           <li>
-            <article class="card voting-card">
+            <article class="card voting-card voting-card--{{ voting.status }}">
               <div class="card__body">
-                <div class="card__meta">
+                <div class="voting-card__top">
                   {% status_badge voting.status %}
-                  <span>{{ voting.choices_count }} escolhas</span>
+                  <span class="voting-card__choices">{{ voting.choices_count }} escolhas</span>
                 </div>
                 <h3 class="card__title voting-card__title">{{ voting.title }}</h3>
                 {% if voting.closed_at %}
-                  <p class="text-muted">Encerrada em {{ voting.closed_at|datetime_br }}</p>
+                  <p class="voting-card__date">Encerrada em {{ voting.closed_at|datetime_br }}</p>
                 {% endif %}
                 <div class="card__actions">
                   {% if voting.status == "open" %}
                     <a class="btn btn-primary" href="{% url 'participant:ballot' voting.pk %}">
-                      Ver minha cédula
+                      Ver meu voto
                     </a>
                   {% else %}
                     <a class="btn btn-primary" href="{% url 'participant:result' voting.pk %}">
                       Ver resultado
                     </a>
                     <a class="btn btn-secondary" href="{% url 'participant:ballot' voting.pk %}">
-                      Minha cédula
+                      Meu voto
                     </a>
                   {% endif %}
                 </div>
@@ -58,21 +62,28 @@
     {% endif %}
   </section>
 
-  <section class="panel stack" aria-labelledby="closed-title">
-    <h2 id="closed-title">Encerradas sem resposta</h2>
+  <section class="panel history-section" aria-labelledby="closed-title">
+    <div class="history-section__header">
+      <h2 id="closed-title">Encerradas sem voto</h2>
+      <span class="badge badge--neutral">{{ closed_without_ballot|length }}</span>
+    </div>
+    <p class="text-muted">
+      Encerradas sem resposta para as quais você era elegível.
+    </p>
+
     {% if closed_without_ballot %}
-      <ul class="voting-list">
+      <ul class="voting-list voting-list--history">
         {% for voting in closed_without_ballot %}
           <li>
-            <article class="card voting-card">
+            <article class="card voting-card voting-card--{{ voting.status }}">
               <div class="card__body">
-                <div class="card__meta">
+                <div class="voting-card__top">
                   {% status_badge voting.status %}
-                  <span>{{ voting.choices_count }} escolhas</span>
+                  <span class="voting-card__choices">{{ voting.choices_count }} escolhas</span>
                 </div>
                 <h3 class="card__title voting-card__title">{{ voting.title }}</h3>
-                <p class="text-muted">
-                  Encerrada em {{ voting.closed_at|datetime_br }}. Você não registrou cédula.
+                <p class="voting-card__date">
+                  Encerrada em {{ voting.closed_at|datetime_br }}. Você não registrou voto.
                 </p>
                 <div class="card__actions">
                   <a class="btn btn-secondary" href="{% url 'participant:result' voting.pk %}">

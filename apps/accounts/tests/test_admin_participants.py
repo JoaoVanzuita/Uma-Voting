@@ -31,7 +31,7 @@ def test_lista_mostra_participantes_e_administrador_read_only(client):
     assert "SpecialWeek" in html
     assert "AdminUser" in html
     assert "Administrador — somente leitura" in html
-    assert "Read-only" in html
+    assert "Somente leitura" in html
 
 
 def test_lista_pesquisa_por_username(client):

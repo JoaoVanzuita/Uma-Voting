@@ -11,10 +11,10 @@
 {% endblock %}
 
 {% block content %}
-  <form class="filters" method="get" role="search">
+  <form class="filters participant-filters" method="get" role="search">
     <div class="filters__row">
       <div class="filters__search form-group">
-        <label class="form-label" for="participant-search">Pesquisar por username</label>
+        <label class="form-label" for="participant-search">Buscar por username</label>
         <input
           id="participant-search"
           class="form-control"
@@ -25,16 +25,16 @@
           autocomplete="off"
         >
       </div>
-      <button class="btn btn-secondary" type="submit">Pesquisar</button>
+      <button class="btn btn-secondary" type="submit">Buscar</button>
       {% if query %}
-        <a class="filters__clear" href="{% url 'admin:participant_list' %}">Limpar</a>
+        <a class="filters__clear" href="{% url 'admin:participant_list' %}">Limpar busca</a>
       {% endif %}
     </div>
   </form>
 
   {% if participants %}
-    <div class="table-wrap">
-      <table class="table">
+    <div class="table-wrap admin-data-table-wrap">
+      <table class="table admin-data-table participant-table">
         <caption class="visually-hidden">Lista de participantes</caption>
         <thead>
           <tr>
@@ -46,23 +46,23 @@
         <tbody>
           {% for participant in participants %}
             <tr>
-              <td>
-                {{ participant.username }}
+              <td data-label="Username">
+                <span class="participant-name">{{ participant.username }}</span>
                 {% if participant.is_admin %}
                   <span class="badge badge--info">Administrador — somente leitura</span>
                 {% endif %}
               </td>
-              <td>
+              <td data-label="Situação">
                 {% if participant.is_active %}
                   <span class="badge badge--success">Ativo</span>
                 {% else %}
                   <span class="badge badge--danger">Inativo</span>
                 {% endif %}
               </td>
-              <td>
+              <td data-label="Ações">
                 <div class="table__actions">
                   {% if participant.is_admin %}
-                    <span class="text-muted text-small">Read-only</span>
+                    <span class="text-muted text-small">Somente leitura</span>
                   {% else %}
                     <a
                       class="btn btn-tertiary"
@@ -89,7 +89,20 @@
   {% else %}
     <div class="empty-state">
       <h2>Nenhum participante encontrado</h2>
-      <p>{% if query %}Tente outro termo de pesquisa.{% else %}Cadastre o primeiro participante.{% endif %}</p>
+      <p>
+        {% if query %}
+          Nenhum username corresponde a “{{ query }}”. Tente outro termo de busca.
+        {% else %}
+          Cadastre o primeiro participante ou importe uma lista por CSV.
+        {% endif %}
+      </p>
+      {% if query %}
+        <p><a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Limpar busca</a></p>
+      {% else %}
+        <p>
+          <a class="btn btn-primary" href="{% url 'admin:participant_create' %}">Novo participante</a>
+        </p>
+      {% endif %}
     </div>
   {% endif %}
 {% endblock %}

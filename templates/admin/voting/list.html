@@ -35,64 +35,70 @@
       </div>
       <button class="btn btn-secondary" type="submit">Filtrar</button>
       {% if query or status %}
-        <a class="filters__clear" href="{% url 'admin:voting_list' %}">Limpar</a>
+        <a class="filters__clear" href="{% url 'admin:voting_list' %}">Limpar filtros</a>
       {% endif %}
     </div>
   </form>
 
   {% if votings %}
-    <div class="table-wrap">
-      <table class="table">
-        <caption class="visually-hidden">Lista de votações</caption>
-        <thead>
-          <tr>
-            <th scope="col">Título</th>
-            <th scope="col">Estado</th>
-            <th scope="col">Escolhas</th>
-            <th scope="col">Corte</th>
-            <th scope="col">Abertura</th>
-            <th scope="col">Encerramento</th>
-            <th scope="col" class="table__actions">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for voting in votings %}
-            <tr>
-              <td>
-                <a href="{% url 'admin:voting_detail' voting.pk %}">{{ voting.title }}</a>
-              </td>
-              <td>{% status_badge voting.status %}</td>
-              <td>{{ voting.choices_count }}</td>
-              <td>{{ voting.catalog_cutoff_date|date_br }}</td>
-              <td>
+    <ul class="av-voting-list">
+      {% for voting in votings %}
+        <li class="av-voting-item">
+          <div class="av-voting-item__head">
+            <a class="av-voting-item__title" href="{% url 'admin:voting_detail' voting.pk %}">
+              {{ voting.title }}
+            </a>
+            {% status_badge voting.status %}
+          </div>
+
+          <dl class="av-meta">
+            <div>
+              <dt>Escolhas por participante</dt>
+              <dd>{{ voting.choices_count }}</dd>
+            </div>
+            <div>
+              <dt>Data de corte</dt>
+              <dd>{{ voting.catalog_cutoff_date|date_br }}</dd>
+            </div>
+            <div>
+              <dt>Abertura</dt>
+              <dd>
                 {{ voting.get_open_mode_display }}
                 {% if voting.opens_at %}<br>{{ voting.opens_at|datetime_br }}{% endif %}
-              </td>
-              <td>
+              </dd>
+            </div>
+            <div>
+              <dt>Encerramento</dt>
+              <dd>
                 {{ voting.get_close_mode_display }}
                 {% if voting.closes_at %}<br>{{ voting.closes_at|datetime_br }}{% endif %}
-              </td>
-              <td>
-                <div class="table__actions">
-                  <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
-                    Detalhes
-                  </a>
-                  {% if voting.status == "draft" %}
-                    <a class="btn btn-secondary" href="{% url 'admin:voting_edit' voting.pk %}">
-                      Editar
-                    </a>
-                  {% endif %}
-                </div>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+              </dd>
+            </div>
+          </dl>
+
+          <div class="av-voting-item__actions">
+            <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
+              Detalhes
+            </a>
+            {% if voting.status == "draft" %}
+              <a class="btn btn-secondary" href="{% url 'admin:voting_edit' voting.pk %}">
+                Editar
+              </a>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
   {% else %}
     <div class="empty-state">
       <h2>Nenhuma votação encontrada</h2>
-      <p>Crie a primeira votação ou ajuste os filtros.</p>
+      {% if query or status %}
+        <p>Nenhum resultado para os filtros atuais.</p>
+        <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Limpar filtros</a>
+      {% else %}
+        <p>Crie a primeira votação para começar.</p>
+        <a class="btn btn-primary" href="{% url 'admin:voting_create' %}">Nova votação</a>
+      {% endif %}
     </div>
   {% endif %}
 {% endblock %}

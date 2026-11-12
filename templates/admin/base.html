@@ -1,44 +1,126 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block body_class %}layout-admin{% endblock %}
 
 {% block body %}
   <div class="admin-shell">
-    <aside class="admin-sidebar">
-      <a class="brand" href="{% url 'admin:dashboard' %}">
-        Uma Voting
-        <small>Administração</small>
-      </a>
+    <aside class="admin-sidebar" id="admin-sidebar" aria-label="Menu administrativo">
+      <div class="admin-sidebar__header">
+        <a class="brand" href="{% url 'admin:dashboard' %}">
+          Uma Voting
+          <small>Administração</small>
+        </a>
+        <button
+          class="btn btn-tertiary admin-drawer__close"
+          type="button"
+          data-admin-drawer-close
+          aria-label="Fechar menu administrativo"
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="{% static 'vendor/lucide/sprite.svg' %}#x"></use>
+          </svg>
+        </button>
+      </div>
 
       <nav class="admin-nav" aria-label="Navegação administrativa">
-        <a class="admin-nav__link" href="{% url 'admin:dashboard' %}" {% if request.resolver_match.url_name == "dashboard" %}aria-current="page"{% endif %}>Dashboard</a>
-        <a class="admin-nav__link" href="{% url 'admin:participant_list' %}" {% if request.resolver_match.url_name == "participant_list" %}aria-current="page"{% endif %}>Participantes</a>
-        <a class="admin-nav__link" href="{% url 'admin:catalog_status' %}" {% if request.resolver_match.url_name == "catalog_status" %}aria-current="page"{% endif %}>Catálogo</a>
-        <a class="admin-nav__link" href="{% url 'admin:voting_list' %}" {% if request.resolver_match.url_name == "voting_list" %}aria-current="page"{% endif %}>Votações</a>
+        <a
+          class="admin-nav__link"
+          href="{% url 'admin:dashboard' %}"
+          {% if request.resolver_match.url_name == "dashboard" %}aria-current="page"{% endif %}
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="{% static 'vendor/lucide/sprite.svg' %}#layout-dashboard"></use>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a
+          class="admin-nav__link"
+          href="{% url 'admin:participant_list' %}"
+          {% if "participant" in request.resolver_match.url_name %}aria-current="page"{% endif %}
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="{% static 'vendor/lucide/sprite.svg' %}#users"></use>
+          </svg>
+          <span>Participantes</span>
+        </a>
+        <a
+          class="admin-nav__link"
+          href="{% url 'admin:catalog_status' %}"
+          {% if "catalog" in request.resolver_match.url_name %}aria-current="page"{% endif %}
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="{% static 'vendor/lucide/sprite.svg' %}#library"></use>
+          </svg>
+          <span>Catálogo</span>
+        </a>
+        <a
+          class="admin-nav__link"
+          href="{% url 'admin:voting_list' %}"
+          {% if "voting" in request.resolver_match.url_name %}aria-current="page"{% endif %}
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="{% static 'vendor/lucide/sprite.svg' %}#vote"></use>
+          </svg>
+          <span>Votações</span>
+        </a>
       </nav>
 
       <div class="admin-sidebar__footer">
         {% if request.user.is_authenticated %}
-          <span class="user-chip">{{ request.user.username }}</span>
+          <span class="user-chip">
+            <svg class="icon icon--sm" aria-hidden="true">
+              <use href="{% static 'vendor/lucide/sprite.svg' %}#user-round"></use>
+            </svg>
+            {{ request.user.username }}
+          </span>
           <form class="inline-form" method="post" action="{% url 'admin:participant_mode' %}">
             {% csrf_token %}
-            <button class="btn btn-tertiary" type="submit">Modo participante</button>
+            <button class="btn btn-tertiary" type="submit">
+              <svg class="icon icon--sm" aria-hidden="true">
+                <use href="{% static 'vendor/lucide/sprite.svg' %}#user-round"></use>
+              </svg>
+              Modo participante
+            </button>
           </form>
           <form class="inline-form" method="post" action="{% url 'admin:logout' %}">
             {% csrf_token %}
-            <button class="btn btn-tertiary" type="submit">Sair</button>
+            <button class="btn btn-tertiary" type="submit">
+              <svg class="icon icon--sm" aria-hidden="true">
+                <use href="{% static 'vendor/lucide/sprite.svg' %}#log-out"></use>
+              </svg>
+              Sair
+            </button>
           </form>
         {% endif %}
       </div>
     </aside>
 
+    <div class="admin-drawer-overlay" data-admin-drawer-overlay aria-hidden="true" hidden></div>
+
     <div class="admin-main">
       <header class="admin-topbar">
-        <div>
+        <button
+          class="btn btn-tertiary admin-menu-button"
+          type="button"
+          data-admin-drawer-open
+          aria-controls="admin-sidebar"
+          aria-expanded="false"
+          aria-label="Abrir menu administrativo"
+        >
+          <svg class="icon" aria-hidden="true">
+            <use href="{% static 'vendor/lucide/sprite.svg' %}#menu"></use>
+          </svg>
+        </button>
+
+        <div class="admin-topbar__heading">
           <h1 class="h2">{% block page_title %}Administração{% endblock %}</h1>
           {% block page_subtitle %}{% endblock %}
         </div>
-        {% block page_actions %}{% endblock %}
+
+        <div class="admin-topbar__actions">
+          {% block page_actions %}{% endblock %}
+        </div>
       </header>
 
       {% include "components/messages.html" %}

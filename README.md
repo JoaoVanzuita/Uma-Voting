@@ -34,11 +34,49 @@ uv sync
 docker compose up --build
 ```
 
-Sem Docker:
+### Django fora do Docker
+
+Use o script quando quiser rodar o Django no host com auto-reload, mantendo o PostgreSQL no
+Docker Compose. Não mantenha o serviço `web` do Compose rodando na mesma porta; se ele estiver
+ativo, o navegador pode continuar exibindo a versão do container.
+
+```bash
+./scripts/dev.sh
+```
+
+O script:
+
+1. carrega o `.env`;
+2. sobe apenas o serviço `db` do Compose, se necessário;
+3. detecta o IP do container PostgreSQL ou usa um PostgreSQL local/`DATABASE_URL`;
+4. executa `migrate`, `createcachetable` e `check`;
+5. inicia `runserver` em `http://localhost:8000/` com auto-reload.
+
+Opções:
+
+```bash
+DEV_PORT=8001 ./scripts/dev.sh          # outra porta
+./scripts/dev.sh --port 8001            # equivalente
+./scripts/dev.sh --stop-web             # para web/scheduler do Compose antes de iniciar
+./scripts/dev.sh --no-migrate           # não executa migrations
+./scripts/dev.sh --help
+```
+
+Se a porta 8000 estiver ocupada pelo container `web`, pare os serviços de aplicação:
+
+```bash
+docker compose stop web scheduler
+```
+
+Também é possível usar um PostgreSQL local, sem Docker:
 
 ```bash
 uv sync
-export DATABASE_URL=postgres://uma_voting:uma_voting@localhost:5432/uma_voting
+export POSTGRES_HOST=127.0.0.1
+export POSTGRES_PORT=5432
+export POSTGRES_DB=uma_voting
+export POSTGRES_USER=uma_voting
+export POSTGRES_PASSWORD=uma_voting
 uv run python manage.py migrate
 uv run python manage.py create_admin --username admin
 uv run python manage.py runserver
@@ -102,6 +140,8 @@ Consulte `docs/security-review.md` e `docs/governance-notes.md`.
 
 ## Documentação
 
+- Funcionalidades: `docs/functionalities.md`
+- Inventário de telas: `docs/screen-inventory.md`
 - Especificação: `specs/001-character-ban-voting/spec.md`
 - Plano técnico: `specs/001-character-ban-voting/plan.md`
 - Tarefas: `specs/001-character-ban-voting/tasks.md`

@@ -3,13 +3,18 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
     <title>{% block title %}Uma Voting{% endblock %}</title>
     <meta name="description" content="Votações de banimento de personagens da comunidade.">
+    <link rel="icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     <link rel="stylesheet" href="{% static 'css/pages.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pages-participant.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pages-admin-voting.css' %}">
+    <link rel="stylesheet" href="{% static 'css/pages-admin-catalog.css' %}">
     {% block extra_css %}{% endblock %}
   </head>
   <body class="{% block body_class %}{% endblock %}">

@@ -11,169 +11,304 @@
 
 {% block page_actions %}
   <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Voltar</a>
-  {% if voting.status == "open" or voting.status == "closed" %}
-    <a class="btn btn-secondary" href="{% url 'admin:voting_results' voting.pk %}">
-      Resultados
-    </a>
-    <a class="btn btn-secondary" href="{% url 'admin:voting_participation' voting.pk %}">
-      Participação
-    </a>
-  {% endif %}
   {% if can_edit %}
     <a class="btn btn-secondary" href="{% url 'admin:voting_edit' voting.pk %}">Editar</a>
-    <a class="btn btn-secondary" href="{% url 'admin:voting_eligible' voting.pk %}">
-      Gerenciar elegíveis
-    </a>
   {% endif %}
 {% endblock %}
 
 {% block content %}
-  <section class="panel stack" aria-labelledby="config-title">
-    <h2 id="config-title">Configuração</h2>
-    <dl class="definition-list">
-      <dt>Descrição</dt><dd>{{ voting.description|default:"—"|linebreaksbr }}</dd>
-      <dt>Escolhas por participante</dt><dd>{{ voting.choices_count }}</dd>
-      <dt>Data de corte do catálogo</dt><dd>{{ voting.catalog_cutoff_date|date_br }}</dd>
-      <dt>Modo de abertura</dt><dd>{{ voting.get_open_mode_display }}</dd>
-      <dt>Abertura</dt><dd>{{ voting.opens_at|datetime_br }}</dd>
-      <dt>Modo de encerramento</dt><dd>{{ voting.get_close_mode_display }}</dd>
-      <dt>Encerramento</dt><dd>{{ voting.closes_at|datetime_br }}</dd>
-      <dt>Criada por</dt><dd>{{ voting.created_by.username }}</dd>
-      <dt>Criada em</dt><dd>{{ voting.created_at|datetime_br }}</dd>
-    </dl>
+  <section class="av-metrics" aria-labelledby="metrics-title">
+    <h2 id="metrics-title" class="visually-hidden">Indicadores da votação</h2>
+    <div class="stats-grid">
+      <section class="stat-card">
+        <p class="stat-card__label">Participantes com acesso</p>
+        <p class="stat-card__value">{{ eligible_count }}</p>
+        {% if can_edit %}
+          <a class="text-small" href="{% url 'admin:voting_eligible' voting.pk %}">Gerenciar acesso</a>
+        {% elif voting.status == "open" or voting.status == "closed" %}
+          <a class="text-small" href="{% url 'admin:voting_participation' voting.pk %}">Ver participação</a>
+        {% endif %}
+      </section>
+      <section class="stat-card">
+        <p class="stat-card__label">Votos registrados</p>
+        <p class="stat-card__value">{{ ballot_count }}</p>
+        {% if voting.status == "open" or voting.status == "closed" %}
+          <a class="text-small" href="{% url 'admin:voting_participation' voting.pk %}">Ver participação</a>
+        {% endif %}
+      </section>
+      <section class="stat-card">
+        <p class="stat-card__label">Escolhas por voto</p>
+        <p class="stat-card__value">{{ voting.choices_count }}</p>
+      </section>
+      <section class="stat-card">
+        <p class="stat-card__label">Data de corte</p>
+        <p class="stat-card__value stat-card__value--text">
+          {{ voting.catalog_cutoff_date|date_br }}
+        </p>
+      </section>
+    </div>
   </section>
 
-  <section class="panel stack" aria-labelledby="preconditions-title">
-    <h2 id="preconditions-title">Pré-condições de abertura</h2>
-    <ul class="plain-list">
-      <li>
-        Participantes elegíveis:
-        <strong>{{ preconditions.eligible_count }}</strong>
-        {% if preconditions.has_eligible %}
-          <span class="badge badge--success">OK</span>
+  {% if voting.status == "draft" %}
+    <section class="panel stack" aria-labelledby="preconditions-title">
+      <div class="section-header">
+        <h2 id="preconditions-title">Pré-condições de abertura</h2>
+        {% if preconditions.ok %}
+          <span class="badge badge--success">Pronto para abrir</span>
         {% else %}
-          <span class="badge badge--danger">Insuficiente</span>
+          <span class="badge badge--warning">Pendências</span>
         {% endif %}
-      </li>
-      <li>
-        Personagens elegíveis no catálogo:
-        <strong>{{ preconditions.catalog_count }}</strong>
-        de <strong>{{ preconditions.choices_count }}</strong> necessária(s)
-        {% if preconditions.has_catalog %}
-          <span class="badge badge--success">OK</span>
-        {% else %}
-          <span class="badge badge--danger">Insuficiente</span>
-        {% endif %}
-      </li>
-      <li>
-        Janela de encerramento:
-        {% if preconditions.window_open %}
-          <span class="badge badge--success">Disponível</span>
-        {% else %}
-          <span class="badge badge--danger">Expirada</span>
-        {% endif %}
-      </li>
-    </ul>
-    {% if not preconditions.ok %}
-      <div class="alert alert-warning" role="alert">
-        A votação não pode ser aberta enquanto as pré-condições não forem atendidas.
       </div>
-    {% endif %}
-  </section>
 
-  <section class="panel stack" aria-labelledby="participation-title">
-    <h2 id="participation-title">Participação</h2>
-    <p>
-      {{ eligible_count }} participante(s) elegível(is);
-      {{ ballot_count }} cédula(s) registrada(s).
-    </p>
-    {% if can_edit %}
-      <p>
-        <a class="btn btn-secondary" href="{% url 'admin:voting_eligible' voting.pk %}">
-          Ajustar elegíveis
-        </a>
-      </p>
-    {% endif %}
+      <ul class="av-check-list">
+        <li class="av-check {% if preconditions.has_eligible %}av-check--success{% else %}av-check--warning{% endif %}">
+          <div class="av-check__body">
+            <p class="av-check__title">Participantes com acesso</p>
+            <p class="av-check__meta">
+              {{ preconditions.eligible_count }} participante(s) com acesso. É necessário ao menos um.
+            </p>
+          </div>
+          {% if preconditions.has_eligible %}
+            <span class="badge badge--success av-check__state">Atendido</span>
+          {% else %}
+            <span class="badge badge--warning av-check__state">Pendente</span>
+          {% endif %}
+        </li>
 
-    {% if ballots %}
-      <div class="table-wrap">
-        <table class="table">
-          <caption class="visually-hidden">Cédulas registradas</caption>
-          <thead>
-            <tr>
-              <th scope="col">Participante</th>
-              <th scope="col">Registrada em</th>
-              <th scope="col" class="table__actions">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for ballot in ballots %}
-              <tr>
-                <td>{{ ballot.participant.username }}</td>
-                <td>{{ ballot.created_at|datetime_br }}</td>
-                <td>
-                  {% if can_close %}
-                    <form
-                      class="inline-form"
-                      method="post"
-                      action="{% url 'admin:ballot_delete' voting.pk ballot.participant_id %}"
-                      data-confirm="Excluir a cédula deste participante? Ele poderá votar novamente."
-                      data-submit-once
-                    >
-                      {% csrf_token %}
-                      <button class="btn btn-danger" type="submit">Excluir cédula</button>
-                    </form>
-                  {% else %}
-                    <span class="text-muted text-small">Somente com votação aberta</span>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        <li class="av-check {% if preconditions.has_catalog %}av-check--success{% else %}av-check--warning{% endif %}">
+          <div class="av-check__body">
+            <p class="av-check__title">Personagens disponíveis</p>
+            <p class="av-check__meta">
+              {{ preconditions.catalog_count }} de {{ preconditions.choices_count }} necessária(s)
+              no catálogo elegível.
+            </p>
+          </div>
+          {% if preconditions.has_catalog %}
+            <span class="badge badge--success av-check__state">Atendido</span>
+          {% else %}
+            <span class="badge badge--warning av-check__state">Pendente</span>
+          {% endif %}
+        </li>
+
+        <li class="av-check {% if preconditions.window_open %}av-check--success{% else %}av-check--warning{% endif %}">
+          <div class="av-check__body">
+            <p class="av-check__title">Janela de encerramento</p>
+            <p class="av-check__meta">
+              {% if preconditions.window_open %}
+                O prazo de encerramento ainda não foi atingido.
+              {% else %}
+                O prazo de encerramento já passou. Ajuste a data antes de abrir.
+              {% endif %}
+            </p>
+          </div>
+          {% if preconditions.window_open %}
+            <span class="badge badge--success av-check__state">Dentro do prazo</span>
+          {% else %}
+            <span class="badge badge--warning av-check__state">Expirada</span>
+          {% endif %}
+        </li>
+      </ul>
+
+      {% if not preconditions.ok %}
+        <div class="alert alert-warning" role="alert">
+          A votação não pode ser aberta enquanto as pré-condições não forem atendidas.
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="panel av-action-panel av-action-panel--primary" aria-labelledby="primary-action-title">
+      <h2 id="primary-action-title">Próximo passo</h2>
+      {% if can_open %}
+        <p>A abertura manual congela os participantes com acesso e o catálogo, e cria os snapshots.</p>
+        <form
+          method="post"
+          action="{% url 'admin:voting_open' voting.pk %}"
+          data-confirm="Abrir a votação agora? Os elegíveis e o catálogo serão congelados."
+          data-submit-once
+        >
+          {% csrf_token %}
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Abrir votação</button>
+          </div>
+        </form>
+      {% elif can_edit and voting.open_mode == "automatic" %}
+        <p>
+          Esta votação abre automaticamente em
+          <strong>{{ voting.opens_at|datetime_br }}</strong>. Ao agendar, a configuração
+          e os participantes com acesso ficam bloqueados.
+        </p>
+        <form method="post" action="{% url 'admin:voting_schedule' voting.pk %}" data-submit-once>
+          {% csrf_token %}
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit" {% if not preconditions.ok %}disabled{% endif %}>
+              Agendar votação
+            </button>
+          </div>
+          {% if not preconditions.ok %}
+            <p class="text-muted">Atenda às pré-condições para agendar.</p>
+          {% endif %}
+        </form>
+      {% elif can_edit %}
+        <p class="text-muted">
+          Abertura manual: a configuração pode ser editada e os participantes com acesso
+          ajustados até a abertura explícita.
+        </p>
+      {% endif %}
+    </section>
+
+  {% elif voting.status == "scheduled" %}
+    <section class="panel stack" aria-labelledby="monitoring-title">
+      <div class="section-header">
+        <h2 id="monitoring-title">Acompanhamento</h2>
+        <span class="badge badge--info">Abertura automática</span>
       </div>
-    {% endif %}
-  </section>
-
-  <section class="panel stack" aria-labelledby="actions-title">
-    <h2 id="actions-title">Ações</h2>
-
-    {% if can_open %}
-      <p>
-        A abertura manual congela os elegíveis e o catálogo e cria os snapshots.
-      </p>
-      <form
-        method="post"
-        action="{% url 'admin:voting_open' voting.pk %}"
-        data-confirm="Abrir a votação agora? Os elegíveis e o catálogo serão congelados."
-        data-submit-once
-      >
-        {% csrf_token %}
-        <button class="btn btn-primary" type="submit">Abrir votação</button>
-      </form>
-    {% elif can_edit and voting.open_mode == "automatic" %}
       <p>
         Esta votação abre automaticamente em
-        <strong>{{ voting.opens_at|datetime_br }}</strong>. Ao agendar, a configuração
-        e os elegíveis ficam bloqueados.
+        <strong>{{ voting.opens_at|datetime_br }}</strong>.
       </p>
-      <form method="post" action="{% url 'admin:voting_schedule' voting.pk %}" data-submit-once>
-        {% csrf_token %}
-        <button class="btn btn-primary" type="submit" {% if not preconditions.ok %}disabled{% endif %}>
-          Agendar votação
-        </button>
-        {% if not preconditions.ok %}
-          <span class="text-muted">Atenda às pré-condições para agendar.</span>
-        {% endif %}
-      </form>
-    {% elif can_edit %}
       <p class="text-muted">
-        Abertura manual: a configuração pode ser editada e os elegíveis ajustados até a
-        abertura explícita.
+        A configuração e os participantes com acesso ficam congelados até a abertura.
       </p>
-    {% endif %}
+      <dl class="av-meta">
+        <div>
+          <dt>Abertura prevista</dt>
+          <dd>{{ voting.opens_at|datetime_br }}</dd>
+        </div>
+        <div>
+          <dt>Encerramento previsto</dt>
+          <dd>{{ voting.closes_at|datetime_br }}</dd>
+        </div>
+        <div>
+          <dt>Participantes com acesso</dt>
+          <dd>{{ eligible_count }}</dd>
+        </div>
+      </dl>
+    </section>
 
-    {% if can_close %}
+  {% elif voting.status == "open" %}
+    <section class="panel stack" aria-labelledby="monitoring-title">
+      <div class="section-header">
+        <h2 id="monitoring-title">Acompanhamento</h2>
+        <span class="badge badge--success">Em andamento</span>
+      </div>
+      <p>
+        {{ ballot_count }} voto(s) registrado(s) de {{ eligible_count }} participante(s)
+        com acesso.
+      </p>
+      <p class="text-muted">
+        Os resultados são somente agregados; nenhuma escolha individual é exibida.
+      </p>
+      <div class="cluster">
+        <a class="btn btn-secondary" href="{% url 'admin:voting_results' voting.pk %}">
+          Ver resultados parciais
+        </a>
+        <a class="btn btn-secondary" href="{% url 'admin:voting_participation' voting.pk %}">
+          Acompanhar participação
+        </a>
+      </div>
+    </section>
+
+  {% elif voting.status == "closed" %}
+    <section class="panel stack" aria-labelledby="official-result-title">
+      <div class="section-header">
+        <h2 id="official-result-title">Resultado oficial</h2>
+        <span class="badge badge--neutral">Encerrada</span>
+      </div>
+      <p>
+        Votação encerrada em <strong>{{ voting.closed_at|datetime_br }}</strong>.
+        O ranking final está disponível para consulta.
+      </p>
+      <div class="cluster">
+        <a class="btn btn-primary" href="{% url 'admin:voting_results' voting.pk %}">
+          Ver ranking final
+        </a>
+        <a class="btn btn-secondary" href="{% url 'admin:voting_participation' voting.pk %}">
+          Ver participação
+        </a>
+      </div>
+    </section>
+
+  {% elif voting.status == "cancelled" %}
+    <section class="panel stack" aria-labelledby="cancelled-title">
+      <div class="section-header">
+        <h2 id="cancelled-title">Situação</h2>
+        <span class="badge badge--danger">Cancelada</span>
+      </div>
+      <p>
+        Votação cancelada em <strong>{{ voting.cancelled_at|datetime_br }}</strong>.
+        Todos os votos registrados foram eliminados.
+      </p>
+      <p class="text-muted">
+        Uma votação cancelada não pode ser reaberta e não produz resultado oficial.
+      </p>
+      <p class="text-muted">Nenhuma ação de ciclo de vida disponível.</p>
+    </section>
+  {% endif %}
+
+  {% if voting.status == "open" or voting.status == "closed" %}
+    <section class="panel stack" aria-labelledby="ballots-title">
+      <div class="section-header">
+        <h2 id="ballots-title">Votos registrados</h2>
+        <span class="text-small text-muted">{{ ballot_count }} registro(s)</span>
+      </div>
+
+      {% if ballots %}
+        <div class="table-wrap av-table-wrap">
+          <table class="table av-table">
+            <caption class="visually-hidden">Votos registrados</caption>
+            <thead>
+              <tr>
+                <th scope="col">Participante</th>
+                <th scope="col">Registrado em</th>
+                <th scope="col">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ballot in ballots %}
+                <tr>
+                  <td class="av-cell-primary" data-label="">{{ ballot.participant.username }}</td>
+                  <td data-label="Registrado em">{{ ballot.created_at|datetime_br }}</td>
+                  <td class="av-cell-actions" data-label="">
+                    {% if can_close %}
+                      <div class="table__actions">
+                        <form
+                          class="inline-form"
+                          method="post"
+                          action="{% url 'admin:ballot_delete' voting.pk ballot.participant_id %}"
+                          data-confirm="Excluir a cédula deste participante? Ele poderá votar novamente."
+                          data-submit-once
+                        >
+                          {% csrf_token %}
+                          <button class="btn btn-danger" type="submit">Excluir voto</button>
+                        </form>
+                      </div>
+                      <p class="text-muted text-small">
+                        O participante poderá votar novamente enquanto a votação estiver aberta.
+                      </p>
+                    {% else %}
+                      <span class="text-muted text-small">Disponível apenas com a votação aberta.</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>Nenhum voto registrado nesta votação.</p>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if voting.status == "open" %}
+    <section class="panel av-action-panel av-action-panel--primary" aria-labelledby="primary-action-title">
+      <h2 id="primary-action-title">Encerrar votação</h2>
+      <p>
+        O encerramento bloqueia novos votos e publica o resultado oficial. Esta ação não
+        pode ser desfeita.
+      </p>
       <form
         method="post"
         action="{% url 'admin:voting_close' voting.pk %}"
@@ -181,11 +316,19 @@
         data-submit-once
       >
         {% csrf_token %}
-        <button class="btn btn-secondary" type="submit">Encerrar votação</button>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit">Encerrar votação</button>
+        </div>
       </form>
-    {% endif %}
+    </section>
+  {% endif %}
 
-    {% if can_cancel %}
+  {% if can_cancel %}
+    <section class="panel av-action-panel av-action-panel--danger" aria-labelledby="secondary-actions-title">
+      <h2 id="secondary-actions-title">Outras ações</h2>
+      <p class="text-muted">
+        Ações destrutivas ficam separadas das ações do dia a dia. Revise antes de confirmar.
+      </p>
       <form
         method="post"
         action="{% url 'admin:voting_cancel' voting.pk %}"
@@ -197,12 +340,28 @@
           <label class="form-label" for="cancel-reason">Motivo do cancelamento (opcional)</label>
           <input id="cancel-reason" class="form-control" type="text" name="reason">
         </div>
-        <button class="btn btn-danger" type="submit">Cancelar votação</button>
+        <p class="text-muted text-small">
+          O cancelamento apaga definitivamente todos os votos e não pode ser desfeito.
+        </p>
+        <div class="form-actions">
+          <button class="btn btn-danger" type="submit">Cancelar votação</button>
+        </div>
       </form>
-    {% endif %}
+    </section>
+  {% endif %}
 
-    {% if not can_edit and not can_close and not can_cancel %}
-      <p class="text-muted">Nenhuma ação de ciclo de vida disponível.</p>
-    {% endif %}
+  <section class="panel stack" aria-labelledby="config-title">
+    <h2 id="config-title">Configuração</h2>
+    <dl class="detail-list">
+      <dt>Descrição</dt><dd>{{ voting.description|default:"—"|linebreaksbr }}</dd>
+      <dt>Escolhas por participante</dt><dd>{{ voting.choices_count }}</dd>
+      <dt>Data de corte do catálogo</dt><dd>{{ voting.catalog_cutoff_date|date_br }}</dd>
+      <dt>Modo de abertura</dt><dd>{{ voting.get_open_mode_display }}</dd>
+      <dt>Abertura</dt><dd>{{ voting.opens_at|datetime_br }}</dd>
+      <dt>Modo de encerramento</dt><dd>{{ voting.get_close_mode_display }}</dd>
+      <dt>Encerramento</dt><dd>{{ voting.closes_at|datetime_br }}</dd>
+      <dt>Criada por</dt><dd>{{ voting.created_by.username }}</dd>
+      <dt>Criada em</dt><dd>{{ voting.created_at|datetime_br }}</dd>
+    </dl>
   </section>
 {% endblock %}

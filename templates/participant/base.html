@@ -1,22 +1,40 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block body_class %}layout-participant{% endblock %}
 
 {% block body %}
   <header class="site-header">
     <div class="container-page site-header__inner">
-      <a class="brand" href="{% url 'participant:home' %}">Uma Voting</a>
+      <a class="brand site-header__brand" href="{% url 'participant:home' %}">Uma Voting</a>
 
       <nav class="site-nav" aria-label="Navegação principal">
-        <a class="site-nav__link" href="{% url 'participant:home' %}" {% if request.resolver_match.url_name == "home" %}aria-current="page"{% endif %}>Votações</a>
-        <a class="site-nav__link" href="{% url 'participant:history' %}" {% if request.resolver_match.url_name == "history" %}aria-current="page"{% endif %}>Histórico</a>
+        <a
+          class="site-nav__link"
+          href="{% url 'participant:home' %}"
+          {% if request.resolver_match.url_name != "history" %}aria-current="page"{% endif %}
+        >Votações</a>
+        <a
+          class="site-nav__link"
+          href="{% url 'participant:history' %}"
+          {% if request.resolver_match.url_name == "history" %}aria-current="page"{% endif %}
+        >Histórico</a>
       </nav>
 
       <div class="site-header__user">
         {% if request.user.is_authenticated %}
           <span class="user-chip">{{ request.user.username }}</span>
           {% if request.user.is_admin and not is_participant_mode %}
-            <a class="btn btn-tertiary" href="{% url 'admin:dashboard' %}">Administração</a>
+            <a
+              class="btn btn-tertiary site-header__admin-link"
+              href="{% url 'admin:dashboard' %}"
+              aria-label="Ir para a administração"
+            >
+              <svg class="icon" aria-hidden="true">
+                <use href="{% static 'vendor/lucide/sprite.svg' %}#layout-dashboard"></use>
+              </svg>
+              <span class="site-header__admin-label">Administração</span>
+            </a>
           {% endif %}
           <form class="inline-form" method="post" action="{% url 'participant:logout' %}">
             {% csrf_token %}
@@ -30,8 +48,8 @@
   </header>
 
   {% if is_participant_mode %}
-    <div class="container-page messages">
-      <div class="alert alert-info cluster">
+    <div class="container-page">
+      <div class="mode-banner alert alert-info" role="status">
         <span>Modo participante ativo.</span>
         <form class="inline-form" method="post" action="{% url 'participant:admin_mode' %}">
           {% csrf_token %}
@@ -48,6 +66,6 @@
   </main>
 
   <footer class="site-footer container-page">
-    <p>Uma Voting — votações de banimento da comunidade.</p>
+    <p>Uma Voting — By Delta</p>
   </footer>
 {% endblock %}

@@ -5,6 +5,8 @@
 (function () {
   "use strict";
 
+  document.documentElement.classList.add("js");
+
   var SELECTION_FORM = "[data-selection-form]";
   var CHARACTER_CHECKBOX = 'input[type="checkbox"][name="character_ids"]';
 
@@ -253,6 +255,168 @@
       submitter.disabled = true;
     }
   });
+
+  /* -----------------------------------------------------------------------
+   * Drawer administrativo mobile
+   * --------------------------------------------------------------------- */
+  var ADMIN_DRAWER_OPEN = "[data-admin-drawer-open]";
+  var ADMIN_DRAWER_CLOSE = "[data-admin-drawer-close]";
+  var ADMIN_DRAWER_OVERLAY = "[data-admin-drawer-overlay]";
+  var ADMIN_DRAWER_SELECTOR = ".admin-sidebar";
+  var ADMIN_DRAWER_DESKTOP = "(min-width: 1024px)";
+  var ADMIN_DRAWER_FOCUSABLE =
+    'a[href], button:not([disabled]), input:not([disabled]), ' +
+    'select:not([disabled]), textarea:not([disabled]), ' +
+    '[tabindex]:not([tabindex="-1"])';
+
+  function adminDrawerFor(trigger) {
+    var id = trigger && trigger.getAttribute("aria-controls");
+    return id ? document.getElementById(id) : null;
+  }
+
+  function adminDrawerOverlay(drawer) {
+    return drawer && drawer.parentNode
+      ? drawer.parentNode.querySelector(ADMIN_DRAWER_OVERLAY)
+      : null;
+  }
+
+  function adminDrawerTrigger(drawer) {
+    return document.querySelector(
+      ADMIN_DRAWER_OPEN + '[aria-controls="' + drawer.id + '"]'
+    );
+  }
+
+  function adminDrawerFocusable(drawer) {
+    return Array.prototype.filter.call(
+      drawer.querySelectorAll(ADMIN_DRAWER_FOCUSABLE),
+      function (element) {
+        return element.getClientRects().length > 0;
+      }
+    );
+  }
+
+  function openAdminDrawer(trigger) {
+    var drawer = adminDrawerFor(trigger);
+    if (!drawer) {
+      return;
+    }
+
+    drawer.classList.add("is-open");
+    var overlay = adminDrawerOverlay(drawer);
+    if (overlay) {
+      overlay.hidden = false;
+    }
+    trigger.setAttribute("aria-expanded", "true");
+    document.body.classList.add("admin-drawer-open");
+
+    var close = drawer.querySelector(ADMIN_DRAWER_CLOSE);
+    var focusTarget = close || adminDrawerFocusable(drawer)[0] || drawer;
+    if (focusTarget && typeof focusTarget.focus === "function") {
+      focusTarget.focus({ preventScroll: true });
+    }
+  }
+
+  function closeAdminDrawer(drawer, restoreFocus) {
+    if (!drawer || !drawer.classList.contains("is-open")) {
+      return;
+    }
+
+    drawer.classList.remove("is-open");
+    var overlay = adminDrawerOverlay(drawer);
+    if (overlay) {
+      overlay.hidden = true;
+    }
+    document.body.classList.remove("admin-drawer-open");
+
+    var trigger = adminDrawerTrigger(drawer);
+    if (trigger) {
+      trigger.setAttribute("aria-expanded", "false");
+      if (restoreFocus) {
+        trigger.focus({ preventScroll: true });
+      }
+    }
+  }
+
+  document.addEventListener("click", function (event) {
+    var target = event.target;
+    if (!target || !target.closest) {
+      return;
+    }
+
+    var openButton = target.closest(ADMIN_DRAWER_OPEN);
+    if (openButton) {
+      event.preventDefault();
+      openAdminDrawer(openButton);
+      return;
+    }
+
+    var closeButton = target.closest(ADMIN_DRAWER_CLOSE);
+    if (closeButton) {
+      event.preventDefault();
+      closeAdminDrawer(closeButton.closest(ADMIN_DRAWER_SELECTOR), true);
+      return;
+    }
+
+    var overlay = target.closest(ADMIN_DRAWER_OVERLAY);
+    if (overlay) {
+      var overlayDrawer = overlay.parentNode.querySelector(ADMIN_DRAWER_SELECTOR);
+      closeAdminDrawer(overlayDrawer, true);
+      return;
+    }
+
+    var drawerLink = target.closest(".admin-sidebar.is-open a[href]");
+    if (drawerLink) {
+      closeAdminDrawer(drawerLink.closest(ADMIN_DRAWER_SELECTOR), false);
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    var drawer = document.querySelector(".admin-sidebar.is-open");
+    if (!drawer) {
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeAdminDrawer(drawer, true);
+      return;
+    }
+
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    var focusable = adminDrawerFocusable(drawer);
+    if (!focusable.length) {
+      return;
+    }
+
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
+
+  var adminDrawerDesktop = window.matchMedia(ADMIN_DRAWER_DESKTOP);
+  function closeAdminDrawerOnDesktop(event) {
+    if (!event.matches) {
+      return;
+    }
+    var drawer = document.querySelector(".admin-sidebar.is-open");
+    if (drawer) {
+      closeAdminDrawer(drawer, false);
+    }
+  }
+  if (adminDrawerDesktop.addEventListener) {
+    adminDrawerDesktop.addEventListener("change", closeAdminDrawerOnDesktop);
+  } else if (adminDrawerDesktop.addListener) {
+    adminDrawerDesktop.addListener(closeAdminDrawerOnDesktop);
+  }
 
   /* -----------------------------------------------------------------------
    * Inicialização

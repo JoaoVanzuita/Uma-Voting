@@ -1,26 +1,28 @@
 {% extends "participant/base.html" %}
 {% load ui_tags %}
 
-{% block title %}Minha cédula — {{ voting.title }}{% endblock %}
+{% block title %}Meu voto — {{ voting.title }}{% endblock %}
 
 {% block content %}
-  <div class="page-header">
+  <div class="page-header ballot-header">
     <div>
-      <p class="text-muted text-small">Minha cédula</p>
+      <p class="text-muted text-small">Meu voto</p>
       <h1>{{ voting.title }}</h1>
       <div class="ballot-summary">
         {% status_badge voting.status %}
         {% if ballot %}
-          <span class="text-muted">Enviada em {{ ballot.created_at|datetime_br }}</span>
+          <span class="text-muted">Registrado em {{ ballot.created_at|datetime_br }}</span>
         {% endif %}
       </div>
     </div>
-    <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
-    {% if voting.status == "closed" %}
-      <a class="btn btn-primary" href="{% url 'participant:result' voting.pk %}">
-        Ver resultado
-      </a>
-    {% endif %}
+    <div class="cluster">
+      <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
+      {% if voting.status == "closed" %}
+        <a class="btn btn-primary" href="{% url 'participant:result' voting.pk %}">
+          Ver resultado
+        </a>
+      {% endif %}
+    </div>
   </div>
 
   {% if error %}
@@ -28,11 +30,14 @@
   {% endif %}
 
   {% if ballot %}
-    <section class="panel" aria-labelledby="ballot-title">
-      <h2 id="ballot-title">Escolhas registradas</h2>
+    <section class="panel ballot-panel" aria-labelledby="ballot-title">
+      <div class="review-panel__header">
+        <h2 id="ballot-title">Voto registrado</h2>
+        <span class="badge badge--success">Definitivo</span>
+      </div>
       <p class="text-muted">
-        A cédula é definitiva para esta votação. Você pode consultá-la enquanto a votação
-        estiver aberta e após o encerramento.
+        A confirmação é definitiva para esta votação. Você pode consultar este voto enquanto a
+        votação estiver aberta e após o encerramento. Não é possível editá-lo ou reenviá-lo.
       </p>
 
       <ul class="review-list">
@@ -55,8 +60,8 @@
     </section>
   {% else %}
     <div class="empty-state">
-      <h2>Nenhuma cédula registrada</h2>
-      <p>Você ainda não enviou uma cédula para esta votação.</p>
+      <h2>Nenhum voto registrado</h2>
+      <p>Você ainda não enviou um voto para esta votação.</p>
     </div>
   {% endif %}
 {% endblock %}

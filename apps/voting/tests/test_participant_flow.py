@@ -292,7 +292,7 @@ def test_confirmacao_cria_cedula_e_redireciona_para_consulta(client):
 
     assert response.status_code == 200
     assert Ballot.objects.filter(voting=voting, participant=participant).exists()
-    assert "Cédula confirmada com sucesso." in html
+    assert "Voto registrado com sucesso." in html
     assert "definitiva" in html
     for snapshot in snapshots[:3]:
         assert snapshot.display_name in html
@@ -310,7 +310,7 @@ def test_segundo_envio_retorna_409(client):
     )
 
     assert response.status_code == 409
-    assert "Você já enviou uma cédula" in response.content.decode()
+    assert "Você já registrou um voto" in response.content.decode()
     assert Ballot.objects.filter(voting=voting, participant=participant).count() == 1
 
 

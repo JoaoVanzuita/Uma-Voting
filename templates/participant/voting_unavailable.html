@@ -3,16 +3,16 @@
 {% block title %}Votação indisponível — Uma Voting{% endblock %}
 
 {% block content %}
-  <div class="page-header">
-    <div>
-      <p class="text-muted text-small">Votação</p>
-      <h1>{{ voting.title }}</h1>
-    </div>
-  </div>
+  <section class="unavailable-state" aria-labelledby="unavailable-title">
+    <p class="text-muted text-small">Votação</p>
+    <h1 id="unavailable-title">{{ voting.title }}</h1>
 
-  <div class="alert alert-danger" role="alert">{{ message }}</div>
+    <div class="alert alert-danger" role="alert">{{ message }}</div>
 
-  <p>
-    <a class="btn btn-secondary" href="{% url 'participant:home' %}">Voltar às votações</a>
-  </p>
+    <p class="text-muted">
+      O voto não foi registrado. Volte às votações para consultar as opções disponíveis.
+    </p>
+
+    <a class="btn btn-primary" href="{% url 'participant:home' %}">Voltar às votações</a>
+  </section>
 {% endblock %}

@@ -39,7 +39,7 @@ class NotEligibleError(BallotError):
 
 class AlreadyVotedError(BallotError):
     def __init__(self) -> None:
-        super().__init__("Você já enviou uma cédula para esta votação.")
+        super().__init__("Você já registrou um voto para esta votação.")
 
 
 def normalize_character_ids(character_ids) -> list[int]:
@@ -72,7 +72,7 @@ def resolve_ballot_selection(voting: Voting, character_ids) -> list[VotingCharac
 
 def _ensure_voting_open(voting: Voting) -> None:
     if voting.status != VotingStatus.OPEN:
-        raise VotingNotOpenError("A votação não está aberta para receber cédulas.")
+        raise VotingNotOpenError("A votação não está aberta para receber votos.")
 
     if (
         voting.close_mode == Mode.AUTOMATIC
@@ -94,7 +94,7 @@ def submit_ballot(voting: Voting, participant, character_ids) -> Ballot:
                     [voting.pk],
                 )
                 if cursor.fetchone() is None:
-                    raise VotingNotOpenError("A votação não está aberta para receber cédulas.")
+                    raise VotingNotOpenError("A votação não está aberta para receber votos.")
 
             locked = Voting.objects.get(pk=voting.pk)
 

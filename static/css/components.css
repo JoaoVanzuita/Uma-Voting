@@ -10,7 +10,7 @@
   padding: 2px var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
   color: var(--color-ink);
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-semibold);
@@ -20,32 +20,32 @@
 
 .badge--neutral {
   border-color: var(--color-border);
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
   color: var(--color-muted);
 }
 
 .badge--info {
-  border-color: #c7d8ee;
+  border-color: var(--color-info-border);
   background-color: var(--color-info-soft);
-  color: #315f96;
+  color: var(--color-info-ink);
 }
 
 .badge--success {
-  border-color: #b9dfcd;
+  border-color: var(--color-success-border);
   background-color: var(--color-success-soft);
-  color: #1c6345;
+  color: var(--color-success-ink);
 }
 
 .badge--warning {
-  border-color: #ecd5ae;
+  border-color: var(--color-warning-border);
   background-color: var(--color-warning-soft);
-  color: #8a5e1d;
+  color: var(--color-warning-ink);
 }
 
 .badge--danger {
-  border-color: #eec7cc;
+  border-color: var(--color-danger-border);
   background-color: var(--color-danger-soft);
-  color: #9a3541;
+  color: var(--color-danger-ink);
 }
 
 /* Cards ------------------------------------------------------------------- */
@@ -146,7 +146,7 @@
   position: relative;
   overflow: hidden;
   border-radius: calc(var(--radius-card) - 4px);
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
   aspect-ratio: 1 / 1;
 }
 
@@ -154,7 +154,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .character-option__check {
@@ -214,11 +214,16 @@
 .form-select {
   min-height: var(--control-height);
   padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
-  background-color: var(--color-white);
+  background-color: var(--color-surface);
   color: var(--color-ink);
   font: inherit;
+  font-size: var(--font-size-control);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
 }
 
 .form-control:focus,
@@ -226,6 +231,7 @@
   border-color: var(--color-primary);
   outline: 2px solid var(--color-focus);
   outline-offset: 1px;
+  box-shadow: var(--focus-ring);
 }
 
 .form-control[aria-invalid="true"],
@@ -248,7 +254,7 @@ textarea.form-control {
 }
 
 .form-error {
-  color: #9a3541;
+  color: var(--color-danger-ink);
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-medium);
 }
@@ -422,7 +428,7 @@ textarea.form-control {
 }
 
 .table thead th {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
   color: var(--color-muted);
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-semibold);
@@ -435,7 +441,7 @@ textarea.form-control {
 }
 
 .table tbody tr:hover {
-  background-color: #fafbfd;
+  background-color: var(--color-bg);
 }
 
 .table__actions {
@@ -470,7 +476,7 @@ textarea.form-control {
 }
 
 .pagination__link:hover {
-  background-color: var(--color-surface);
+  background-color: var(--color-surface-muted);
 }
 
 .pagination__link[aria-current="page"] {
@@ -583,5 +589,199 @@ dialog.dialog::backdrop {
   .btn[aria-busy="true"]::after,
   .btn.is-loading::after {
     animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Ícones locais (sprite Lucide)
+ * ------------------------------------------------------------------------- */
+.icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon--sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Indicadores compactos
+ * ------------------------------------------------------------------------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background-color: var(--color-surface);
+}
+
+.stat-card__label {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+}
+
+.stat-card__value {
+  display: block;
+  color: var(--color-ink);
+  font-size: 1.75rem;
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card a {
+  margin-top: auto;
+  font-size: var(--font-size-small);
+}
+
+.stat-card--warning .stat-card__value {
+  color: var(--color-warning);
+}
+
+.stat-card--danger .stat-card__value {
+  color: var(--color-danger);
+}
+
+/* ---------------------------------------------------------------------------
+ * Ranking e miniaturas
+ * ------------------------------------------------------------------------- */
+.result-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result-item {
+  display: grid;
+  grid-template-columns: 3rem 3rem minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface);
+}
+
+.result-item__position {
+  color: var(--color-primary-ink);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.result-item__media {
+  display: block;
+  width: 3rem;
+  height: 3rem;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-muted);
+}
+
+.result-item__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.result-item__name {
+  min-width: 0;
+  font-weight: var(--font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.result-item__votes {
+  color: var(--color-muted);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.result-character {
+  display: inline-flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+}
+
+.character-thumb {
+  width: 3rem;
+  height: 3rem;
+  flex: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface-muted);
+  object-fit: contain;
+}
+
+/* ---------------------------------------------------------------------------
+ * Listas de checkbox e blocos de código
+ * ------------------------------------------------------------------------- */
+.checkbox-list {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.checkbox-list > div {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.checkbox-list label {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  min-height: var(--touch-target);
+  padding-block: var(--space-1);
+  cursor: pointer;
+}
+
+.checkbox-list input {
+  margin-top: 0.15rem;
+}
+
+.code-block {
+  max-width: 100%;
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background-color: var(--color-surface-muted);
+  color: var(--color-ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--font-size-caption);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 479px) {
+  .result-item {
+    grid-template-columns: 2.5rem 3rem minmax(0, 1fr);
+  }
+
+  .result-item__votes {
+    grid-column: 3;
   }
 }

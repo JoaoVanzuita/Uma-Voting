@@ -5,103 +5,155 @@
 
 {% block page_title %}Imagens do catálogo{% endblock %}
 
+{% block page_subtitle %}
+  <p class="text-muted text-small">Monitore a integridade do acervo local de imagens e valide os arquivos.</p>
+{% endblock %}
+
 {% block page_actions %}
   <a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Personagens</a>
   <a class="btn btn-secondary" href="{% url 'admin:catalog_status' %}">Voltar ao catálogo</a>
 {% endblock %}
 
 {% block content %}
-  <div class="grid grid--stats">
-    <section class="card stat">
-      <p class="stat__label">Válidas</p>
-      <p class="stat__value">{{ stats.valid }}</p>
+  <div class="stats-grid catalog-stats">
+    <section class="stat-card">
+      <p class="stat-card__label">Válidas</p>
+      <p class="stat-card__value">{{ stats.valid }}</p>
     </section>
-    <section class="card stat">
-      <p class="stat__label">Inválidas</p>
-      <p class="stat__value">{{ stats.invalid }}</p>
+    <section class="stat-card">
+      <p class="stat-card__label">Inválidas</p>
+      <p class="stat-card__value">{{ stats.invalid }}</p>
     </section>
-    <section class="card stat">
-      <p class="stat__label">Ausentes</p>
-      <p class="stat__value">{{ stats.missing }}</p>
+    <section class="stat-card">
+      <p class="stat-card__label">Ausentes</p>
+      <p class="stat-card__value">{{ stats.missing }}</p>
     </section>
-    <section class="card stat">
-      <p class="stat__label">Personagens sem imagem válida</p>
-      <p class="stat__value">{{ characters_without_image|length }}</p>
+    <section class="stat-card">
+      <p class="stat-card__label">Personagens sem imagem válida</p>
+      <p class="stat-card__value">{{ characters_without_image|length }}</p>
     </section>
   </div>
 
-  <section class="panel stack">
+  <div class="catalog-toolbar">
     <form method="post" action="{% url 'admin:catalog_images_validate' %}" data-submit-once>
       {% csrf_token %}
-      <div class="form-actions">
-        <button class="btn btn-primary" type="submit">Validar acervo agora</button>
-      </div>
+      <button class="btn btn-primary" type="submit">Validar acervo agora</button>
     </form>
-  </section>
+
+    <form class="catalog-filter-form" method="get">
+      <div class="form-group">
+        <label class="form-label" for="image-status">Situação</label>
+        <select id="image-status" class="form-control" name="status" data-image-filter>
+          <option value="">Todas</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-secondary" type="submit">Filtrar</button>
+      {% if status %}
+        <a class="filters__clear" href="{% url 'admin:catalog_images' %}">Limpar filtro</a>
+      {% endif %}
+    </form>
+  </div>
 
   {% if report %}
-    <section class="panel stack" aria-labelledby="report-title">
-      <h2 id="report-title">Relatório de validação</h2>
-      <p>
-        {{ report.checked }} asset(s) verificado(s); {{ report.valid }} válido(s);
-        {{ report.invalid }} inválido(s); {{ report.missing }} ausente(s).
-      </p>
+    <section class="panel stack catalog-report" aria-labelledby="report-title">
+      <div class="catalog-section-header">
+        <h2 id="report-title" class="catalog-section-title">Relatório de validação</h2>
+        {% if report.issues or report.orphans or report.broken_references or report.duplicate_checksums %}
+          <span class="badge badge--warning">Requer atenção</span>
+        {% else %}
+          <span class="badge badge--success">Acervo íntegro</span>
+        {% endif %}
+      </div>
+
+      <div class="import-summary">
+        <div class="import-summary__item">
+          <span class="import-summary__value">{{ report.checked }}</span>
+          <span class="import-summary__label">asset(s) verificado(s)</span>
+        </div>
+        <div class="import-summary__item import-summary__item--success">
+          <span class="import-summary__value">{{ report.valid }}</span>
+          <span class="import-summary__label">válido(s)</span>
+        </div>
+        <div class="import-summary__item import-summary__item--danger">
+          <span class="import-summary__value">{{ report.invalid }}</span>
+          <span class="import-summary__label">inválido(s)</span>
+        </div>
+        <div class="import-summary__item import-summary__item--warning">
+          <span class="import-summary__value">{{ report.missing }}</span>
+          <span class="import-summary__label">ausente(s)</span>
+        </div>
+      </div>
+
       {% if report.issues %}
         <div class="alert alert-warning" role="alert">
           Foram encontrados problemas em imagens do acervo.
         </div>
-        <div class="table-wrap">
-          <table class="table">
+        <div class="table-wrap admin-data-table-wrap">
+          <table class="table admin-data-table">
+            <caption class="visually-hidden">Problemas encontrados na validação</caption>
             <thead>
-              <tr><th scope="col">Personagem</th><th scope="col">Arquivo</th><th scope="col">Problema</th></tr>
+              <tr>
+                <th scope="col">Personagem</th>
+                <th scope="col">Arquivo</th>
+                <th scope="col">Problema</th>
+              </tr>
             </thead>
             <tbody>
               {% for issue in report.issues %}
                 <tr>
-                  <td>{{ issue.character|default:"—" }}</td>
-                  <td><code>{{ issue.file }}</code></td>
-                  <td>{{ issue.message }}</td>
+                  <td data-label="Personagem">{{ issue.character|default:"—" }}</td>
+                  <td data-label="Arquivo"><code>{{ issue.file }}</code></td>
+                  <td data-label="Problema">{{ issue.message }}</td>
                 </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       {% endif %}
+
       {% if report.orphans %}
-        <h3>Arquivos órfãos</h3>
-        <ul class="plain-list">
-          {% for orphan in report.orphans %}<li><code>{{ orphan }}</code></li>{% endfor %}
-        </ul>
+        <details class="catalog-report__detail">
+          <summary>Arquivos órfãos ({{ report.orphans|length }})</summary>
+          <ul class="plain-list">
+            {% for orphan in report.orphans %}<li><code>{{ orphan }}</code></li>{% endfor %}
+          </ul>
+        </details>
       {% endif %}
+
       {% if report.duplicate_checksums %}
-        <h3>Checksums duplicados</h3>
-        <ul class="plain-list">
-          {% for checksum in report.duplicate_checksums %}<li><code>{{ checksum }}</code></li>{% endfor %}
-        </ul>
+        <details class="catalog-report__detail">
+          <summary>Checksums duplicados ({{ report.duplicate_checksums|length }})</summary>
+          <ul class="plain-list">
+            {% for checksum in report.duplicate_checksums %}<li><code>{{ checksum }}</code></li>{% endfor %}
+          </ul>
+        </details>
+      {% endif %}
+
+      {% if report.characters_without_image %}
+        <details class="catalog-report__detail">
+          <summary>Personagens sem imagem válida ({{ report.characters_without_image|length }})</summary>
+          <ul class="plain-list">
+            {% for item in report.characters_without_image %}<li><code>{{ item }}</code></li>{% endfor %}
+          </ul>
+        </details>
       {% endif %}
     </section>
   {% endif %}
 
   <section class="panel stack" aria-labelledby="assets-title">
-    <h2 id="assets-title">Assets de imagem</h2>
-    <form class="filters" method="get">
-      <div class="filters__row">
-        <div class="form-group">
-          <label class="form-label" for="image-status">Situação</label>
-          <select id="image-status" class="form-control" name="status" data-image-filter>
-            <option value="">Todas</option>
-            {% for value, label in status_choices %}
-              <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <button class="btn btn-secondary" type="submit">Filtrar</button>
-      </div>
-    </form>
+    <div class="catalog-section-header">
+      <h2 id="assets-title" class="catalog-section-title">Assets de imagem</h2>
+      {% if assets %}
+        <span class="text-muted text-small">Exibindo até 500 registros</span>
+      {% endif %}
+    </div>
 
     {% if assets %}
-      <div class="table-wrap">
-        <table class="table">
+      <div class="table-wrap admin-data-table-wrap catalog-assets-table-wrap">
+        <table class="table admin-data-table catalog-assets-table">
           <caption class="visually-hidden">Assets de imagem</caption>
           <thead>
             <tr>
@@ -116,7 +168,7 @@
           <tbody>
             {% for asset in assets %}
               <tr data-image-status="{{ asset.status }}">
-                <td>
+                <td data-label="Prévia">
                   <img
                     class="character-thumb"
                     src="{% character_image asset %}"
@@ -127,11 +179,19 @@
                     data-fallback-src="{% placeholder_url %}"
                   >
                 </td>
-                <td>{{ asset.character.display_name }}</td>
-                <td><code>{{ asset.file_path }}</code></td>
-                <td>{% status_badge asset.status %}</td>
-                <td>{% if asset.is_current %}Sim{% else %}Não{% endif %}</td>
-                <td>{{ asset.source.name|default:"—" }}</td>
+                <td data-label="Personagem">
+                  <span class="catalog-asset-name">{{ asset.character.display_name }}</span>
+                </td>
+                <td data-label="Arquivo"><code class="catalog-asset-file">{{ asset.file_path }}</code></td>
+                <td data-label="Situação">{% status_badge asset.status %}</td>
+                <td data-label="Corrente">
+                  {% if asset.is_current %}
+                    <span class="badge badge--info">Corrente</span>
+                  {% else %}
+                    <span class="text-muted text-small">Anterior</span>
+                  {% endif %}
+                </td>
+                <td data-label="Fonte">{{ asset.source.name|default:"—" }}</td>
               </tr>
             {% endfor %}
           </tbody>
@@ -145,14 +205,20 @@
   </section>
 
   <section class="panel stack" aria-labelledby="without-title">
-    <h2 id="without-title">Personagens sem imagem válida</h2>
+    <div class="catalog-section-header">
+      <h2 id="without-title" class="catalog-section-title">Personagens sem imagem válida</h2>
+      {% if characters_without_image %}
+        <span class="badge badge--warning">{{ characters_without_image|length }}</span>
+      {% endif %}
+    </div>
+
     {% if characters_without_image %}
-      <ul class="plain-list">
+      <ul class="plain-list catalog-without-image">
         {% for character in characters_without_image %}
           <li>
-            <strong>{{ character.display_name }}</strong>
+            <span class="catalog-without-image__name">{{ character.display_name }}</span>
             <code>{{ character.stable_id }}</code>
-            <span class="text-muted">{{ character.version_count }} versão(ões)</span>
+            <span class="text-muted text-small">{{ character.version_count }} versão(ões)</span>
           </li>
         {% endfor %}
       </ul>

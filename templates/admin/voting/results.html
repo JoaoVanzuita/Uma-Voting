@@ -19,49 +19,40 @@
     <div class="empty-state">
       <h2>Votação cancelada</h2>
       <p>Votações canceladas não possuem resultado oficial.</p>
+      <a class="btn btn-secondary" href="{% url 'admin:voting_detail' voting.pk %}">
+        Voltar aos detalhes
+      </a>
     </div>
   {% elif voting.status == "closed" %}
     <section class="panel stack" aria-labelledby="ranking-title">
-      <h2 id="ranking-title">Ranking final</h2>
-      <p class="text-muted">
+      <div class="section-header">
+        <h2 id="ranking-title">Ranking final</h2>
+        <span class="badge badge--neutral">Resultado oficial</span>
+      </div>
+      <p class="text-muted av-results-note">
         Personagens sem votos não aparecem. Empates ocupam a mesma posição.
       </p>
       {% if ranked %}
-        <div class="table-wrap">
-          <table class="table">
-            <caption class="visually-hidden">Ranking final da votação</caption>
-            <thead>
-              <tr>
-                <th scope="col">Posição</th>
-                <th scope="col">Personagem</th>
-                <th scope="col">Votos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in ranked %}
-                <tr>
-                  <td>{{ row.position }}º</td>
-                  <td>
-                    <span class="result-character">
-                      {% image_url row.image_asset as image_src %}
-                      <img
-                        class="character-thumb"
-                        src="{{ image_src }}"
-                        data-fallback-src="{% placeholder_url %}"
-                        alt="Retrato de {{ row.display_name }}"
-                        width="40"
-                        height="40"
-                        loading="lazy"
-                      >
-                      {{ row.display_name }}
-                    </span>
-                  </td>
-                  <td>{{ row.votes }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <ol class="result-list">
+          {% for row in ranked %}
+            <li class="result-item">
+              <span class="result-item__position">{{ row.position }}º</span>
+              <span class="result-item__media">
+                {% image_url row.image_asset as image_src %}
+                <img
+                  src="{{ image_src }}"
+                  data-fallback-src="{% placeholder_url %}"
+                  alt="Retrato de {{ row.display_name }}"
+                  width="48"
+                  height="48"
+                  loading="lazy"
+                >
+              </span>
+              <span class="result-item__name">{{ row.display_name }}</span>
+              <span class="result-item__votes">{{ row.votes }} voto(s)</span>
+            </li>
+          {% endfor %}
+        </ol>
       {% else %}
         <div class="empty-state">
           <p>Nenhum voto registrado nesta votação.</p>
@@ -70,45 +61,34 @@
     </section>
   {% else %}
     <section class="panel stack" aria-labelledby="partial-title">
-      <h2 id="partial-title">Resultados parciais</h2>
-      <p class="text-muted">
-        Visão exclusiva de administradores durante a votação. Nenhuma escolha individual
-        ou associação participante–personagem é exibida.
+      <div class="section-header">
+        <h2 id="partial-title">Resultados parciais</h2>
+        <span class="badge badge--info">Parcial</span>
+      </div>
+      <p class="text-muted av-results-note">
+        Visão exclusiva de administradores durante a votação. Apenas totais agregados são
+        exibidos; nenhuma escolha individual ou associação participante–personagem é mostrada.
       </p>
       {% if results %}
-        <div class="table-wrap">
-          <table class="table">
-            <caption class="visually-hidden">Agregados parciais da votação</caption>
-            <thead>
-              <tr>
-                <th scope="col">Personagem</th>
-                <th scope="col">Votos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for row in results %}
-                <tr>
-                  <td>
-                    <span class="result-character">
-                      {% image_url row.image_asset as image_src %}
-                      <img
-                        class="character-thumb"
-                        src="{{ image_src }}"
-                        data-fallback-src="{% placeholder_url %}"
-                        alt="Retrato de {{ row.display_name }}"
-                        width="40"
-                        height="40"
-                        loading="lazy"
-                      >
-                      {{ row.display_name }}
-                    </span>
-                  </td>
-                  <td>{{ row.votes }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <ul class="result-list">
+          {% for row in results %}
+            <li class="result-item result-item--partial">
+              <span class="result-item__media">
+                {% image_url row.image_asset as image_src %}
+                <img
+                  src="{{ image_src }}"
+                  data-fallback-src="{% placeholder_url %}"
+                  alt="Retrato de {{ row.display_name }}"
+                  width="48"
+                  height="48"
+                  loading="lazy"
+                >
+              </span>
+              <span class="result-item__name">{{ row.display_name }}</span>
+              <span class="result-item__votes">{{ row.votes }} voto(s)</span>
+            </li>
+          {% endfor %}
+        </ul>
       {% else %}
         <div class="empty-state">
           <p>Nenhuma personagem no snapshot desta votação.</p>

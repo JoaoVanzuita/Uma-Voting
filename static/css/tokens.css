@@ -1,42 +1,89 @@
+/* ---------------------------------------------------------------------------
+ * Uma Voting — Design tokens
+ *
+ * Fundação visual "Racing Academy": base clara, discreta e legível.
+ * Tokens são organizados por finalidade, não por página.
+ * Breakpoints de referência (não utilizáveis em media queries via custom
+ * properties): 360–479, 480–767, 768–1023 e 1024+ px.
+ * ------------------------------------------------------------------------- */
+
 :root {
   color-scheme: light;
+  accent-color: var(--color-primary);
 
-  /* Cores do design system */
-  --color-white: #ffffff;
-  --color-surface: #f5f6fa;
-  --color-ink: #202431;
-  --color-primary: #7771d8;
-  --color-primary-hover: #655fc5;
-  --color-muted: #747b8c;
-  --color-border: #e5e7ef;
-  --color-success: #27845d;
-  --color-warning: #c58a32;
-  --color-danger: #c64f5b;
-  --color-info: #5484c7;
+  /* Cores ---------------------------------------------------------------- */
+  --color-bg: #f7f6fa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f0eff5;
+  --color-ink: #25243a;
+  --color-muted: #646174;
+  --color-primary: #5145a8;
+  --color-primary-hover: #40368f;
+  --color-rose: #a83f65;
+  --color-sky: #2e6895;
+  --color-border: #e4e1eb;
+  --color-border-strong: #8f879f;
+  --color-success: #1a7a61;
+  --color-warning: #8a5200;
+  --color-danger: #a53d54;
+  --color-info: #2e6895;
 
-  /* Derivados acessíveis */
-  --color-primary-soft: #efedfb;
-  --color-success-soft: #e7f4ee;
-  --color-warning-soft: #fbf3e5;
-  --color-danger-soft: #fbeaec;
-  --color-info-soft: #eaf1fa;
-  --color-focus: #3f3aa8;
-  --color-overlay: rgb(32 36 49 / 45%);
+  /* Aliases de compatibilidade com a folha anterior. */
+  --color-white: var(--color-surface);
+  --color-canvas: var(--color-bg);
 
-  /* Tipografia */
+  /* Ponte para utilitários do Bootstrap que usam !important. */
+  --bs-secondary-color: var(--color-muted);
+
+  /* Texto sobre fundos suaves (contraste AA validado). */
+  --color-primary-ink: #40368f;
+  --color-success-ink: #14624d;
+  --color-warning-ink: #6b3f00;
+  --color-danger-ink: #8f3247;
+  --color-info-ink: #245273;
+  --color-neutral-ink: #646174;
+
+  /* Superfícies suaves e tintas semânticas. */
+  --color-primary-soft: #eeebf9;
+  --color-rose-soft: #f7e9ef;
+  --color-sky-soft: #e7f0f7;
+  --color-success-soft: #e6f3ee;
+  --color-warning-soft: #f7eedf;
+  --color-danger-soft: #f8e9ed;
+  --color-info-soft: #e7f0f7;
+
+  /* Bordas suaves para badges e alertas. */
+  --color-primary-border: #d8d2ef;
+  --color-success-border: #b7dccf;
+  --color-warning-border: #e8d2b0;
+  --color-danger-border: #e8c3cc;
+  --color-info-border: #c9ddec;
+
+  --color-focus: #40368f;
+  --color-focus-inverse: #ffffff;
+  --color-overlay: rgb(37 36 58 / 45%);
+  --focus-ring: 0 0 0 3px rgb(64 54 143 / 28%);
+
+  /* Tipografia ----------------------------------------------------------- */
   --font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
-  --font-size-page-title: 1.75rem; /* 28px */
-  --font-size-section-title: 1.25rem; /* 20px */
+  --font-size-page-title: 1.625rem; /* 26px */
+  --font-size-section-title: 1.1875rem; /* 19px */
   --font-size-card-title: 1rem; /* 16px */
   --font-size-body: 0.875rem; /* 14px */
-  --font-size-small: 0.75rem; /* 12px */
+  --font-size-caption: 0.75rem; /* 12px */
+  --font-size-small: var(--font-size-caption);
+  --font-size-control: 0.875rem; /* 14px */
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --line-height-tight: 1.2;
+  --line-height-heading: 1.28;
+  --line-height-body: 1.55;
+  --letter-spacing-label: 0.01em;
 
-  /* Espaçamento */
+  /* Espaçamento ---------------------------------------------------------- */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -44,28 +91,35 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
+  /* Passo legado usado pelo shell de autenticação. */
+  --space-10: 40px;
 
-  /* Formas e elevação */
-  --radius-card: 10px;
-  --radius-control: 8px;
+  /* Formas --------------------------------------------------------------- */
+  --radius-sm: 8px;
+  --radius-control: 10px;
+  --radius-card: 14px;
   --radius-pill: 999px;
-  --shadow-soft: 0 1px 2px rgb(32 36 49 / 6%), 0 4px 12px rgb(32 36 49 / 4%);
-  --shadow-raised: 0 8px 24px rgb(32 36 49 / 10%);
 
-  /* Layout */
-  --container-max: 1120px;
-  --container-narrow: 720px;
-  --control-height: 40px;
+  /* Elevação ------------------------------------------------------------- */
+  --shadow-soft: 0 1px 2px rgb(37 36 58 / 5%), 0 4px 12px rgb(37 36 58 / 4%);
+  --shadow-raised: 0 8px 24px rgb(37 36 58 / 10%);
+  --shadow-control: 0 1px 2px rgb(37 36 58 / 6%);
+
+  /* Layout --------------------------------------------------------------- */
+  --container-max: 1200px;
+  --container-narrow: 760px;
+  --control-height: 44px;
   --touch-target: 44px;
-  --sidebar-width: 248px;
+  --sidebar-width: 224px;
   --header-height: 64px;
-  --focus-ring: 0 0 0 3px rgb(63 58 168 / 35%);
 
-  /* Camadas */
+  /* Camadas -------------------------------------------------------------- */
   --z-header: 100;
   --z-sidebar: 100;
   --z-overlay: 200;
 
-  /* Movimento */
-  --transition-fast: 120ms ease;
+  /* Movimento ------------------------------------------------------------ */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --transition-fast: 120ms var(--ease-standard);
+  --transition-base: 180ms var(--ease-standard);
 }

@@ -5,6 +5,10 @@
 
 {% block page_title %}Personagens do catálogo{% endblock %}
 
+{% block page_subtitle %}
+  <p class="text-muted text-small">Consulte versões disponíveis, aptidões consolidadas e imagens.</p>
+{% endblock %}
+
 {% block page_actions %}
   <a class="btn btn-secondary" href="{% url 'admin:catalog_status' %}">Voltar ao catálogo</a>
 {% endblock %}
@@ -13,7 +17,7 @@
   <form class="filters" method="get" role="search">
     <div class="filters__row">
       <div class="filters__search form-group">
-        <label class="form-label" for="catalog-search">Pesquisar personagem</label>
+        <label class="form-label" for="catalog-search">Buscar personagem</label>
         <input
           id="catalog-search"
           class="form-control"
@@ -25,7 +29,7 @@
         >
       </div>
       <div class="form-group">
-        <label class="form-label" for="catalog-cutoff">Data de corte</label>
+        <label class="form-label" for="catalog-cutoff">Data de referência</label>
         <input
           id="catalog-cutoff"
           class="form-control"
@@ -33,66 +37,80 @@
           name="cutoff"
           value="{{ cutoff|date:'Y-m-d' }}"
         >
+        <p class="form-help">Versões lançadas até esta data.</p>
       </div>
       <button class="btn btn-secondary" type="submit">Filtrar</button>
       {% if query %}
-        <a class="filters__clear" href="{% url 'admin:catalog_characters' %}">Limpar</a>
+        <a class="filters__clear" href="{% url 'admin:catalog_characters' %}">Limpar busca</a>
       {% endif %}
     </div>
   </form>
 
   {% if rows %}
-    <div class="table-wrap">
-      <table class="table">
+    <div class="catalog-list-header">
+      <p class="text-muted text-small">
+        Página {{ page.number }} de {{ page.paginator.num_pages }} ·
+        {{ page.paginator.count }} personagem(ns) no catálogo.
+      </p>
+      <p class="text-muted text-small">Data de referência: {{ cutoff|date_br }}</p>
+    </div>
+
+    <div class="table-wrap admin-data-table-wrap">
+      <table class="table admin-data-table catalog-characters-table">
         <caption class="visually-hidden">Personagens e aptidões consolidadas</caption>
         <thead>
           <tr>
             <th scope="col">Imagem</th>
             <th scope="col">Personagem</th>
-            <th scope="col">Versões elegíveis</th>
+            <th scope="col">Versões disponíveis</th>
             <th scope="col">Aptidões consolidadas</th>
           </tr>
         </thead>
         <tbody>
           {% for row in rows %}
             <tr>
-              <td>
-                {% character_image row.character as image_src %}
-                <img
-                  class="character-thumb"
-                  src="{{ image_src }}"
-                  alt="{% character_image_alt row.character %}"
-                  width="48"
-                  height="48"
-                  loading="lazy"
-                  data-fallback-src="{% placeholder_url %}"
-                >
-                {% if row.image %}
-                  {% status_badge row.image.status %}
-                {% else %}
-                  <span class="badge badge--warning">Sem imagem</span>
-                {% endif %}
+              <td data-label="Imagem">
+                <div class="catalog-character-media">
+                  {% character_image row.character as image_src %}
+                  <img
+                    class="character-thumb"
+                    src="{{ image_src }}"
+                    alt="{% character_image_alt row.character %}"
+                    width="48"
+                    height="48"
+                    loading="lazy"
+                    data-fallback-src="{% placeholder_url %}"
+                  >
+                  {% if row.image %}
+                    {% status_badge row.image.status %}
+                  {% else %}
+                    <span class="badge badge--warning">Sem imagem</span>
+                  {% endif %}
+                </div>
               </td>
-              <td>
-                <strong>{{ row.character.display_name }}</strong><br>
-                <code>{{ row.character.stable_id }}</code>
+              <td data-label="Personagem">
+                <span class="catalog-character-name">{{ row.character.display_name }}</span>
+                <code class="catalog-character-id">{{ row.character.stable_id }}</code>
               </td>
-              <td>
-                {% for version in row.eligible_versions %}
-                  <span class="badge badge--neutral">{{ version.display_name }}</span>
-                {% empty %}
-                  <span class="text-muted">Nenhuma até o corte</span>
-                {% endfor %}
+              <td data-label="Versões disponíveis">
+                <div class="catalog-badge-list">
+                  {% for version in row.eligible_versions %}
+                    <span class="badge badge--neutral">{{ version.display_name }}</span>
+                  {% empty %}
+                    <span class="text-muted">Nenhuma até a data de referência</span>
+                  {% endfor %}
+                </div>
               </td>
-              <td>
-                {% for category, values in row.aptitudes.items %}
-                  <div>
-                    <span class="text-muted text-small">{{ category }}:</span>
-                    {{ values|join:", " }}
-                  </div>
-                {% empty %}
-                  <span class="text-muted">—</span>
-                {% endfor %}
+              <td data-label="Aptidões consolidadas">
+                <div class="catalog-aptitudes">
+                  {% for category, values in row.aptitudes.items %}
+                    <div class="catalog-aptitudes__row">
+                      {% include "admin/catalog/_aptitude_values.html" with category=category values=values %}
+                    </div>
+                  {% empty %}
+                    <span class="text-muted">—</span>
+                  {% endfor %}
+                </div>
               </td>
             </tr>
           {% endfor %}
@@ -107,7 +125,7 @@
             Anterior
           </a>
         {% endif %}
-        <span>Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+        <span class="pagination__status">Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
         {% if page.has_next %}
           <a class="btn btn-tertiary" href="?q={{ query }}&cutoff={{ cutoff|date:'Y-m-d' }}&page={{ page.next_page_number }}">
             Próxima
@@ -118,7 +136,16 @@
   {% else %}
     <div class="empty-state">
       <h2>Nenhuma personagem encontrada</h2>
-      <p>Importe um catálogo ou ajuste os filtros de pesquisa.</p>
+      <p>
+        {% if query %}
+          Nenhuma personagem corresponde a “{{ query }}”. Ajuste a busca ou a data de referência.
+        {% else %}
+          Importe um catálogo para começar a consultar as personagens.
+        {% endif %}
+      </p>
+      {% if query %}
+        <p><a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Limpar busca</a></p>
+      {% endif %}
     </div>
   {% endif %}
 {% endblock %}

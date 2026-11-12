@@ -3,17 +3,10 @@
 {% block title %}Acesso administrativo — Uma Voting{% endblock %}
 
 {% block body %}
-  <div class="auth-shell">
-    <aside class="auth-aside">
-      <span class="badge badge--info">Administração</span>
-      <h1 class="auth-aside__title">Gestão de participantes, catálogo e votações.</h1>
-      <p>
-        O acesso administrativo exige username e senha e é restrito aos administradores
-        da comunidade.
-      </p>
-    </aside>
-
+  <main id="conteudo" class="auth-shell">
     <section class="auth-card" aria-labelledby="login-title">
+      <a class="auth-brand" href="{% url 'admin:login' %}">Uma Voting</a>
+
       <div class="auth-card__header">
         <h1 id="login-title" class="h2">Acesso administrativo</h1>
         <p>Informe suas credenciais para continuar.</p>
@@ -55,5 +48,5 @@
         É participante? <a href="{% url 'participant:login' %}">Entrar somente com username</a>.
       </p>
     </section>
-  </div>
+  </main>
 {% endblock %}
