@@ -69,6 +69,12 @@ def create_import_job(
             .first()
         )
         if existing is not None:
+            logger.info(
+                "import_job.reused job_id=%s source=%s status=%s",
+                existing.pk,
+                source.name,
+                existing.status,
+            )
             existing.already_active = True
             return existing
 
@@ -133,7 +139,15 @@ def request_cancel(job: ImportJob, admin) -> ImportJob:
                 ]
             )
 
-    logger.info("import_job.cancelled job_id=%s status=%s", locked.pk, locked.status)
+    if locked.status == ImportJob.Status.CANCELLED:
+        logger.info("import_job.cancelled job_id=%s source=%s", locked.pk, locked.source.name)
+    else:
+        logger.info(
+            "import_job.cancel_requested job_id=%s source=%s phase=%s",
+            locked.pk,
+            locked.source.name,
+            locked.phase,
+        )
     return locked
 
 
@@ -197,6 +211,15 @@ def mark_stale_jobs(now=None, threshold: int | None = None) -> int:
     return affected
 
 
+def last_failure_for_source(source: CatalogSource) -> ImportJob | None:
+    """Última execução com falha da fonte, para o painel de diagnóstico."""
+    return (
+        ImportJob.objects.filter(source=source, status=ImportJob.Status.FAILED)
+        .order_by("-finished_at", "-created_at")
+        .first()
+    )
+
+
 def check_source(source: CatalogSource):
     """Verifica disponibilidade sem criar job nem gravar catálogo/imagens."""
     if not is_supported(source):
@@ -239,10 +262,12 @@ def claim_next_job(worker_id: str) -> ImportJob | None:
         )
 
     logger.info(
-        "import_job.claimed job_id=%s source=%s kind=%s worker=%s",
+        "import_job.claimed job_id=%s source=%s kind=%s phase=%s status=%s worker=%s",
         job.pk,
         job.source.name,
         job.kind,
+        job.phase,
+        job.status,
         worker_id,
     )
     return job
@@ -285,10 +310,19 @@ def _finish(
             "report",
         ]
     )
+    duration_ms = None
+    if job.started_at is not None:
+        duration_ms = int((job.finished_at - job.started_at).total_seconds() * 1000)
     logger.info(
-        "import_job.completed job_id=%s status=%s error=%s",
+        "import_job.completed job_id=%s source=%s status=%s phase=%s "
+        "progress_done=%s progress_total=%s duration_ms=%s error=%s",
         job.pk,
+        job.source.name,
         status,
+        job.phase,
+        job.progress_done,
+        job.progress_total,
+        duration_ms,
         error_message[:200],
     )
     return job

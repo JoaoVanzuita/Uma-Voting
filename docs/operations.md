@@ -7,8 +7,27 @@
 
 - **Desenvolvimento**: Docker Compose com `compose.override.yaml`, Django `runserver` e
   PostgreSQL local.
+- **Staging temporário**: `config.settings.staging` (herda de `dev`) apontando para um banco
+  separado, útil para testes ponta a ponta sem tocar nos dados de desenvolvimento.
 - **Produção**: `compose.yaml` + `compose.prod.yaml`, Gunicorn, scheduler, Caddy e PostgreSQL.
 - **Variáveis**: `.env` não versionado; consulte `.env.example`.
+
+### 1.1 Staging temporário
+
+```bash
+# cria o banco (uma vez)
+docker compose exec db createdb -U uma_voting uma_voting_staging
+
+# migrations, cache e admin no banco de staging
+DJANGO_SETTINGS_MODULE=config.settings.staging ./scripts/dev.sh
+```
+
+O sufixo do banco pode ser trocado com `STAGING_POSTGRES_DB`. Para descartar o ambiente:
+
+```bash
+docker compose exec db dropdb -U uma_voting uma_voting_staging
+```
+
 
 ## 2. Deploy e release
 

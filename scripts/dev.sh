@@ -12,6 +12,7 @@
 #   DEV_PORT=8001 ./scripts/dev.sh
 #   ./scripts/dev.sh --port 8001 --host 127.0.0.1
 #   ./scripts/dev.sh --stop-web
+#   DJANGO_SETTINGS_MODULE=config.settings.staging ./scripts/dev.sh
 #
 # Variáveis:
 #   DEV_HOST              host do runserver (padrão: 0.0.0.0)
@@ -82,7 +83,7 @@ if [[ -n "$EXPLICIT_POSTGRES_HOST" ]]; then
   POSTGRES_HOST="$EXPLICIT_POSTGRES_HOST"
 fi
 
-export DJANGO_SETTINGS_MODULE=config.settings.dev
+export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-config.settings.dev}"
 export DJANGO_DEBUG=True
 export PYTHONUNBUFFERED=1
 export POSTGRES_PORT="${POSTGRES_PORT:-5432}"

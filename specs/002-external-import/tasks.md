@@ -214,12 +214,12 @@ bloqueia a importação e desabilitar a feature por configuração.
 
 **Purpose**: fechar as lacunas críticas e altas identificadas na análise antes do deploy.
 
-- [ ] T081 [US1] Criar teste de regressão de snapshots em `tests/integration/test_external_import_snapshot.py`: votação com snapshot/cédula, importação aplicada, snapshot e resultado inalterados
-- [ ] T082 [US2] Criar teste de isolamento de mídia em `tests/integration/test_external_import_isolation.py`: páginas de participante e catálogo não fazem requisições externas de imagem
-- [ ] T083 [US3] Adicionar consulta da última falha por fonte em `apps/catalog/services/imports.py` e usá-la no painel de fontes
-- [ ] T084 [US3] Cobrir todas as transições de estado com log estruturado em `apps/catalog/services/imports.py`: criada, claimed, fase, concluída, cancelada, stale e retry
-- [ ] T085 [US3] Criar `apps/catalog/migrations/0006_importjob_terminal_trigger.py` com triggers que bloqueiam `UPDATE` de execução terminal e `DELETE` de execuções
-- [ ] T086 [US3] Testar constraints, índice único parcial e triggers de `ImportJob` em `apps/catalog/tests/test_import_job_model.py`
+- [X] T081 [US1] Criar teste de regressão de snapshots em `tests/integration/test_external_import_snapshot.py`: votação com snapshot/cédula, importação aplicada, snapshot e resultado inalterados
+- [X] T082 [US2] Criar teste de isolamento de mídia em `tests/integration/test_external_import_isolation.py`: páginas de participante e catálogo não fazem requisições externas de imagem
+- [X] T083 [US3] Adicionar consulta da última falha por fonte em `apps/catalog/services/imports.py` e usá-la no painel de fontes
+- [X] T084 [US3] Cobrir todas as transições de estado com log estruturado em `apps/catalog/services/imports.py`: criada, claimed, fase, concluída, cancelada, stale e retry
+- [X] T085 [US3] Criar `apps/catalog/migrations/0006_importjob_terminal_trigger.py` com triggers que bloqueiam `UPDATE` de execução terminal e `DELETE` de execuções
+- [X] T086 [US3] Testar constraints, índice único parcial e triggers de `ImportJob` em `apps/catalog/tests/test_import_job_model.py`
 
 **Checkpoint**: lacunas CRITICAL/HIGH cobertas e verificadas.
 

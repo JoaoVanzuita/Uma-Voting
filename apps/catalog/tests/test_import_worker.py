@@ -611,3 +611,21 @@ def test_advisory_lock_global_impede_segundo_worker():
     payload = json.loads(output.getvalue())
     assert any("Outro worker" in error for error in payload["errors"])
     assert payload["processed"] == []
+
+
+def test_logs_de_fases_e_conclusao(monkeypatch, source, caplog):
+    report = make_report(
+        "tokai-teio,Tokai Teio,tokai-teio-original,Tokai Teio (Original),"
+        "2025-06-26,pace,medium;long,turf\n"
+    )
+    register(monkeypatch, report=report)
+    job = running_job(source)
+
+    with caplog.at_level("INFO", logger="apps.catalog.imports"):
+        run_import_job(job.pk, "worker-log")
+
+    messages = "\n".join(record.getMessage() for record in caplog.records)
+    assert "import_job.phase.started" in messages
+    assert "import_job.phase.finished" in messages
+    assert "import_job.completed" in messages
+    assert "status=success" in messages

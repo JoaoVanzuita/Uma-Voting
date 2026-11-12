@@ -18,6 +18,7 @@ from apps.catalog.services.imports import (
     check_source,
     claim_next_job,
     create_import_job,
+    last_failure_for_source,
     mark_stale_jobs,
     request_cancel,
     request_retry,
@@ -309,3 +310,63 @@ def test_check_source_propaga_resultado_do_conector(adapter, monkeypatch):
 
     assert result.ok is False
     assert result.message == "fonte fora do ar"
+
+
+# ---------------------------------------------------------------------------
+# Última falha por fonte (T083)
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_ultima_falha_por_fonte(adapter):
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    other = CatalogSourceFactory(adapter=FakeAdapter.key)
+    older = ImportJobFactory(
+        source=source,
+        status=ImportJob.Status.FAILED,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now() - timedelta(hours=2),
+        error_message="antiga",
+    )
+    newer = ImportJobFactory(
+        source=source,
+        status=ImportJob.Status.FAILED,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+        error_message="recente",
+    )
+    ImportJobFactory(
+        source=other,
+        status=ImportJob.Status.SUCCESS,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+    )
+
+    assert last_failure_for_source(source) == newer
+    assert last_failure_for_source(other) is None
+    assert older.pk != newer.pk
+
+
+# ---------------------------------------------------------------------------
+# Logs estruturados de transição (T084)
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_logs_de_criacao_claim_cancelamento_retry_e_stale(adapter, enabled, caplog):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+
+    with caplog.at_level("INFO", logger="apps.catalog.imports"):
+        queued = create_import_job(source, ImportJob.Kind.CATALOG, triggered_by=admin)
+        request_cancel(queued, admin)
+        running = create_import_job(source, ImportJob.Kind.CATALOG, triggered_by=admin)
+        claim_next_job("worker-log")
+        request_cancel(running, admin)
+        mark_stale_jobs(threshold=0)
+        running.refresh_from_db()
+        request_retry(running, admin)
+
+    messages = "\n".join(record.getMessage() for record in caplog.records)
+    assert "import_job.created" in messages
+    assert "import_job.cancelled" in messages
+    assert "import_job.claimed" in messages
+    assert "import_job.cancel_requested" in messages
+    assert "import_job.stale" in messages
+    assert "import_job.retry_requested" in messages

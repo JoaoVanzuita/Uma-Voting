@@ -35,6 +35,7 @@ from apps.catalog.services.import_errors import (
 from apps.catalog.services.imports import (
     check_source,
     create_import_job,
+    last_failure_for_source,
     request_cancel,
     request_retry,
 )
@@ -73,11 +74,7 @@ def _characters_without_image():
 
 
 def _last_failure(source: CatalogSource) -> ImportJob | None:
-    return (
-        ImportJob.objects.filter(source=source, status=ImportJob.Status.FAILED)
-        .order_by("-finished_at", "-created_at")
-        .first()
-    )
+    return last_failure_for_source(source)
 
 
 def _external_sources() -> list[dict]:
