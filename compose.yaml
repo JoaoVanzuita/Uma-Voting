@@ -86,6 +86,18 @@ services:
       - media_data:/app/media
       - static_data:/app/staticfiles
 
+  import-worker:
+    <<: *app
+    command: ["python", "manage.py", "run_import_worker", "--interval", "5"]
+    depends_on:
+      db:
+        condition: service_healthy
+      release:
+        condition: service_completed_successfully
+    volumes:
+      - media_data:/app/media
+      - static_data:/app/staticfiles
+
   caddy:
     image: caddy:2.10-alpine
     environment:

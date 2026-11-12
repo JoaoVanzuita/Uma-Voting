@@ -17,6 +17,8 @@ from apps.catalog.models import (
     CharacterVersion,
     CharacterVersionAptitude,
     ImageAsset,
+    SyncChange,
+    SyncRun,
 )
 from apps.voting.models import (
     Ballot,
@@ -98,6 +100,25 @@ class CatalogSourceFactory(factory.django.DjangoModelFactory):
     kind = CatalogSource.Kind.FILE
     license_note = "Fonte de teste."
     enabled = True
+
+
+class SyncRunFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SyncRun
+
+    source = factory.SubFactory(CatalogSourceFactory)
+    status = SyncRun.Status.RUNNING
+    summary = ""
+
+
+class SyncChangeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SyncChange
+
+    sync_run = factory.SubFactory(SyncRunFactory)
+    change_type = SyncChange.ChangeType.NEW_CHARACTER
+    status = SyncChange.Status.PENDING
+    payload = factory.LazyFunction(dict)
 
 
 class CharacterFactory(factory.django.DjangoModelFactory):

@@ -38,12 +38,15 @@ Projeto Django único na raiz do repositório:
 
 **Purpose**: configuração, fixtures, compose e base de testes.
 
-- [ ] T001 Adicionar as variáveis `EXTERNAL_IMPORT_ENABLED`, `EXTERNAL_IMPORT_HTTP_TIMEOUT`, `EXTERNAL_IMPORT_MAX_IMAGE_BYTES`, `EXTERNAL_IMPORT_CONCURRENCY` e `EXTERNAL_IMPORT_STALE_SECONDS` em `config/settings/base.py` e `.env.example`
-- [ ] T002 Configurar o logger `apps.catalog.imports` em `config/settings/base.py`, com formato sem dados sensíveis
-- [ ] T003 Adicionar o serviço `import-worker` em `compose.yaml`, com `manage.py run_import_worker --interval 5` e volume `media_data`
-- [ ] T004 [P] Criar fixtures HTTP em `apps/catalog/tests/fixtures/sources/` (`official_characters.json`, `official_character_detail.json`, `gametora_cards.json`, `gametora_release.json`)
-- [ ] T005 [P] Desabilitar `EXTERNAL_IMPORT_ENABLED` por padrão em `config/settings/test.py` e impedir chamadas de rede reais nos testes
+- [X] T001 Adicionar as variáveis `EXTERNAL_IMPORT_ENABLED`, `EXTERNAL_IMPORT_HTTP_TIMEOUT`, `EXTERNAL_IMPORT_MAX_IMAGE_BYTES`, `EXTERNAL_IMPORT_CONCURRENCY` e `EXTERNAL_IMPORT_STALE_SECONDS` em `config/settings/base.py` e `.env.example`
+- [X] T002 Configurar o logger `apps.catalog.imports` em `config/settings/base.py`, com formato sem dados sensíveis
+- [X] T003 Adicionar o serviço `import-worker` em `compose.yaml`, com `manage.py run_import_worker --interval 5` e volume `media_data`
+- [X] T004 [P] Criar fixtures HTTP em `apps/catalog/tests/fixtures/sources/` (`official_characters.json`, `official_character_detail.json`, `gametora_cards.json`, `gametora_release.json`)
+- [X] T005 [P] Desabilitar `EXTERNAL_IMPORT_ENABLED` por padrão em `config/settings/test.py` e impedir chamadas de rede reais nos testes
 - [ ] T006 [P] Adicionar factories de `CatalogSource` com `adapter`, `ImportJob`, `SyncRun` e `SyncChange` em `tests/factories.py`
+
+> **Nota**: T006 depende de T007–T009 (campos e modelos). As factories de `SyncRun` e
+> `SyncChange` já existem; `adapter` e `ImportJob` serão adicionados no início da Phase 2.
 
 ---
 

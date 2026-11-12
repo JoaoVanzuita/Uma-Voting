@@ -1,0 +1,42 @@
+[
+  {
+    "card_id": 100101,
+    "char_id": 1001,
+    "name_en": "Special Week",
+    "url_name": "special-week",
+    "release_en": "2025-06-26",
+    "aptitude": ["A", "G", "C", "A", "A", "A", "A", "A", "A", "A"]
+  },
+  {
+    "card_id": 100102,
+    "char_id": 1001,
+    "name_en": "Special Week",
+    "url_name": "special-week",
+    "release_en": "2025-07-01",
+    "aptitude": ["A", "G", "C", "A", "A", "A", "A", "A", "A", "A"]
+  },
+  {
+    "card_id": 100201,
+    "char_id": 1002,
+    "name_en": "Silence Suzuka",
+    "url_name": "silence-suzuka",
+    "release_en": "2025-06-26",
+    "aptitude": ["A", "G", "F", "A", "A", "B", "S", "A", "B", "G"]
+  },
+  {
+    "card_id": 100301,
+    "char_id": 1003,
+    "name_en": "Tokai Teio",
+    "url_name": "tokai-teio",
+    "release_en": "2025-07-10",
+    "aptitude": ["A", "G", "B", "A", "A", "B", "A", "A", "A", "C"]
+  },
+  {
+    "card_id": 100401,
+    "char_id": 1004,
+    "name_en": "Symboli Rudolf",
+    "url_name": "symboli-rudolf",
+    "release_en": null,
+    "aptitude": ["A", "G", "C", "A", "A", "A", "A", "S", "A", "B"]
+  }
+]

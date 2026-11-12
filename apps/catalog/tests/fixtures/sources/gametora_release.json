@@ -1,0 +1,18 @@
+{
+  "pageProps": {
+    "sourceData": {
+      "banners": [
+        {
+          "server": "jp",
+          "start": 1752710400,
+          "is_estimated": false
+        },
+        {
+          "server": "en",
+          "start": 1755129600,
+          "is_estimated": true
+        }
+      ]
+    }
+  }
+}

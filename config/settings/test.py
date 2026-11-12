@@ -14,3 +14,6 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 # Testes nunca devem exigir TLS nem cookies seguros.
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
+
+# Importação externa desligada por padrão; testes que a exercitam usam override.
+EXTERNAL_IMPORT_ENABLED = False

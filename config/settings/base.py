@@ -19,6 +19,11 @@ env = environ.Env(
     DJANGO_CSRF_COOKIE_SECURE=(bool, False),
     DJANGO_DB_CONN_MAX_AGE=(int, 60),
     DJANGO_SESSION_COOKIE_AGE=(int, 43200),
+    EXTERNAL_IMPORT_ENABLED=(bool, False),
+    EXTERNAL_IMPORT_HTTP_TIMEOUT=(int, 15),
+    EXTERNAL_IMPORT_MAX_IMAGE_BYTES=(int, 5 * 1024 * 1024),
+    EXTERNAL_IMPORT_CONCURRENCY=(int, 4),
+    EXTERNAL_IMPORT_STALE_SECONDS=(int, 600),
 )
 
 environ.Env.read_env(BASE_DIR / ".env")
@@ -177,6 +182,20 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 6 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 # ---------------------------------------------------------------------------
+# Importação externa de catálogo e imagens
+# ---------------------------------------------------------------------------
+# A importação externa é opcional e desligada por padrão (kill switch).
+EXTERNAL_IMPORT_ENABLED = env("EXTERNAL_IMPORT_ENABLED")
+# Timeout de conexão/leitura por requisição ao conector externo.
+EXTERNAL_IMPORT_HTTP_TIMEOUT = env("EXTERNAL_IMPORT_HTTP_TIMEOUT")
+# Limite por resposta de imagem; acima disso a imagem é rejeitada.
+EXTERNAL_IMPORT_MAX_IMAGE_BYTES = env("EXTERNAL_IMPORT_MAX_IMAGE_BYTES")
+# Downloads simultâneos na fase de imagens.
+EXTERNAL_IMPORT_CONCURRENCY = env("EXTERNAL_IMPORT_CONCURRENCY")
+# Execução `running` sem heartbeat por esse tempo é marcada como falha.
+EXTERNAL_IMPORT_STALE_SECONDS = env("EXTERNAL_IMPORT_STALE_SECONDS")
+
+# ---------------------------------------------------------------------------
 # Cache compartilhado entre workers (throttle de login)
 # ---------------------------------------------------------------------------
 CACHES = {
@@ -224,6 +243,13 @@ LOGGING = {
             "propagate": False,
         },
         "apps": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        # Transições do worker de importação externa. Campos estruturados
+        # (job_id, source, phase, status) sem credenciais ou dados pessoais.
+        "apps.catalog.imports": {
             "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
