@@ -516,3 +516,30 @@ def test_worker_marca_execucao_stale_no_ciclo(monkeypatch):
     assert stale.status == ImportJob.Status.FAILED
     assert stale.phase == ImportJob.Phase.FINISHED
     assert "sinal de vida" in stale.error_message
+
+
+def test_fase_de_imagens_roda_sem_nota_de_licenca(monkeypatch, source):
+    source.license_note = ""
+    source.save(update_fields=["license_note"])
+    character = CharacterFactory(stable_id="special-week", display_name="Special Week")
+    monkeypatch.setitem(
+        ADAPTERS,
+        "fake-source",
+        image_adapter_class(
+            [
+                ImageCandidate(
+                    character_stable_id=character.stable_id,
+                    data=png_bytes(),
+                    source_url="https://example.com/sem-licenca.png",
+                )
+            ]
+        ),
+    )
+    job = images_job(source)
+
+    result = run_import_job(job.pk, "worker-teste")
+
+    assert result.status == ImportJob.Status.SUCCESS
+    assert result.report["images"]["created"] == 1
+    asset = ImageAsset.objects.get(character=character, is_current=True)
+    assert asset.license_note == ""

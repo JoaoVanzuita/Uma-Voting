@@ -149,6 +149,14 @@
         {% else %}
           <div class="empty-state"><p>Nenhuma fonte externa cadastrada.</p></div>
         {% endif %}
+
+        {% if has_ineligible_sources %}
+          <p class="text-muted text-small">
+            Para tornar uma fonte elegível, confirme que ela está habilitada e que o campo
+            <code>adapter</code> aponta para um conector registrado. O ajuste é feito no cadastro
+            da fonte.
+          </p>
+        {% endif %}
       </section>
 
       <section class="panel stack" aria-labelledby="pending-title">

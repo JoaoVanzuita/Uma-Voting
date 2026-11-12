@@ -15,6 +15,7 @@ from apps.catalog.services.import_errors import (
 )
 from apps.catalog.services.importers import CatalogParseReport
 from apps.catalog.services.imports import (
+    check_source,
     claim_next_job,
     create_import_job,
     mark_stale_jobs,
@@ -273,3 +274,38 @@ def test_repeticao_nao_altera_execucao_original(adapter, enabled):
     assert original.status == ImportJob.Status.FAILED
     assert original.error_message == "falha original"
     assert original.attempts == 2
+
+
+# ---------------------------------------------------------------------------
+# Verificação de fonte (T065)
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_check_source_funciona_para_fonte_desabilitada(adapter):
+    source = CatalogSourceFactory(adapter=FakeAdapter.key, enabled=False)
+
+    result = check_source(source)
+
+    assert result.ok is True
+
+
+@pytest.mark.django_db
+def test_check_source_exige_conector():
+    source = CatalogSourceFactory(adapter="")
+
+    with pytest.raises(ImportSourceError, match="não possui conector"):
+        check_source(source)
+
+
+@pytest.mark.django_db
+def test_check_source_propaga_resultado_do_conector(adapter, monkeypatch):
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    monkeypatch.setattr(
+        FakeAdapter,
+        "check",
+        lambda self: SourceCheckResult(False, "fonte fora do ar", timezone.now()),
+    )
+
+    result = check_source(source)
+
+    assert result.ok is False
+    assert result.message == "fonte fora do ar"

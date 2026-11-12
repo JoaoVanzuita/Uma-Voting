@@ -638,3 +638,98 @@ def test_licenca_nao_aparece_na_interface_de_importacao(client, adapter, enabled
     assert "Texto de licença que não deve aparecer." not in form_html
     assert "Texto de licença que não deve aparecer." not in status_html
     assert "Licença:" not in form_html
+
+
+# ---------------------------------------------------------------------------
+# Verificação de fonte e diagnóstico (T065/T067/T072)
+# ---------------------------------------------------------------------------
+def test_painel_exibe_motivo_e_orientacao_para_fonte_inelegivel(client, adapter, enabled):
+    admin = AdminUserFactory()
+    CatalogSourceFactory(
+        name="fonte-desabilitada",
+        adapter=FakeAdapter.key,
+        enabled=False,
+    )
+    CatalogSourceFactory(name="fonte-sem-conector", adapter="")
+    _login(client, admin)
+
+    html = client.get(reverse("admin:catalog_status")).content.decode()
+
+    assert "Fonte desabilitada." in html
+    assert "Sem conector registrado." in html
+    assert "Para tornar uma fonte elegível" in html
+
+
+def test_verificar_fonte_disponivel_mostra_sucesso(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    _login(client, admin)
+
+    response = client.post(
+        reverse("admin:catalog_source_check", args=[source.pk]),
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert "Fonte disponível." in response.content.decode()
+
+
+def test_verificar_fonte_indisponivel_mostra_motivo(client, adapter, enabled, monkeypatch):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    monkeypatch.setattr(
+        FakeAdapter,
+        "check",
+        lambda self: SourceCheckResult(False, "fonte fora do ar", timezone.now()),
+    )
+    _login(client, admin)
+
+    response = client.post(
+        reverse("admin:catalog_source_check", args=[source.pk]),
+        follow=True,
+    )
+
+    html = response.content.decode()
+    assert "Fonte indisponível" in html
+    assert "fonte fora do ar" in html
+
+
+def test_verificar_fonte_desabilitada_funciona(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key, enabled=False)
+    _login(client, admin)
+
+    response = client.post(
+        reverse("admin:catalog_source_check", args=[source.pk]),
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert "Fonte disponível." in response.content.decode()
+
+
+def test_verificar_fonte_sem_conector_retorna_409(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter="")
+    _login(client, admin)
+
+    response = client.post(reverse("admin:catalog_source_check", args=[source.pk]))
+
+    assert response.status_code == 409
+
+
+def test_verificar_fonte_exige_post(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    _login(client, admin)
+
+    assert client.get(reverse("admin:catalog_source_check", args=[source.pk])).status_code == 405
+
+
+def test_nao_administrador_nao_verifica_fonte(client, adapter, enabled):
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    client.force_login(ParticipantFactory())
+
+    response = client.post(reverse("admin:catalog_source_check", args=[source.pk]))
+
+    assert response.status_code == 403

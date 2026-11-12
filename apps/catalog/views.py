@@ -107,6 +107,7 @@ def _external_sources() -> list[dict]:
 def catalog_status(request):
     last_sync = SyncRun.objects.select_related("source").first()
     pending_changes = SyncChange.objects.filter(status=SyncChange.Status.PENDING)
+    external_sources = _external_sources()
     context = {
         "last_sync": last_sync,
         "recent_runs": SyncRun.objects.select_related("source")[:5],
@@ -116,7 +117,8 @@ def catalog_status(request):
         "image_stats": _image_stats(),
         "characters_without_image": _characters_without_image().count(),
         "sources": CatalogSource.objects.all(),
-        "external_sources": _external_sources(),
+        "external_sources": external_sources,
+        "has_ineligible_sources": any(not row["eligible"] for row in external_sources),
         "import_enabled": settings.EXTERNAL_IMPORT_ENABLED,
         "recent_import_jobs": ImportJob.objects.select_related("source")[:5],
         "sync_form": CatalogSyncForm(),

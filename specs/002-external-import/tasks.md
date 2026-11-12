@@ -181,17 +181,17 @@ bloqueia a importação e desabilitar a feature por configuração.
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T065 [P] [US4] Testar `check_source` e a rota de verificação em `apps/catalog/tests/test_import_jobs.py` e `test_ui_admin_import.py`
-- [ ] T066 [US4] Testar bloqueio por `EXTERNAL_IMPORT_ENABLED=False` e ausência de bloqueio por licença
-- [ ] T067 [US4] Testar exibição de todas as fontes no painel e de somente fontes elegíveis no seletor
+- [X] T065 [P] [US4] Testar `check_source` e a rota de verificação em `apps/catalog/tests/test_import_jobs.py` e `test_ui_admin_import.py`
+- [X] T066 [US4] Testar bloqueio por `EXTERNAL_IMPORT_ENABLED=False` e ausência de bloqueio por licença
+- [X] T067 [US4] Testar exibição de todas as fontes no painel e de somente fontes elegíveis no seletor
 
 ### Implementation for User Story 4
 
-- [ ] T068 [US4] Implementar `check_source()` e `catalog_source_check` com timeout curto, mensagem resumida e diagnóstico de fonte desabilitada que possua conector
-- [ ] T069 [US4] Exibir no painel todas as fontes com nome, última execução, situação, conector e motivo da última falha; o seletor do formulário usa apenas fontes elegíveis
-- [ ] T070 [US4] Remover a confirmação de licença do fluxo externo e exibir o kill switch como aviso discreto (sem banner de alerta)
-- [ ] T071 [US4] Implementar o kill switch na view, no serviço e na interface
-- [ ] T072 [US4] Documentar no próprio painel como resolver fonte sem conector ou desabilitada
+- [X] T068 [US4] Implementar `check_source()` e `catalog_source_check` com timeout curto, mensagem resumida e diagnóstico de fonte desabilitada que possua conector
+- [X] T069 [US4] Exibir no painel todas as fontes com nome, última execução, situação, conector e motivo da última falha; o seletor do formulário usa apenas fontes elegíveis
+- [X] T070 [US4] Remover a confirmação de licença do fluxo externo e exibir o kill switch como aviso discreto (sem banner de alerta)
+- [X] T071 [US4] Implementar o kill switch na view, no serviço e na interface
+- [X] T072 [US4] Documentar no próprio painel como resolver fonte sem conector ou desabilitada
 
 **Checkpoint**: diagnóstico e manutenção de fontes disponíveis.
 
