@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import pytest
+from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.catalog.models import ImportJob
+from apps.catalog.models import ImportJob, SyncRun
 from apps.catalog.services.importers import CatalogParseReport
 from apps.catalog.services.sources.base import SourceCheckResult
 from apps.catalog.services.sources.registry import ADAPTERS
-from tests.factories import AdminUserFactory, CatalogSourceFactory, ImportJobFactory
+from tests.factories import (
+    AdminUserFactory,
+    CatalogSourceFactory,
+    ImportJobFactory,
+    ParticipantFactory,
+)
 
 pytestmark = pytest.mark.django_db
 
@@ -155,3 +161,157 @@ def test_historico_lista_execucoes(client, adapter, enabled):
 
     assert response.status_code == 200
     assert f"#{job.pk}" in html
+
+
+# ---------------------------------------------------------------------------
+# Criação, detalhe e proteções (T031/T032)
+# ---------------------------------------------------------------------------
+def test_post_redireciona_para_execucao_ativa_existente(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(name="fonte-elegivel", adapter=FakeAdapter.key)
+    active = ImportJobFactory(source=source, status=ImportJob.Status.QUEUED)
+    _login(client, admin)
+
+    response = client.post(
+        reverse("admin:catalog_import"),
+        {"source": source.pk, "kind": "catalog", "image_scope": "missing"},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert ImportJob.objects.filter(source=source).count() == 1
+    assert reverse("admin:catalog_import_detail", args=[active.pk]) in [
+        url for url, _status in response.redirect_chain
+    ]
+    assert any("execução ativa" in str(message) for message in response.context["messages"])
+
+
+def test_kill_switch_impede_criacao_pela_view(client, adapter, settings):
+    settings.EXTERNAL_IMPORT_ENABLED = False
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(name="fonte-elegivel", adapter=FakeAdapter.key)
+    _login(client, admin)
+
+    response = client.post(
+        reverse("admin:catalog_import"),
+        {"source": source.pk, "kind": "catalog", "image_scope": "missing"},
+    )
+
+    assert response.status_code == 200
+    assert "Importação externa desabilitada" in response.content.decode()
+    assert not ImportJob.objects.filter(source=source).exists()
+
+
+def test_fonte_desabilitada_nao_pode_ser_enviada(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(name="fonte-desabilitada", adapter=FakeAdapter.key, enabled=False)
+    _login(client, admin)
+
+    response = client.post(
+        reverse("admin:catalog_import"),
+        {"source": source.pk, "kind": "catalog", "image_scope": "missing"},
+    )
+
+    assert response.status_code == 200
+    assert not ImportJob.objects.filter(source=source).exists()
+
+
+def test_fonte_sem_conector_nao_pode_ser_enviada(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(name="fonte-sem-conector", adapter="")
+    _login(client, admin)
+
+    response = client.post(
+        reverse("admin:catalog_import"),
+        {"source": source.pk, "kind": "catalog", "image_scope": "missing"},
+    )
+
+    assert response.status_code == 200
+    assert not ImportJob.objects.filter(source=source).exists()
+
+
+def test_importacao_de_imagens_exige_confirmacao_de_licenca(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(
+        name="fonte-elegivel", adapter=FakeAdapter.key, license_note="Uso interno."
+    )
+    _login(client, admin)
+
+    response = client.post(
+        reverse("admin:catalog_import"),
+        {"source": source.pk, "kind": "images", "image_scope": "missing"},
+    )
+
+    assert response.status_code == 200
+    assert "Confirme a leitura da nota de licença" in response.content.decode()
+    assert not ImportJob.objects.filter(source=source).exists()
+
+
+def test_usuario_nao_administrador_recebe_403(client, adapter, enabled):
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    client.force_login(ParticipantFactory())
+
+    response = client.get(reverse("admin:catalog_import"))
+
+    assert response.status_code == 403
+    assert source.name not in response.content.decode()
+
+
+def test_post_exige_csrf(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    client.force_login(admin)
+    csrf_client = Client(enforce_csrf_checks=True)
+    csrf_client.force_login(admin)
+
+    response = csrf_client.post(
+        reverse("admin:catalog_import"),
+        {"source": source.pk, "kind": "catalog", "image_scope": "missing"},
+    )
+
+    assert response.status_code == 403
+    assert not ImportJob.objects.filter(source=source).exists()
+
+
+def test_detalhe_exibe_relatorio_vinculo_e_ultima_falha(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    sync_run = SyncRun.objects.create(
+        source=source,
+        status=SyncRun.Status.SUCCESS,
+        origin=SyncRun.Origin.EXTERNAL,
+        finished_at=timezone.now(),
+    )
+    failure = ImportJobFactory(
+        source=source,
+        status=ImportJob.Status.FAILED,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+        error_message="GameTora indisponível.",
+    )
+    job = ImportJobFactory(
+        source=source,
+        status=ImportJob.Status.SUCCESS,
+        phase=ImportJob.Phase.FINISHED,
+        finished_at=timezone.now(),
+        sync_run=sync_run,
+        report={
+            "catalog": {
+                "total_rows": 3,
+                "new_characters": 1,
+                "warnings": ["Detalhe ausente (HTTP 404)."],
+            }
+        },
+    )
+    _login(client, admin)
+
+    response = client.get(reverse("admin:catalog_import_detail", args=[job.pk]))
+    html = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Relatório de catálogo" in html
+    assert "Novas personagens" in html
+    assert "Detalhe ausente (HTTP 404)." in html
+    assert reverse("admin:catalog_sync_detail", args=[sync_run.pk]) in html
+    assert reverse("admin:catalog_import_detail", args=[failure.pk]) in html
+    assert "GameTora indisponível." in html

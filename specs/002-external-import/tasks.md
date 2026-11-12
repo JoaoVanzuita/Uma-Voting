@@ -91,23 +91,23 @@ versões, aptidões, `SyncRun.origin=external`, `SyncChange.auto_applied` e zero
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T028 [P] [US1] Testar parsing da lista e do detalhe oficial em `apps/catalog/tests/test_source_umamusume_global.py`
-- [ ] T029 [US1] Testar parsing de cards, build ID, datas e aptidões do GameTora no mesmo arquivo
-- [ ] T030 [P] [US1] Testar fase de catálogo em `apps/catalog/tests/test_import_worker.py`: sucesso, lista vazia, GameTora indisponível, conflito de versão, `stable_id` duplicado, detalhe 404 como aviso e falha atômica
-- [ ] T031 [P] [US1] Testar criação e detalhe do job em `apps/catalog/tests/test_ui_admin_import.py`
-- [ ] T032 [US1] Testar permissão, CSRF, fonte desabilitada, fonte sem conector e kill switch no mesmo arquivo
+- [X] T028 [P] [US1] Testar parsing da lista e do detalhe oficial em `apps/catalog/tests/test_source_umamusume_global.py`
+- [X] T029 [US1] Testar parsing de cards, build ID, datas e aptidões do GameTora no mesmo arquivo
+- [X] T030 [P] [US1] Testar fase de catálogo em `apps/catalog/tests/test_import_worker.py`: sucesso, lista vazia, GameTora indisponível, conflito de versão, `stable_id` duplicado, detalhe 404 como aviso e falha atômica
+- [X] T031 [P] [US1] Testar criação e detalhe do job em `apps/catalog/tests/test_ui_admin_import.py`
+- [X] T032 [US1] Testar permissão, CSRF, fonte desabilitada, fonte sem conector e kill switch no mesmo arquivo
 
 ### Implementation for User Story 1
 
-- [ ] T033 [US1] Implementar `UmamusumeGlobalAdapter.fetch_catalog()` em `apps/catalog/services/sources/umamusume_global.py` com lista e detalhe oficiais
-- [ ] T034 [US1] Implementar descoberta de cards, build ID e JSON do GameTora no mesmo módulo, com cache e fallback
-- [ ] T035 [US1] Implementar mapeamento de aptidões, `stable_id`, versão `-original`, data global e avisos no mesmo módulo
-- [ ] T036 [US1] Implementar `run_catalog_phase()` em `apps/catalog/services/imports.py` com `sync_from_report(apply_all=True, origin=external)` e vínculo `job.sync_run`
-- [ ] T037 [US1] Preencher `report["catalog"]` com contagens de mudanças, ignoradas, avisos e erros
-- [ ] T038 [US1] Implementar `catalog_import` em `apps/catalog/views.py` para GET do formulário e POST de criação, com redirect para job existente quando já houver execução ativa da mesma fonte
-- [ ] T039 [US1] Implementar `catalog_import_detail` e o template `import_detail.html` com relatório de catálogo, última falha da fonte e link para `catalog_sync_detail`
-- [ ] T040 [US1] Conectar `run_import_worker` à fase de catálogo e registrar transições no logger `apps.catalog.imports`
-- [ ] T041 [US1] Tratar falhas sistêmicas, schema inválido e conflitos de identidade/versão com mensagens PT-BR e status `failed` sem escrita parcial, mantendo avisos de item como não fatais
+- [X] T033 [US1] Implementar `UmamusumeGlobalAdapter.fetch_catalog()` em `apps/catalog/services/sources/umamusume_global.py` com lista e detalhe oficiais
+- [X] T034 [US1] Implementar descoberta de cards, build ID e JSON do GameTora no mesmo módulo, com cache e fallback
+- [X] T035 [US1] Implementar mapeamento de aptidões, `stable_id`, versão `-original`, data global e avisos no mesmo módulo
+- [X] T036 [US1] Implementar `run_catalog_phase()` em `apps/catalog/services/imports.py` com `sync_from_report(apply_all=True, origin=external)` e vínculo `job.sync_run`
+- [X] T037 [US1] Preencher `report["catalog"]` com contagens de mudanças, ignoradas, avisos e erros
+- [X] T038 [US1] Implementar `catalog_import` em `apps/catalog/views.py` para GET do formulário e POST de criação, com redirect para job existente quando já houver execução ativa da mesma fonte
+- [X] T039 [US1] Implementar `catalog_import_detail` e o template `import_detail.html` com relatório de catálogo, última falha da fonte e link para `catalog_sync_detail`
+- [X] T040 [US1] Conectar `run_import_worker` à fase de catálogo e registrar transições no logger `apps.catalog.imports`
+- [X] T041 [US1] Tratar falhas sistêmicas, schema inválido e conflitos de identidade/versão com mensagens PT-BR e status `failed` sem escrita parcial, mantendo avisos de item como não fatais
 
 **Checkpoint**: catálogo externo funcional e testável isoladamente.
 

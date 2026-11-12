@@ -12,6 +12,7 @@ from django.db.models import QuerySet
 from apps.catalog.models import CatalogSource
 from apps.catalog.services.import_errors import ImportSourceError
 from apps.catalog.services.sources.base import ExternalSourceAdapter
+from apps.catalog.services.sources.umamusume_global import UmamusumeGlobalAdapter
 
 ADAPTERS: dict[str, type[ExternalSourceAdapter]] = {}
 
@@ -19,6 +20,9 @@ ADAPTERS: dict[str, type[ExternalSourceAdapter]] = {}
 def register_adapter(adapter_class: type[ExternalSourceAdapter]) -> None:
     """Registra uma classe de conector pela sua chave estável."""
     ADAPTERS[adapter_class.key] = adapter_class
+
+
+register_adapter(UmamusumeGlobalAdapter)
 
 
 def get_adapter_class(key: str) -> type[ExternalSourceAdapter] | None:
