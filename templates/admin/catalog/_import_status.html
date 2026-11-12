@@ -1,0 +1,41 @@
+{% load ui_tags %}
+<div
+  class="import-status"
+  data-import-status
+  data-status-url="{% url 'admin:catalog_import_status' job.pk %}"
+  data-terminal="{% if job.is_terminal %}true{% else %}false{% endif %}"
+>
+  <div class="catalog-section-header">
+    <h2 id="import-progress-title" class="catalog-section-title">Progresso</h2>
+    {% status_badge job.status %}
+  </div>
+
+  <dl class="detail-list">
+    <dt>Situação</dt><dd data-status-label>{{ job.get_status_display }}</dd>
+    <dt>Fase</dt><dd data-phase-label>{{ job.get_phase_display }}</dd>
+    <dt>Etapa atual</dt><dd data-current-step>{{ job.current_step|default:"—" }}</dd>
+    <dt>Início</dt><dd>{{ job.started_at|datetime_br }}</dd>
+    <dt>Fim</dt><dd>{{ job.finished_at|datetime_br }}</dd>
+    <dt>Progresso</dt><dd data-progress-text>{{ job.progress_done }} de {{ job.progress_total }}</dd>
+  </dl>
+
+  <div
+    class="progress"
+    role="progressbar"
+    aria-labelledby="import-progress-title"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="{{ job.progress_percent }}"
+    data-progress-bar
+  >
+    <span class="progress__bar" style="width: {{ job.progress_percent }}%" data-progress-fill></span>
+  </div>
+
+  {% if job.cancel_requested %}
+    <p class="text-muted text-small">Cancelamento solicitado; a execução encerra no próximo ponto seguro.</p>
+  {% endif %}
+
+  {% if job.error_message %}
+    <div class="alert alert-danger" role="alert">{{ job.error_message }}</div>
+  {% endif %}
+</div>

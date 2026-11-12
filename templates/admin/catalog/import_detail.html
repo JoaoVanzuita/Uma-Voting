@@ -1,0 +1,130 @@
+{% extends "admin/base.html" %}
+{% load static %}
+{% load ui_tags %}
+
+{% block title %}Importação #{{ job.pk }} — Uma Voting{% endblock %}
+
+{% block page_title %}Importação #{{ job.pk }}{% endblock %}
+
+{% block page_subtitle %}
+  <p class="text-muted text-small">
+    {{ job.source.name }} · {{ job.get_kind_display }} · {{ job.created_at|datetime_br }}
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:catalog_import_list' %}">Histórico</a>
+  <a class="btn btn-tertiary" href="{% url 'admin:catalog_status' %}">Voltar ao catálogo</a>
+{% endblock %}
+
+{% block content %}
+  <section class="panel" aria-labelledby="import-progress-title" data-import-detail>
+    {% include "admin/catalog/_import_status.html" %}
+
+    <div class="form-actions">
+      {% if not job.is_terminal %}
+        <form method="post" action="{% url 'admin:catalog_import_cancel' job.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-danger" type="submit">Cancelar importação</button>
+        </form>
+      {% else %}
+        <form method="post" action="{% url 'admin:catalog_import_retry' job.pk %}">
+          {% csrf_token %}
+          <button class="btn btn-primary" type="submit">Repetir importação</button>
+        </form>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if catalog_report %}
+    <section class="panel stack" aria-labelledby="catalog-report-title">
+      <div class="catalog-section-header">
+        <h2 id="catalog-report-title" class="catalog-section-title">Relatório de catálogo</h2>
+        {% if job.sync_run %}
+          <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' job.sync_run.pk %}">
+            Ver sincronização
+          </a>
+        {% endif %}
+      </div>
+      <dl class="detail-list">
+        <dt>Linhas lidas</dt><dd>{{ catalog_report.total_rows|default:"0" }}</dd>
+        <dt>Personagens</dt><dd>{{ catalog_report.characters|default:"0" }}</dd>
+        <dt>Novas personagens</dt><dd>{{ catalog_report.new_characters|default:"0" }}</dd>
+        <dt>Personagens atualizadas</dt><dd>{{ catalog_report.updated_characters|default:"0" }}</dd>
+        <dt>Novas versões</dt><dd>{{ catalog_report.new_versions|default:"0" }}</dd>
+        <dt>Versões atualizadas</dt><dd>{{ catalog_report.updated_versions|default:"0" }}</dd>
+        <dt>Aptidões alteradas</dt><dd>{{ catalog_report.aptitude_changes|default:"0" }}</dd>
+        <dt>Ignoradas</dt><dd>{{ catalog_report.ignored|default:"0" }}</dd>
+      </dl>
+
+      {% if catalog_report.warnings %}
+        <h3 class="catalog-subsection-title">Avisos</h3>
+        <ul class="text-small">
+          {% for warning in catalog_report.warnings %}<li>{{ warning }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+      {% if catalog_report.errors %}
+        <h3 class="catalog-subsection-title">Erros</h3>
+        <ul class="text-small">
+          {% for error in catalog_report.errors %}<li>{{ error.message }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if images_report %}
+    <section class="panel stack" aria-labelledby="images-report-title">
+      <div class="catalog-section-header">
+        <h2 id="images-report-title" class="catalog-section-title">Relatório de imagens</h2>
+        <a class="btn btn-tertiary" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
+      </div>
+      <dl class="detail-list">
+        <dt>Total</dt><dd>{{ images_report.total|default:"0" }}</dd>
+        <dt>Criadas</dt><dd>{{ images_report.created|default:"0" }}</dd>
+        <dt>Substituídas</dt><dd>{{ images_report.replaced|default:"0" }}</dd>
+        <dt>Reutilizadas</dt><dd>{{ images_report.reused|default:"0" }}</dd>
+        <dt>Ignoradas</dt><dd>{{ images_report.skipped|default:"0" }}</dd>
+      </dl>
+
+      {% if images_report.errors %}
+        <h3 class="catalog-subsection-title">Falhas de imagem</h3>
+        <div class="table-wrap admin-data-table-wrap">
+          <table class="table admin-data-table">
+            <caption class="visually-hidden">Falhas de imagem desta execução</caption>
+            <thead>
+              <tr>
+                <th scope="col">Personagem</th>
+                <th scope="col">URL</th>
+                <th scope="col">Motivo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for error in images_report.errors %}
+                <tr>
+                  <td data-label="Personagem">{{ error.character }}</td>
+                  <td data-label="URL">{{ error.url|default:"—" }}</td>
+                  <td data-label="Motivo">{{ error.message }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  {% if last_failure and last_failure.pk != job.pk %}
+    <section class="panel stack" aria-labelledby="failure-title">
+      <h2 id="failure-title" class="catalog-section-title">Última falha da fonte</h2>
+      <p class="text-muted text-small">
+        Execução #{{ last_failure.pk }} · {{ last_failure.finished_at|datetime_br }}
+      </p>
+      <div class="alert alert-danger" role="alert">{{ last_failure.error_message }}</div>
+      <a class="btn btn-tertiary" href="{% url 'admin:catalog_import_detail' last_failure.pk %}">
+        Ver execução
+      </a>
+    </section>
+  {% endif %}
+
+  <script src="{% static 'js/catalog-import.js' %}" defer></script>
+{% endblock %}

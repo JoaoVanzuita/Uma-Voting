@@ -104,6 +104,7 @@ class CatalogParseReport:
     rows: list[CatalogRow] = field(default_factory=list)
     characters: dict[str, CatalogCharacter] = field(default_factory=dict)
     errors: list[ImportIssue] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     ignored_lines: list[int] = field(default_factory=list)
 
     @property

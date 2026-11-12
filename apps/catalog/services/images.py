@@ -92,6 +92,17 @@ class ImageImportReport:
         return sum(1 for item in self.items if item.action == "reuse")
 
 
+@dataclass(frozen=True)
+class ImageStoreResult:
+    """Resultado de ``store_image_bytes`` para uma imagem."""
+
+    action: str
+    checksum: str
+    destination: str
+    message: str
+    warnings: tuple[str, ...] = ()
+
+
 def _media_path(relative_path: str) -> Path:
     return Path(settings.MEDIA_ROOT) / relative_path
 
@@ -289,6 +300,143 @@ def _read_manifest(manifest) -> list[dict[str, str]]:
     return [row for row in reader]
 
 
+def _inspect_bytes(data: bytes, *, max_bytes: int) -> tuple[Image.Image, str]:
+    """Abre e valida a integridade de uma imagem em memória."""
+    if len(data) > max_bytes:
+        raise ValueError(f"Arquivo de imagem excede o limite de {max_bytes // (1024 * 1024)} MB.")
+
+    try:
+        with Image.open(io.BytesIO(data)) as probe:
+            probe.verify()
+
+        image = Image.open(io.BytesIO(data))
+        image.load()
+    except UnidentifiedImageError as exc:
+        raise ValueError("Imagem inválida ou formato não reconhecido.") from exc
+
+    if image.width * image.height > MAX_PIXELS:
+        image.close()
+        raise ValueError("Imagem excede o limite de 4096×4096 pixels.")
+
+    fmt = (image.format or "").upper()
+    if fmt not in ALLOWED_FORMATS:
+        image.close()
+        raise ValueError(f"Formato não permitido: {fmt or 'desconhecido'}.")
+
+    return image, fmt
+
+
+def store_image_bytes(
+    character: Character,
+    data: bytes,
+    *,
+    source: CatalogSource,
+    source_url: str = "",
+    license_note: str = "",
+    is_current: bool = True,
+    max_bytes: int | None = None,
+    dry_run: bool = False,
+) -> ImageStoreResult:
+    """Valida, normaliza e grava uma imagem recebida em memória.
+
+    Reutiliza o mesmo pipeline da importação por manifesto: Pillow, WebP
+    256×256, checksum SHA-256, destino content-addressed e preservação do
+    arquivo anterior. O chamador converte ``ValueError``/``OSError`` em item do
+    relatório e continua.
+    """
+    if source.name != LOCAL_SOURCE and not license_note.strip():
+        raise ValueError("Fonte externa exige license_note e revisão manual antes de --apply.")
+
+    limit = MAX_IMAGE_BYTES if max_bytes is None else max_bytes
+    image, _fmt = _inspect_bytes(data, max_bytes=limit)
+
+    try:
+        width, height = image.size
+        if width < MIN_SIZE[0] or height < MIN_SIZE[1]:
+            raise ValueError(f"Dimensões mínimas de {MIN_SIZE[0]}×{MIN_SIZE[1]} não atendidas.")
+        normalized_bytes = _normalize_image(image)
+    finally:
+        image.close()
+
+    checksum = _sha256(normalized_bytes)
+    destination = f"characters/{character.stable_id}/{checksum}.webp"
+    destination_path = _media_path(destination)
+
+    warnings: list[str] = []
+    duplicates = ImageAsset.objects.filter(checksum_sha256=checksum).exclude(character=character)
+    if duplicates.exists():
+        warnings.append(f"Checksum {checksum[:12]}… também usado por outra personagem.")
+
+    existing_checksum = ImageAsset.objects.filter(
+        character=character,
+        checksum_sha256=checksum,
+    ).first()
+    current_asset = ImageAsset.objects.filter(character=character, is_current=True).first()
+
+    if existing_checksum is not None:
+        action = "reuse"
+        message = "Asset já existente para a personagem; reutilizado."
+    elif current_asset is not None and is_current:
+        action = "replace"
+        message = "Substitui a imagem corrente; arquivo antigo é preservado."
+    else:
+        action = "create"
+        message = "Nova imagem."
+
+    if not dry_run:
+        if not destination_path.exists():
+            destination_path.parent.mkdir(parents=True, exist_ok=True)
+            handle = tempfile.NamedTemporaryFile(
+                dir=destination_path.parent,
+                prefix=".tmp-",
+                suffix=".webp",
+                delete=False,
+            )
+            try:
+                handle.write(normalized_bytes)
+                handle.flush()
+                os.fsync(handle.fileno())
+            finally:
+                handle.close()
+            os.replace(handle.name, destination_path)
+
+        with transaction.atomic():
+            if is_current:
+                ImageAsset.objects.filter(character=character, is_current=True).exclude(
+                    pk=getattr(existing_checksum, "pk", None)
+                ).update(is_current=False)
+            if existing_checksum is None:
+                ImageAsset.objects.create(
+                    character=character,
+                    file_path=destination,
+                    is_current=is_current,
+                    status=ImageAsset.Status.VALID,
+                    checksum_sha256=checksum,
+                    width=TARGET_SIZE[0],
+                    height=TARGET_SIZE[1],
+                    source=source,
+                    source_url=source_url,
+                    license_note=license_note,
+                    validated_at=timezone.now(),
+                )
+            elif is_current and not existing_checksum.is_current:
+                existing_checksum.is_current = True
+                existing_checksum.validated_at = timezone.now()
+                existing_checksum.save(update_fields=["is_current", "validated_at"])
+            if existing_checksum is not None:
+                existing_checksum.status = ImageAsset.Status.VALID
+                existing_checksum.validated_at = timezone.now()
+                existing_checksum.save(update_fields=["status", "validated_at"])
+
+    return ImageStoreResult(
+        action=action,
+        checksum=checksum,
+        destination=destination,
+        message=message,
+        warnings=tuple(warnings),
+    )
+
+
 def import_images(manifest, source_dir, *, dry_run: bool = True) -> ImageImportReport:
     """Importa ou substitui imagens a partir de um manifesto CSV.
 
@@ -358,112 +506,38 @@ def import_images(manifest, source_dir, *, dry_run: bool = True) -> ImageImportR
                 raise ValueError("Extensão de imagem não permitida.")
             if not source_path.is_file():
                 raise ValueError("Arquivo não encontrado.")
-            image, _fmt, _original_checksum = _inspect_image(source_path)
-        except (OSError, ValueError, UnidentifiedImageError) as exc:
+            data = source_path.read_bytes()
+        except (OSError, ValueError) as exc:
             report.errors.append(ImageIssue(character_stable_id, file_value, str(exc)))
             continue
-
-        width, height = image.size
-        if width < MIN_SIZE[0] or height < MIN_SIZE[1]:
-            image.close()
-            report.errors.append(
-                ImageIssue(
-                    character_stable_id,
-                    file_value,
-                    f"Dimensões mínimas de {MIN_SIZE[0]}×{MIN_SIZE[1]} não atendidas.",
-                )
-            )
-            continue
-
-        normalized_bytes = _normalize_image(image)
-        image.close()
-        checksum = _sha256(normalized_bytes)
-        destination = f"characters/{character.stable_id}/{checksum}.webp"
-        destination_path = _media_path(destination)
 
         is_current_raw = (raw.get("is_current") or "true").strip().lower()
         is_current = is_current_raw not in {"false", "0", "nao", "não"}
 
-        existing_checksum = ImageAsset.objects.filter(
-            character=character,
-            checksum_sha256=checksum,
-        ).first()
-        current_asset = ImageAsset.objects.filter(character=character, is_current=True).first()
+        try:
+            result = store_image_bytes(
+                character,
+                data,
+                source=source,
+                source_url=(raw.get("source_url") or "").strip(),
+                license_note=license_note,
+                is_current=is_current,
+                dry_run=dry_run,
+            )
+        except (OSError, ValueError) as exc:
+            report.errors.append(ImageIssue(character_stable_id, file_value, str(exc)))
+            continue
 
-        duplicates = ImageAsset.objects.filter(checksum_sha256=checksum).exclude(
-            character=character
-        )
-        if duplicates.exists():
-            report.warnings.append(f"Checksum {checksum[:12]}… também usado por outra personagem.")
-
-        if existing_checksum is not None:
-            action = "reuse"
-            message = "Asset já existente para a personagem; reutilizado."
-        elif current_asset is not None and is_current:
-            action = "replace"
-            message = "Substitui a imagem corrente; arquivo antigo é preservado."
-        else:
-            action = "create"
-            message = "Nova imagem."
-
-        if not dry_run:
-            try:
-                if not destination_path.exists():
-                    destination_path.parent.mkdir(parents=True, exist_ok=True)
-                    handle = tempfile.NamedTemporaryFile(
-                        dir=destination_path.parent,
-                        prefix=".tmp-",
-                        suffix=".webp",
-                        delete=False,
-                    )
-                    try:
-                        handle.write(normalized_bytes)
-                        handle.flush()
-                        os.fsync(handle.fileno())
-                    finally:
-                        handle.close()
-                    os.replace(handle.name, destination_path)
-
-                with transaction.atomic():
-                    if is_current:
-                        ImageAsset.objects.filter(character=character, is_current=True).exclude(
-                            pk=getattr(existing_checksum, "pk", None)
-                        ).update(is_current=False)
-                    if existing_checksum is None:
-                        ImageAsset.objects.create(
-                            character=character,
-                            file_path=destination,
-                            is_current=is_current,
-                            status=ImageAsset.Status.VALID,
-                            checksum_sha256=checksum,
-                            width=TARGET_SIZE[0],
-                            height=TARGET_SIZE[1],
-                            source=source,
-                            source_url=(raw.get("source_url") or "").strip(),
-                            license_note=license_note,
-                            validated_at=timezone.now(),
-                        )
-                    elif is_current and not existing_checksum.is_current:
-                        existing_checksum.is_current = True
-                        existing_checksum.validated_at = timezone.now()
-                        existing_checksum.save(update_fields=["is_current", "validated_at"])
-                    if existing_checksum is not None:
-                        existing_checksum.status = ImageAsset.Status.VALID
-                        existing_checksum.validated_at = timezone.now()
-                        existing_checksum.save(update_fields=["status", "validated_at"])
-            except OSError as exc:
-                report.errors.append(ImageIssue(character_stable_id, file_value, str(exc)))
-                continue
-
+        report.warnings.extend(result.warnings)
         report.items.append(
             ImageImportItem(
                 line=index,
                 character_stable_id=character.stable_id,
                 file=file_value,
-                action=action,
-                destination=destination,
-                checksum=checksum,
-                message=message,
+                action=result.action,
+                destination=result.destination,
+                checksum=result.checksum,
+                message=result.message,
             )
         )
 

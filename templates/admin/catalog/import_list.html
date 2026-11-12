@@ -1,0 +1,104 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Importações externas — Uma Voting{% endblock %}
+
+{% block page_title %}Importações externas{% endblock %}
+
+{% block page_subtitle %}
+  <p class="text-muted text-small">Histórico de execuções de catálogo e imagens.</p>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-primary" href="{% url 'admin:catalog_import' %}">Nova importação</a>
+  <a class="btn btn-tertiary" href="{% url 'admin:catalog_status' %}">Voltar ao catálogo</a>
+{% endblock %}
+
+{% block content %}
+  <section class="panel stack" aria-labelledby="filters-title">
+    <h2 id="filters-title" class="catalog-section-title">Filtros</h2>
+    <form method="get" class="form-row">
+      <div class="form-group">
+        <label class="form-label" for="filter-status">Situação</label>
+        <select class="form-control" id="filter-status" name="status">
+          <option value="">Todas</option>
+          {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="filter-source">Fonte</label>
+        <select class="form-control" id="filter-source" name="source">
+          <option value="">Todas</option>
+          {% for source in sources %}
+            <option value="{{ source.pk }}" {% if source_id == source.pk|stringformat:"s" %}selected{% endif %}>
+              {{ source.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" type="submit">Filtrar</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="stack" aria-labelledby="jobs-title">
+    <div class="catalog-section-header">
+      <h2 id="jobs-title" class="catalog-section-title">Execuções</h2>
+    </div>
+
+    {% if page.object_list %}
+      <div class="table-wrap admin-data-table-wrap">
+        <table class="table admin-data-table">
+          <caption class="visually-hidden">Histórico de importações externas</caption>
+          <thead>
+            <tr>
+              <th scope="col">Execução</th>
+              <th scope="col">Fonte</th>
+              <th scope="col">Modo</th>
+              <th scope="col">Situação</th>
+              <th scope="col">Criada em</th>
+              <th scope="col" class="table__actions">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for job in page.object_list %}
+              <tr>
+                <td data-label="Execução">#{{ job.pk }}</td>
+                <td data-label="Fonte">{{ job.source.name }}</td>
+                <td data-label="Modo">{{ job.get_kind_display }}</td>
+                <td data-label="Situação">{% status_badge job.status %}</td>
+                <td data-label="Criada em">{{ job.created_at|datetime_br }}</td>
+                <td data-label="Ações">
+                  <a class="btn btn-tertiary" href="{% url 'admin:catalog_import_detail' job.pk %}">
+                    Detalhes
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if page.has_other_pages %}
+        <nav class="pagination" aria-label="Paginação das importações">
+          {% if page.has_previous %}
+            <a class="btn btn-tertiary" href="?page={{ page.previous_page_number }}{% if status %}&status={{ status }}{% endif %}{% if source_id %}&source={{ source_id }}{% endif %}">
+              Anterior
+            </a>
+          {% endif %}
+          <span class="text-muted text-small">Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+          {% if page.has_next %}
+            <a class="btn btn-tertiary" href="?page={{ page.next_page_number }}{% if status %}&status={{ status }}{% endif %}{% if source_id %}&source={{ source_id }}{% endif %}">
+              Próxima
+            </a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty-state"><p>Nenhuma importação encontrada.</p></div>
+    {% endif %}
+  </section>
+{% endblock %}

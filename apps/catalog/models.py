@@ -21,6 +21,19 @@ class CatalogSource(models.Model):
     terms_url = models.URLField("URL dos termos", blank=True)
     license_note = models.TextField("nota de licença", blank=True)
     enabled = models.BooleanField("habilitada", default=True)
+    adapter = models.SlugField(
+        "conector",
+        max_length=50,
+        blank=True,
+        db_index=True,
+        help_text="Chave do conector registrado; vazio desabilita a importação externa.",
+    )
+    options = models.JSONField(
+        "opções do conector",
+        default=dict,
+        blank=True,
+        help_text="Parâmetros não sensíveis do conector; nunca armazene credenciais.",
+    )
     created_at = models.DateTimeField("criada em", auto_now_add=True)
 
     class Meta:
@@ -230,6 +243,10 @@ class SyncRun(models.Model):
         PARTIAL = "partial", "Parcial"
         FAILED = "failed", "Falhou"
 
+    class Origin(models.TextChoices):
+        MANUAL = "manual", "Manual"
+        EXTERNAL = "external", "Importação externa"
+
     source = models.ForeignKey(
         CatalogSource,
         on_delete=models.PROTECT,
@@ -243,6 +260,12 @@ class SyncRun(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.RUNNING,
+    )
+    origin = models.CharField(
+        "origem",
+        max_length=20,
+        choices=Origin.choices,
+        default=Origin.MANUAL,
     )
     summary = models.TextField("resumo", blank=True)
     error_message = models.TextField("mensagem de erro", blank=True)
@@ -338,3 +361,184 @@ class SyncChange(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_change_type_display()} — {self.get_status_display()}"
+
+
+class ImportJob(models.Model):
+    """Execução assíncrona de importação externa de catálogo e imagens."""
+
+    class Kind(models.TextChoices):
+        CATALOG = "catalog", "Catálogo"
+        IMAGES = "images", "Imagens"
+        FULL = "full", "Catálogo e imagens"
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Na fila"
+        RUNNING = "running", "Em execução"
+        SUCCESS = "success", "Concluída"
+        PARTIAL = "partial", "Concluída com falhas"
+        FAILED = "failed", "Falhou"
+        CANCELLED = "cancelled", "Cancelada"
+
+    class Phase(models.TextChoices):
+        QUEUED = "queued", "Aguardando"
+        CATALOG = "catalog", "Catálogo"
+        IMAGES = "images", "Imagens"
+        FINISHED = "finished", "Encerrada"
+
+    TERMINAL_STATUSES = frozenset(
+        {
+            Status.SUCCESS,
+            Status.PARTIAL,
+            Status.FAILED,
+            Status.CANCELLED,
+        }
+    )
+
+    source = models.ForeignKey(
+        CatalogSource,
+        on_delete=models.PROTECT,
+        related_name="import_jobs",
+        verbose_name="fonte",
+    )
+    kind = models.CharField("tipo", max_length=20, choices=Kind.choices)
+    status = models.CharField(
+        "situação",
+        max_length=20,
+        choices=Status.choices,
+        default=Status.QUEUED,
+    )
+    phase = models.CharField(
+        "fase",
+        max_length=20,
+        choices=Phase.choices,
+        default=Phase.QUEUED,
+    )
+    options = models.JSONField("opções", default=dict, blank=True)
+    progress_total = models.PositiveIntegerField("total do progresso", default=0)
+    progress_done = models.PositiveIntegerField("progresso concluído", default=0)
+    current_step = models.CharField("etapa atual", max_length=200, blank=True)
+    report = models.JSONField("relatório", default=dict, blank=True)
+    error_message = models.TextField("mensagem de erro", blank=True)
+    cancel_requested = models.BooleanField("cancelamento solicitado", default=False)
+    attempts = models.PositiveSmallIntegerField("tentativas", default=0)
+    heartbeat_at = models.DateTimeField("último sinal", null=True, blank=True)
+    started_at = models.DateTimeField("iniciada em", null=True, blank=True)
+    finished_at = models.DateTimeField("finalizada em", null=True, blank=True)
+    created_at = models.DateTimeField("criada em", auto_now_add=True)
+    triggered_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="catalog_import_jobs",
+        verbose_name="disparada por",
+        null=True,
+        blank=True,
+    )
+    cancelled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="cancelled_catalog_import_jobs",
+        verbose_name="cancelada por",
+        null=True,
+        blank=True,
+    )
+    cancel_requested_at = models.DateTimeField("cancelamento solicitado em", null=True, blank=True)
+    retry_of = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        related_name="retries",
+        verbose_name="repetição de",
+        null=True,
+        blank=True,
+    )
+    sync_run = models.OneToOneField(
+        SyncRun,
+        on_delete=models.SET_NULL,
+        related_name="import_job",
+        verbose_name="execução de catálogo",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = "execução de importação"
+        verbose_name_plural = "execuções de importação"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status", "created_at"], name="catalog_import_status_idx"),
+            models.Index(fields=["source", "-created_at"], name="catalog_import_source_idx"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(kind__in=["catalog", "images", "full"]),
+                name="import_job_kind_check",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(
+                    status__in=[
+                        "queued",
+                        "running",
+                        "success",
+                        "partial",
+                        "failed",
+                        "cancelled",
+                    ]
+                ),
+                name="import_job_status_check",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(phase__in=["queued", "catalog", "images", "finished"]),
+                name="import_job_phase_check",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(progress_done__lte=models.F("progress_total")),
+                name="import_job_progress_check",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    (
+                        models.Q(
+                            status__in=["success", "partial", "failed", "cancelled"],
+                            finished_at__isnull=False,
+                            phase="finished",
+                        )
+                    )
+                    | (
+                        ~models.Q(status__in=["success", "partial", "failed", "cancelled"])
+                        & models.Q(finished_at__isnull=True)
+                        & ~models.Q(phase="finished")
+                    )
+                ),
+                name="import_job_terminal_check",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    ~models.Q(status="cancelled")
+                    | (
+                        models.Q(cancelled_by__isnull=False)
+                        & models.Q(cancel_requested_at__isnull=False)
+                    )
+                ),
+                name="import_job_cancelled_check",
+            ),
+            models.UniqueConstraint(
+                models.Value(1),
+                condition=models.Q(status="running"),
+                name="uniq_import_job_running",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"{self.source.name} — {self.get_kind_display()} "
+            f"({self.get_status_display()}, {self.created_at:%d/%m/%Y %H:%M})"
+        )
+
+    @property
+    def is_terminal(self) -> bool:
+        return self.status in self.TERMINAL_STATUSES
+
+    @property
+    def progress_percent(self) -> int:
+        if not self.progress_total:
+            return 0
+        return min(100, round(self.progress_done * 100 / self.progress_total))

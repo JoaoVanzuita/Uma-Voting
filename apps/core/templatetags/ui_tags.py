@@ -34,6 +34,7 @@ STATUS_LABELS = {
     "pending": "Pendente",
     "approved": "Aprovada",
     "rejected": "Rejeitada",
+    "queued": "Na fila",
 }
 
 STATUS_TONES = {
@@ -53,6 +54,7 @@ STATUS_TONES = {
     "pending": "warning",
     "approved": "success",
     "rejected": "danger",
+    "queued": "neutral",
 }
 
 

@@ -25,6 +25,7 @@ from apps.catalog.services.sync import (
     preview_catalog,
     reject_change,
     sync_from_file,
+    sync_from_report,
 )
 from tests.factories import (
     AdminUserFactory,
@@ -283,3 +284,66 @@ def test_cutoff_exclui_personagem_sem_versao_lancada():
     CharacterFactory(stable_id="futura", display_name="Futura")
 
     assert not eligible_characters(date(2026, 12, 1)).exists()
+
+
+# ---------------------------------------------------------------------------
+# sync_from_report (importação externa)
+# ---------------------------------------------------------------------------
+def test_sync_from_report_modo_manual_mantem_alteracoes_pendentes(db):
+    source = CatalogSourceFactory()
+    CharacterFactory(stable_id="tokai-teio", display_name="Nome antigo")
+    report = parse_catalog_csv(
+        csv_file(
+            "tokai-teio,Tokai Teio,tokai-teio-original,Tokai Teio (Original),"
+            "2025-06-26,pace,medium;long,turf\n"
+        )
+    )
+
+    run = sync_from_report(report, source)
+
+    assert run.origin == SyncRun.Origin.MANUAL
+    assert run.changes.filter(status=SyncChange.Status.PENDING).exists()
+    assert not run.changes.filter(status=SyncChange.Status.AUTO_APPLIED).exists()
+
+
+def test_sync_from_report_apply_all_nao_deixa_pendencias(db):
+    source = CatalogSourceFactory()
+    CharacterFactory(stable_id="tokai-teio", display_name="Nome antigo")
+    report = parse_catalog_csv(
+        csv_file(
+            "tokai-teio,Tokai Teio,tokai-teio-original,Tokai Teio (Original),"
+            "2025-06-26,pace,medium;long,turf\n"
+        )
+    )
+
+    run = sync_from_report(
+        report,
+        source,
+        apply_all=True,
+        origin=SyncRun.Origin.EXTERNAL,
+    )
+
+    assert run.origin == SyncRun.Origin.EXTERNAL
+    assert not run.changes.filter(status=SyncChange.Status.PENDING).exists()
+    assert run.changes.filter(status=SyncChange.Status.AUTO_APPLIED).exists()
+    assert Character.objects.get(stable_id="tokai-teio").display_name == "Tokai Teio"
+
+
+def test_sync_from_report_apply_all_e_idempotente(db):
+    source = CatalogSourceFactory()
+    body = (
+        "tokai-teio,Tokai Teio,tokai-teio-original,Tokai Teio (Original),"
+        "2025-06-26,pace,medium;long,turf\n"
+    )
+
+    first = sync_from_report(
+        parse_catalog_csv(csv_file(body)), source, apply_all=True, origin="external"
+    )
+    second = sync_from_report(
+        parse_catalog_csv(csv_file(body)), source, apply_all=True, origin="external"
+    )
+
+    assert first.status == SyncRun.Status.SUCCESS
+    assert second.status == SyncRun.Status.SUCCESS
+    assert Character.objects.filter(stable_id="tokai-teio").count() == 1
+    assert not second.changes.exists()

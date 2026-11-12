@@ -43,10 +43,7 @@ Projeto Django único na raiz do repositório:
 - [X] T003 Adicionar o serviço `import-worker` em `compose.yaml`, com `manage.py run_import_worker --interval 5` e volume `media_data`
 - [X] T004 [P] Criar fixtures HTTP em `apps/catalog/tests/fixtures/sources/` (`official_characters.json`, `official_character_detail.json`, `gametora_cards.json`, `gametora_release.json`)
 - [X] T005 [P] Desabilitar `EXTERNAL_IMPORT_ENABLED` por padrão em `config/settings/test.py` e impedir chamadas de rede reais nos testes
-- [ ] T006 [P] Adicionar factories de `CatalogSource` com `adapter`, `ImportJob`, `SyncRun` e `SyncChange` em `tests/factories.py`
-
-> **Nota**: T006 depende de T007–T009 (campos e modelos). As factories de `SyncRun` e
-> `SyncChange` já existem; `adapter` e `ImportJob` serão adicionados no início da Phase 2.
+- [X] T006 [P] Adicionar factories de `CatalogSource` com `adapter`, `ImportJob`, `SyncRun` e `SyncChange` em `tests/factories.py`
 
 ---
 
@@ -56,27 +53,27 @@ Projeto Django único na raiz do repositório:
 
 **⚠️ CRITICAL**: nenhuma história deve começar antes desta fase.
 
-- [ ] T007 Adicionar `adapter` (`SlugField(50, blank=True, db_index=True)`) e `options` (`JSONField(default=dict, blank=True)`) a `CatalogSource` em `apps/catalog/models.py`
-- [ ] T008 Criar `ImportJob` em `apps/catalog/models.py` com campos, enums, `Meta.ordering`, índices, constraints e invariantes de `data-model.md` §4
-- [ ] T009 Adicionar `origin` (`manual|external`, default `manual`) a `SyncRun` em `apps/catalog/models.py`
-- [ ] T010 Gerar `apps/catalog/migrations/0004_catalogsource_adapter_importjob.py` com as alterações de T007–T009, incluindo constraints e índice único parcial
-- [ ] T011 Criar `apps/catalog/migrations/0005_seed_umamusume_global.py` com `get_or_create` por `name`, atualizando `adapter`, `kind` e `base_url` somente quando vazios e preservando `license_note` já revisada; não usar defaults que sobrescrevam a licença
-- [ ] T012 [P] Criar `apps/catalog/services/sources/base.py` com `ExternalSourceAdapter`, `ImageCandidate`, `ImageFetchError`, `SourceCheckResult` e exceções
-- [ ] T013 [P] Criar `apps/catalog/services/sources/registry.py` com `ADAPTERS`, `get_adapter`, `get_adapter_class`, `available_sources` e `is_supported`
-- [ ] T014 Criar `apps/catalog/services/sources/http.py` com HTTPS, allowlist, bloqueio de IP privado, redirects, timeout, limite de bytes, retries e cache por execução
-- [ ] T015 [P] Escrever testes do cliente HTTP em `apps/catalog/tests/test_source_http.py` (allowlist, HTTPS, redirect, IP privado, timeout, tamanho, retry)
-- [ ] T016 Refatorar `apps/catalog/services/sync.py` para expor `sync_from_report(report, source, *, triggered_by=None, apply_all=False, origin=...)`, mantendo `sync_from_file` como wrapper
-- [ ] T017 [P] Escrever testes de `sync_from_report` em `apps/catalog/tests/test_sync.py`: modo manual inalterado, `apply_all=True` sem pendências e `origin` correto
-- [ ] T018 Refatorar `apps/catalog/services/images.py` para extrair `store_image_bytes(character, data, *, source, source_url, license_note, is_current=True)` e fazer `import_images` usá-lo
-- [ ] T019 [P] Escrever testes de `store_image_bytes` em `apps/catalog/tests/test_images.py`: normalização, checksum, reutilização, substituição, limites e erros
-- [ ] T020 Criar `apps/catalog/services/imports.py` com `create_import_job`, `request_cancel`, `request_retry`, `mark_stale_jobs` e `claim_next_job`
-- [ ] T021 [P] Escrever testes de ciclo de vida em `apps/catalog/tests/test_import_jobs.py`: criação, duplicidade ativa, cancelamento, retry, stale e claim
-- [ ] T022 Criar `apps/catalog/management/commands/run_import_worker.py` com `--interval`, `--once`, `--json`, advisory lock e loop de claim
-- [ ] T023 Criar esqueletos de rotas em `apps/catalog/urls.py` e views em `apps/catalog/views.py` para iniciar, listar, detalhar, status, cancelar, repetir e verificar fonte
-- [ ] T024 [P] Criar `templates/admin/catalog/import_form.html`, `import_detail.html`, `import_list.html` e `_import_status.html` seguindo o admin existente
-- [ ] T025 [P] Criar `static/js/catalog-import.js` com polling de status, atualização de progresso e parada em estado terminal
-- [ ] T026 Adicionar `ImportJobForm` em `apps/catalog/forms.py` com fonte, modo, escopo e confirmação de licença
-- [ ] T027 Adicionar o painel "Fontes externas" em `templates/admin/catalog/status.html` e o contexto correspondente em `apps/catalog/views.py`
+- [X] T007 Adicionar `adapter` (`SlugField(50, blank=True, db_index=True)`) e `options` (`JSONField(default=dict, blank=True)`) a `CatalogSource` em `apps/catalog/models.py`
+- [X] T008 Criar `ImportJob` em `apps/catalog/models.py` com campos, enums, `Meta.ordering`, índices, constraints e invariantes de `data-model.md` §4
+- [X] T009 Adicionar `origin` (`manual|external`, default `manual`) a `SyncRun` em `apps/catalog/models.py`
+- [X] T010 Gerar `apps/catalog/migrations/0004_catalogsource_adapter_importjob.py` com as alterações de T007–T009, incluindo constraints e índice único parcial
+- [X] T011 Criar `apps/catalog/migrations/0005_seed_umamusume_global.py` com `get_or_create` por `name`, atualizando `adapter`, `kind` e `base_url` somente quando vazios e preservando `license_note` já revisada; não usar defaults que sobrescrevam a licença
+- [X] T012 [P] Criar `apps/catalog/services/sources/base.py` com `ExternalSourceAdapter`, `ImageCandidate`, `ImageFetchError`, `SourceCheckResult` e exceções
+- [X] T013 [P] Criar `apps/catalog/services/sources/registry.py` com `ADAPTERS`, `get_adapter`, `get_adapter_class`, `available_sources` e `is_supported`
+- [X] T014 Criar `apps/catalog/services/sources/http.py` com HTTPS, allowlist, bloqueio de IP privado, redirects, timeout, limite de bytes, retries e cache por execução
+- [X] T015 [P] Escrever testes do cliente HTTP em `apps/catalog/tests/test_source_http.py` (allowlist, HTTPS, redirect, IP privado, timeout, tamanho, retry)
+- [X] T016 Refatorar `apps/catalog/services/sync.py` para expor `sync_from_report(report, source, *, triggered_by=None, apply_all=False, origin=...)`, mantendo `sync_from_file` como wrapper
+- [X] T017 [P] Escrever testes de `sync_from_report` em `apps/catalog/tests/test_sync.py`: modo manual inalterado, `apply_all=True` sem pendências e `origin` correto
+- [X] T018 Refatorar `apps/catalog/services/images.py` para extrair `store_image_bytes(character, data, *, source, source_url, license_note, is_current=True)` e fazer `import_images` usá-lo
+- [X] T019 [P] Escrever testes de `store_image_bytes` em `apps/catalog/tests/test_images.py`: normalização, checksum, reutilização, substituição, limites e erros
+- [X] T020 Criar `apps/catalog/services/imports.py` com `create_import_job`, `request_cancel`, `request_retry`, `mark_stale_jobs` e `claim_next_job`
+- [X] T021 [P] Escrever testes de ciclo de vida em `apps/catalog/tests/test_import_jobs.py`: criação, duplicidade ativa, cancelamento, retry, stale e claim
+- [X] T022 Criar `apps/catalog/management/commands/run_import_worker.py` com `--interval`, `--once`, `--json`, advisory lock e loop de claim
+- [X] T023 Criar esqueletos de rotas em `apps/catalog/urls.py` e views em `apps/catalog/views.py` para iniciar, listar, detalhar, status, cancelar, repetir e verificar fonte
+- [X] T024 [P] Criar `templates/admin/catalog/import_form.html`, `import_detail.html`, `import_list.html` e `_import_status.html` seguindo o admin existente
+- [X] T025 [P] Criar `static/js/catalog-import.js` com polling de status, atualização de progresso e parada em estado terminal
+- [X] T026 Adicionar `ImportJobForm` em `apps/catalog/forms.py` com fonte, modo, escopo e confirmação de licença
+- [X] T027 Adicionar o painel "Fontes externas" em `templates/admin/catalog/status.html` e o contexto correspondente em `apps/catalog/views.py`
 
 **Checkpoint**: modelos, serviços, worker, rotas e templates base prontos.
 

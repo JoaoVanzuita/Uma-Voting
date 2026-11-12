@@ -1,0 +1,119 @@
+{% extends "admin/base.html" %}
+{% load ui_tags %}
+
+{% block title %}Importar catálogo externo — Uma Voting{% endblock %}
+
+{% block page_title %}Importar catálogo externo{% endblock %}
+
+{% block page_subtitle %}
+  <p class="text-muted text-small">
+    A coleta e a aplicação acontecem em segundo plano; você acompanha o progresso nesta tela.
+  </p>
+{% endblock %}
+
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:catalog_import_list' %}">Histórico</a>
+  <a class="btn btn-tertiary" href="{% url 'admin:catalog_status' %}">Voltar ao catálogo</a>
+{% endblock %}
+
+{% block content %}
+  {% if not import_enabled %}
+    <div class="alert alert-danger" role="alert">
+      Importação externa desabilitada. Ative <code>EXTERNAL_IMPORT_ENABLED</code> para criar execuções.
+    </div>
+  {% endif %}
+
+  <div class="catalog-columns">
+    <section class="panel stack" aria-labelledby="import-title">
+      <div class="catalog-section-header">
+        <h2 id="import-title" class="catalog-section-title">Nova importação</h2>
+      </div>
+
+      {% if sources %}
+        <form method="post" action="{% url 'admin:catalog_import' %}" data-submit-once>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger" role="alert">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="form-group">
+            <label class="form-label" for="{{ form.source.id_for_label }}">Fonte externa</label>
+            {{ form.source }}
+            {% for error in form.source.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            <p class="form-help">Somente fontes habilitadas com conector aparecem nesta lista.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="{{ form.kind.id_for_label }}">Modo</label>
+            {{ form.kind }}
+            {% for error in form.kind.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="{{ form.image_scope.id_for_label }}">Escopo das imagens</label>
+            {{ form.image_scope }}
+            {% for error in form.image_scope.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+            <p class="form-help">Usado quando o modo inclui imagens.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="{{ form.license_ack.id_for_label }}">
+              {{ form.license_ack }} {{ form.license_ack.label }}
+            </label>
+            {% for error in form.license_ack.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit" {% if not import_enabled %}disabled{% endif %}>
+              Iniciar importação
+            </button>
+          </div>
+        </form>
+      {% else %}
+        <div class="empty-state">
+          <p>Nenhuma fonte habilitada com conector disponível.</p>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="panel stack" aria-labelledby="sources-title">
+      <div class="catalog-section-header">
+        <h2 id="sources-title" class="catalog-section-title">Fontes cadastradas</h2>
+      </div>
+      <div class="stack">
+        {% for row in sources %}
+          <article class="change-card">
+            <div class="change-card__header">
+              <div>
+                <h3 class="change-card__title">{{ row.source.name }}</h3>
+                <p class="change-card__meta">
+                  <span class="badge {% if row.eligible %}badge--success{% else %}badge--warning{% endif %}">
+                    {% if row.eligible %}Elegível{% else %}Inelegível{% endif %}
+                  </span>
+                  {% if row.source.adapter %}<span class="text-muted">{{ row.source.adapter }}</span>{% endif %}
+                </p>
+              </div>
+            </div>
+            {% if row.reason %}<p class="text-muted text-small">{{ row.reason }}</p>{% endif %}
+            {% if row.source.license_note %}
+              <p class="text-small"><strong>Licença:</strong> {{ row.source.license_note }}</p>
+            {% endif %}
+            {% if row.last_job %}
+              <p class="text-muted text-small">
+                Última execução: #{{ row.last_job.pk }} ·
+                {{ row.last_job.get_status_display }} ·
+                {{ row.last_job.created_at|datetime_br }}
+              </p>
+            {% endif %}
+            {% if row.last_failure and row.last_failure.error_message %}
+              <p class="text-small"><strong>Última falha:</strong> {{ row.last_failure.error_message }}</p>
+            {% endif %}
+          </article>
+        {% empty %}
+          <div class="empty-state"><p>Nenhuma fonte cadastrada.</p></div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+{% endblock %}

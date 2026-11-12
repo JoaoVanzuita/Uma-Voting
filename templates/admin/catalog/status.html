@@ -10,6 +10,8 @@
 {% endblock %}
 
 {% block page_actions %}
+  <a class="btn btn-primary" href="{% url 'admin:catalog_import' %}">Importar de fonte externa</a>
+  <a class="btn btn-secondary" href="{% url 'admin:catalog_import_list' %}">Importações</a>
   <a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Personagens</a>
   <a class="btn btn-secondary" href="{% url 'admin:catalog_images' %}">Imagens</a>
 {% endblock %}
@@ -69,6 +71,87 @@
             <button class="btn btn-primary" type="submit">Sincronizar catálogo</button>
           </div>
         </form>
+      </section>
+
+      <section class="panel stack" aria-labelledby="external-sources-title">
+        <div class="catalog-section-header">
+          <div>
+            <h2 id="external-sources-title" class="catalog-section-title">Fontes externas</h2>
+            <p class="text-muted text-small">
+              Todas as fontes cadastradas; apenas habilitadas com conector podem ser importadas.
+            </p>
+          </div>
+          {% if not import_enabled %}
+            <span class="badge badge--danger">Importação desabilitada</span>
+          {% endif %}
+        </div>
+
+        {% if external_sources %}
+          <div class="table-wrap admin-data-table-wrap">
+            <table class="table admin-data-table">
+              <caption class="visually-hidden">Fontes externas cadastradas</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Fonte</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col">Última execução</th>
+                  <th scope="col" class="table__actions">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in external_sources %}
+                  <tr>
+                    <td data-label="Fonte">
+                      <strong>{{ row.source.name }}</strong>
+                      {% if row.source.adapter %}
+                        <span class="text-muted text-small">· {{ row.source.adapter }}</span>
+                      {% endif %}
+                      {% if row.source.license_note %}
+                        <p class="text-muted text-small">{{ row.source.license_note }}</p>
+                      {% endif %}
+                    </td>
+                    <td data-label="Situação">
+                      {% if row.eligible %}
+                        <span class="badge badge--success">Elegível</span>
+                      {% else %}
+                        <span class="badge badge--warning">Inelegível</span>
+                        <p class="text-muted text-small">{{ row.reason }}</p>
+                      {% endif %}
+                    </td>
+                    <td data-label="Última execução">
+                      {% if row.last_job %}
+                        <a href="{% url 'admin:catalog_import_detail' row.last_job.pk %}">
+                          #{{ row.last_job.pk }} · {{ row.last_job.get_status_display }}
+                        </a>
+                        <p class="text-muted text-small">{{ row.last_job.created_at|datetime_br }}</p>
+                        {% if row.last_failure and row.last_failure.error_message %}
+                          <p class="text-small"><strong>Falha:</strong> {{ row.last_failure.error_message }}</p>
+                        {% endif %}
+                      {% else %}
+                        <span class="text-muted">Nunca executada</span>
+                      {% endif %}
+                    </td>
+                    <td data-label="Ações">
+                      <div class="table__actions">
+                        {% if row.eligible %}
+                          <a class="btn btn-tertiary" href="{% url 'admin:catalog_import' %}">Importar</a>
+                        {% endif %}
+                        {% if row.source.adapter %}
+                          <form method="post" action="{% url 'admin:catalog_source_check' row.source.pk %}">
+                            {% csrf_token %}
+                            <button class="btn btn-tertiary" type="submit">Verificar fonte</button>
+                          </form>
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state"><p>Nenhuma fonte externa cadastrada.</p></div>
+        {% endif %}
       </section>
 
       <section class="panel stack" aria-labelledby="pending-title">

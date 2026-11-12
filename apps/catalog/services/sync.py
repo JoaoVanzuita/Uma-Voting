@@ -334,35 +334,71 @@ def sync_from_file(
     Personagens novas são aplicadas automaticamente; alterações em personagens
     existentes ficam pendentes de aprovação administrativa.
     """
-    report = parse_catalog_file(path)
+    return sync_from_report(
+        parse_catalog_file(path),
+        source,
+        triggered_by=triggered_by,
+    )
 
+
+def _failed_run(
+    report: CatalogParseReport,
+    source: CatalogSource,
+    *,
+    triggered_by,
+    origin: str,
+    errors: list[ImportIssue],
+) -> SyncRun:
+    return SyncRun.objects.create(
+        source=source,
+        status=SyncRun.Status.FAILED,
+        finished_at=timezone.now(),
+        error_message="; ".join(issue.message for issue in errors),
+        summary=_summary(report, 0, 0, 0),
+        triggered_by=triggered_by,
+        origin=origin,
+    )
+
+
+def sync_from_report(
+    report: CatalogParseReport,
+    source: CatalogSource,
+    *,
+    triggered_by=None,
+    apply_all: bool = False,
+    origin: str = SyncRun.Origin.MANUAL,
+) -> SyncRun:
+    """Aplica um relatório de catálogo já parseado.
+
+    Com ``apply_all=False`` (fluxo CSV), alterações em personagens existentes
+    ficam pendentes de revisão. Com ``apply_all=True`` (importação externa),
+    todas as mudanças planejadas são aplicadas e registradas como
+    ``SyncChange(status=auto_applied)``.
+    """
     if report.has_errors:
-        run = SyncRun.objects.create(
-            source=source,
-            status=SyncRun.Status.FAILED,
-            finished_at=timezone.now(),
-            error_message="; ".join(issue.message for issue in report.errors),
-            summary=_summary(report, 0, 0, 0),
+        return _failed_run(
+            report,
+            source,
             triggered_by=triggered_by,
+            origin=origin,
+            errors=report.errors,
         )
-        return run
 
     planned, plan_errors = _plan_changes(report)
     if plan_errors:
-        run = SyncRun.objects.create(
-            source=source,
-            status=SyncRun.Status.FAILED,
-            finished_at=timezone.now(),
-            error_message="; ".join(issue.message for issue in plan_errors),
-            summary=_summary(report, 0, 0, 0),
+        return _failed_run(
+            report,
+            source,
             triggered_by=triggered_by,
+            origin=origin,
+            errors=plan_errors,
         )
-        return run
 
     run = SyncRun.objects.create(
         source=source,
         status=SyncRun.Status.RUNNING,
         triggered_by=triggered_by,
+        origin=origin,
     )
 
     applied = 0
@@ -381,6 +417,22 @@ def sync_from_file(
                         payload=change.payload,
                         status=SyncChange.Status.AUTO_APPLIED,
                     )
+                    applied += 1
+                elif apply_all:
+                    stored = SyncChange.objects.create(
+                        sync_run=run,
+                        change_type=change.change_type,
+                        character=change.character,
+                        version=change.version,
+                        payload=change.payload,
+                        status=SyncChange.Status.PENDING,
+                    )
+                    _apply_payload(stored)
+                    stored.status = SyncChange.Status.AUTO_APPLIED
+                    update_fields = ["status"]
+                    if stored.version_id is not None:
+                        update_fields.append("version")
+                    stored.save(update_fields=update_fields)
                     applied += 1
                 else:
                     SyncChange.objects.create(

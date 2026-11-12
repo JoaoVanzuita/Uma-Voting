@@ -17,6 +17,7 @@ from apps.catalog.models import (
     CharacterVersion,
     CharacterVersionAptitude,
     ImageAsset,
+    ImportJob,
     SyncChange,
     SyncRun,
 )
@@ -100,6 +101,20 @@ class CatalogSourceFactory(factory.django.DjangoModelFactory):
     kind = CatalogSource.Kind.FILE
     license_note = "Fonte de teste."
     enabled = True
+    adapter = ""
+    options = factory.LazyFunction(dict)
+
+
+class ImportJobFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ImportJob
+
+    source = factory.SubFactory(CatalogSourceFactory, adapter="test-source")
+    kind = ImportJob.Kind.CATALOG
+    status = ImportJob.Status.QUEUED
+    phase = ImportJob.Phase.QUEUED
+    options = factory.LazyFunction(dict)
+    report = factory.LazyFunction(dict)
 
 
 class SyncRunFactory(factory.django.DjangoModelFactory):

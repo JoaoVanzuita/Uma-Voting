@@ -10,6 +10,7 @@ from PIL import Image
 from apps.catalog.models import ImageAsset
 from apps.catalog.services.images import (
     import_images,
+    store_image_bytes,
     validate_all_images,
     validate_image_asset,
 )
@@ -241,3 +242,108 @@ def test_validate_all_images_detecta_orfaos_e_personagens_sem_imagem(tmp_path, s
     assert "characters/orfao.webp" in report.orphans
     assert "sem-imagem" in report.characters_without_image
     assert "com-imagem" not in report.characters_without_image
+
+
+# ---------------------------------------------------------------------------
+# store_image_bytes (importação externa)
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db
+def test_store_image_bytes_normaliza_cria_e_calcula_checksum(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    character = CharacterFactory(stable_id="special-week")
+    source = CatalogSourceFactory(name="umamusume-global", license_note="Uso interno.")
+    data = image_bytes(size=(400, 400))
+
+    result = store_image_bytes(
+        character,
+        data,
+        source=source,
+        source_url="https://example.com/special-week.png",
+        license_note="Uso interno.",
+    )
+
+    assert result.action == "create"
+    assert len(result.checksum) == 64
+    assert (tmp_path / result.destination).exists()
+    asset = ImageAsset.objects.get(character=character, is_current=True)
+    assert asset.checksum_sha256 == result.checksum
+    assert asset.width == 256 and asset.height == 256
+    assert asset.source_url == "https://example.com/special-week.png"
+
+
+@pytest.mark.django_db
+def test_store_image_bytes_reutiliza_mesmo_checksum(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    character = CharacterFactory(stable_id="special-week")
+    source = CatalogSourceFactory(name="umamusume-global", license_note="Uso interno.")
+    data = image_bytes()
+
+    first = store_image_bytes(character, data, source=source, license_note="Uso interno.")
+    second = store_image_bytes(character, data, source=source, license_note="Uso interno.")
+
+    assert second.action == "reuse"
+    assert first.checksum == second.checksum
+    assert ImageAsset.objects.filter(character=character).count() == 1
+
+
+@pytest.mark.django_db
+def test_store_image_bytes_substitui_corrente_preservando_arquivo_antigo(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    character = CharacterFactory(stable_id="special-week")
+    source = CatalogSourceFactory(name="umamusume-global", license_note="Uso interno.")
+
+    first = store_image_bytes(
+        character, image_bytes(color=(10, 10, 10)), source=source, license_note="Uso interno."
+    )
+    second = store_image_bytes(
+        character, image_bytes(color=(200, 20, 20)), source=source, license_note="Uso interno."
+    )
+
+    assert second.action == "replace"
+    assert (tmp_path / first.destination).exists()
+    assert (tmp_path / second.destination).exists()
+    assert ImageAsset.objects.filter(character=character, is_current=True).count() == 1
+    assert ImageAsset.objects.get(character=character, is_current=True).checksum_sha256 == (
+        second.checksum
+    )
+
+
+@pytest.mark.django_db
+def test_store_image_bytes_rejeita_limite_de_bytes(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    character = CharacterFactory()
+    source = CatalogSourceFactory(name="umamusume-global", license_note="Uso interno.")
+
+    with pytest.raises(ValueError, match="limite"):
+        store_image_bytes(
+            character,
+            image_bytes(size=(800, 800)),
+            source=source,
+            license_note="Uso interno.",
+            max_bytes=1024,
+        )
+
+
+@pytest.mark.django_db
+def test_store_image_bytes_rejeita_formato_invalido(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    character = CharacterFactory()
+    source = CatalogSourceFactory(name="umamusume-global", license_note="Uso interno.")
+
+    with pytest.raises(ValueError, match="formato|inválida"):
+        store_image_bytes(
+            character,
+            b"nao-e-uma-imagem",
+            source=source,
+            license_note="Uso interno.",
+        )
+
+
+@pytest.mark.django_db
+def test_store_image_bytes_exige_licenca_para_fonte_externa(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    character = CharacterFactory()
+    source = CatalogSourceFactory(name="umamusume-global", license_note="Uso interno.")
+
+    with pytest.raises(ValueError, match="license_note"):
+        store_image_bytes(character, image_bytes(), source=source, license_note="")
