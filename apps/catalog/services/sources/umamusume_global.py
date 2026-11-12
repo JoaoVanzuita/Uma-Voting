@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections import deque
+from collections.abc import Iterable, Iterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
@@ -16,13 +18,15 @@ from datetime import UTC, date, datetime
 from django.conf import settings
 from django.utils import timezone
 
-from apps.catalog.models import CatalogSource
+from apps.catalog.models import CatalogSource, Character, ImageAsset
 from apps.catalog.services.importers import (
     CatalogCharacter,
     CatalogParseReport,
     CatalogRow,
 )
 from apps.catalog.services.sources.base import (
+    ImageCandidate,
+    ImageFetchError,
     SourceCheckResult,
     SourceDataError,
     SourceError,
@@ -133,6 +137,7 @@ class UmamusumeGlobalAdapter:
         self._build_id_override = str(options.get("gametora_build_id") or "").strip()
         self._detail_cache: dict[str, dict] = {}
         self._release_cache: dict[str, tuple[date | None, bool]] = {}
+        self._official_by_stable_id: dict[str, dict] | None = None
         self._gametora_html: str | None = None
 
     # ------------------------------------------------------------------
@@ -423,6 +428,123 @@ class UmamusumeGlobalAdapter:
     # ------------------------------------------------------------------
     # Imagens (implementado na fase de imagens)
     # ------------------------------------------------------------------
-    def iter_images(self, characters, *, only_missing: bool):
-        raise NotImplementedError("A coleta de imagens é implementada na fase de imagens.")
-        yield  # pragma: no cover
+    def iter_images(
+        self,
+        characters: Iterable[Character],
+        *,
+        only_missing: bool,
+    ) -> Iterator[ImageCandidate | ImageFetchError]:
+        """Baixa imagens oficiais com concorrência limitada.
+
+        Falhas de uma imagem viram ``ImageFetchError`` e não interrompem as
+        demais. Downloads em voo quando o consumidor para (cancelamento) são
+        descartados.
+        """
+        targets = self._image_targets(characters, only_missing=only_missing)
+        if not targets:
+            return
+
+        workers = max(1, settings.EXTERNAL_IMPORT_CONCURRENCY)
+        if workers == 1 or len(targets) == 1:
+            for character, slug in targets:
+                yield self._download_image(character, slug)
+            return
+
+        pending: deque = deque()
+        iterator = iter(targets)
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            while True:
+                while len(pending) < workers:
+                    try:
+                        character, slug = next(iterator)
+                    except StopIteration:
+                        break
+                    pending.append(pool.submit(self._download_image, character, slug))
+                if not pending:
+                    break
+                yield pending.popleft().result()
+
+    def _image_targets(
+        self,
+        characters: Iterable[Character],
+        *,
+        only_missing: bool,
+    ) -> list[tuple[Character, str | None]]:
+        selected = list(characters)
+        if not selected:
+            return []
+
+        if only_missing:
+            valid_ids = set(
+                ImageAsset.objects.filter(
+                    character__in=selected,
+                    is_current=True,
+                    status=ImageAsset.Status.VALID,
+                ).values_list("character_id", flat=True)
+            )
+            selected = [character for character in selected if character.pk not in valid_ids]
+
+        official = self._official_index()
+        targets: list[tuple[Character, str | None]] = []
+        for character in selected:
+            entry = official.get(character.stable_id)
+            slug = str(entry.get("slug") or "").strip() if entry else ""
+            targets.append((character, slug or None))
+        return targets
+
+    def _official_index(self) -> dict[str, dict]:
+        if self._official_by_stable_id is None:
+            index: dict[str, dict] = {}
+            for entry in self._fetch_official_list():
+                name = str(entry.get("subject") or "").strip()
+                slug = str(entry.get("slug") or "").strip()
+                stable_id = slugify(name)
+                if name and slug and stable_id:
+                    index[stable_id] = {"slug": slug, "subject": name}
+            self._official_by_stable_id = index
+        return self._official_by_stable_id
+
+    def _download_image(
+        self,
+        character: Character,
+        slug: str | None,
+    ) -> ImageCandidate | ImageFetchError:
+        if not slug:
+            return ImageFetchError(
+                character_stable_id=character.stable_id,
+                source_url="",
+                message="Personagem não encontrada na lista oficial.",
+            )
+
+        icon_url = self.icon_url_for_slug(slug)
+        try:
+            data = self.client.get_bytes(
+                icon_url,
+                max_bytes=settings.EXTERNAL_IMPORT_MAX_IMAGE_BYTES,
+            )
+        except SourceError as exc:
+            return ImageFetchError(
+                character_stable_id=character.stable_id,
+                source_url=icon_url,
+                message=str(exc),
+            )
+        return ImageCandidate(
+            character_stable_id=character.stable_id,
+            data=data,
+            source_url=OFFICIAL_PAGE_URL.format(slug=slug),
+        )
+
+    def icon_url_for_slug(self, slug: str) -> str:
+        if slug not in self._detail_cache:
+            try:
+                payload = self.client.get_json(OFFICIAL_DETAIL_URL.format(slug=slug))
+            except SourceError:
+                payload = None
+            detail = payload.get("details") if isinstance(payload, dict) else None
+            self._detail_cache[slug] = detail if isinstance(detail, dict) else {}
+        detail = self._detail_cache[slug]
+        download = detail.get("download") or {}
+        icon = str(download.get("icon") or "").strip()
+        if icon:
+            return icon
+        return OFFICIAL_ICON_FALLBACK.format(slug=slug)

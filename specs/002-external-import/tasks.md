@@ -122,20 +122,20 @@ verificar `ImageAsset` corrente válido, checksum, reutilização e relatório d
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T042 [P] [US2] Testar `iter_images` em `apps/catalog/tests/test_source_umamusume_global.py`: URL oficial, escopo `all` e `missing`, 404 e timeout
-- [ ] T043 [P] [US2] Testar fase de imagens em `apps/catalog/tests/test_import_worker.py`: sucesso, parcial, imagem inválida, tamanho excessivo e personagem sem imagem
-- [ ] T044 [P] [US2] Testar idempotência e substituição de imagem em `apps/catalog/tests/test_images.py`
-- [ ] T045 [P] [US2] Testar escopo padrão e opções do formulário em `apps/catalog/tests/test_ui_admin_import.py`
+- [X] T042 [P] [US2] Testar `iter_images` em `apps/catalog/tests/test_source_umamusume_global.py`: URL oficial, escopo `all` e `missing`, 404 e timeout
+- [X] T043 [P] [US2] Testar fase de imagens em `apps/catalog/tests/test_import_worker.py`: sucesso, parcial, imagem inválida, tamanho excessivo e personagem sem imagem
+- [X] T044 [P] [US2] Testar idempotência e substituição de imagem em `apps/catalog/tests/test_images.py`
+- [X] T045 [P] [US2] Testar escopo padrão e opções do formulário em `apps/catalog/tests/test_ui_admin_import.py`
 
 ### Implementation for User Story 2
 
-- [ ] T046 [US2] Implementar `iter_images()` no conector com URL oficial, `source_url`, licença e escopo
-- [ ] T047 [US2] Implementar download concorrente limitado no conector, convertendo falhas em `ImageFetchError`
-- [ ] T048 [US2] Implementar `run_images_phase()` em `apps/catalog/services/imports.py` com progresso, heartbeat e `store_image_bytes`
-- [ ] T049 [US2] Preencher `report["images"]` com criadas, substituídas, reutilizadas, ignoradas, avisos e erros
-- [ ] T050 [US2] Encadear catálogo → imagens no modo `full` e impedir imagens quando o catálogo falhar
-- [ ] T051 [US2] Adicionar link para `/admin/catalogo/imagens/` e para `validate_images` no detalhe do job
-- [ ] T052 [US2] Garantir que o escopo `missing` não baixe imagem de personagem com asset corrente válido
+- [X] T046 [US2] Implementar `iter_images()` no conector com URL oficial, `source_url`, licença e escopo
+- [X] T047 [US2] Implementar download concorrente limitado no conector, convertendo falhas em `ImageFetchError`
+- [X] T048 [US2] Implementar `run_images_phase()` em `apps/catalog/services/imports.py` com progresso, heartbeat e `store_image_bytes`
+- [X] T049 [US2] Preencher `report["images"]` com criadas, substituídas, reutilizadas, ignoradas, avisos e erros
+- [X] T050 [US2] Encadear catálogo → imagens no modo `full` e impedir imagens quando o catálogo falhar
+- [X] T051 [US2] Adicionar link para `/admin/catalogo/imagens/` e para `validate_images` no detalhe do job
+- [X] T052 [US2] Garantir que o escopo `missing` não baixe imagem de personagem com asset corrente válido
 
 **Checkpoint**: catálogo e imagens funcionam de ponta a ponta.
 

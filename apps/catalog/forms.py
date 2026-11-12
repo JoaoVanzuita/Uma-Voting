@@ -37,15 +37,17 @@ class ImportJobForm(forms.Form):
         initial=ImportJob.Kind.CATALOG,
         widget=forms.Select(attrs={"class": "form-control"}),
     )
-    image_scope = forms.ChoiceField(
+    image_scope = forms.CharField(
         label="Escopo das imagens",
-        choices=[
-            ("missing", "Somente personagens sem imagem válida"),
-            ("all", "Todas as personagens"),
-        ],
-        initial="missing",
         required=False,
-        widget=forms.Select(attrs={"class": "form-control"}),
+        initial="missing",
+        widget=forms.Select(
+            choices=[
+                ("missing", "Somente personagens sem imagem válida"),
+                ("all", "Todas as personagens"),
+            ],
+            attrs={"class": "form-control"},
+        ),
     )
     license_ack = forms.BooleanField(
         label="Li e revisei a nota de licença da fonte",

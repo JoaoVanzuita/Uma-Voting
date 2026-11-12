@@ -76,7 +76,13 @@
     <section class="panel stack" aria-labelledby="images-report-title">
       <div class="catalog-section-header">
         <h2 id="images-report-title" class="catalog-section-title">Relatório de imagens</h2>
-        <a class="btn btn-tertiary" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
+        <div class="table__actions">
+          <a class="btn btn-tertiary" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
+          <form method="post" action="{% url 'admin:catalog_images_validate' %}">
+            {% csrf_token %}
+            <button class="btn btn-tertiary" type="submit">Validar acervo</button>
+          </form>
+        </div>
       </div>
       <dl class="detail-list">
         <dt>Total</dt><dd>{{ images_report.total|default:"0" }}</dd>

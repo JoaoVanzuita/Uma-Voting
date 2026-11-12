@@ -8,7 +8,10 @@ from pathlib import Path
 
 import pytest
 
+from apps.catalog.models import ImageAsset
 from apps.catalog.services.sources.base import (
+    ImageCandidate,
+    ImageFetchError,
     SourceDataError,
     SourceHTTPError,
     SourceUnavailableError,
@@ -26,7 +29,7 @@ from apps.catalog.services.sources.umamusume_global import (
     normalize_name,
     slugify,
 )
-from tests.factories import CatalogSourceFactory
+from tests.factories import CatalogSourceFactory, CharacterFactory, ImageAssetFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -42,9 +45,10 @@ def load_fixture(name: str):
 
 
 class FakeClient:
-    def __init__(self, *, json_responses=None, text_responses=None):
+    def __init__(self, *, json_responses=None, text_responses=None, bytes_responses=None):
         self.json_responses = dict(json_responses or {})
         self.text_responses = dict(text_responses or {})
+        self.bytes_responses = dict(bytes_responses or {})
         self.calls: list[str] = []
 
     def get_json(self, url, *, max_bytes=None):
@@ -59,6 +63,15 @@ class FakeClient:
     def get_text(self, url, *, max_bytes=None):
         self.calls.append(url)
         value = self.text_responses.get(url)
+        if isinstance(value, Exception):
+            raise value
+        if value is None:
+            raise SourceHTTPError("não encontrado", status=404, url=url)
+        return value
+
+    def get_bytes(self, url, *, max_bytes=None):
+        self.calls.append(url)
+        value = self.bytes_responses.get(url)
         if isinstance(value, Exception):
             raise value
         if value is None:
@@ -350,3 +363,117 @@ def test_icon_url_usa_detalhe_e_fallback(source):
     assert adapter.icon_url("Personagem Desconhecida") == OFFICIAL_ICON_FALLBACK.format(
         slug="personagem-desconhecida"
     )
+
+
+# ---------------------------------------------------------------------------
+# Imagens oficiais (T042)
+# ---------------------------------------------------------------------------
+ICON_URL = (
+    "https://en-portal.g.kuroco-img.app/files/user/character/special-week/special-week_icon.png"
+)
+
+
+def image_bytes(data: bytes = b"imagem"):
+    return data
+
+
+def test_iter_images_baixa_icone_oficial(source):
+    client = make_client()
+    client.bytes_responses[ICON_URL] = image_bytes()
+    adapter = build_adapter(source, client)
+    characters = [
+        CharacterFactory(stable_id="special-week", display_name="Special Week"),
+        CharacterFactory(stable_id="tokai-teio", display_name="Tokai Teio"),
+    ]
+
+    results = list(adapter.iter_images(characters, only_missing=False))
+
+    assert len(results) == 2
+    assert all(isinstance(item, ImageCandidate) for item in results)
+    assert results[0].character_stable_id == "special-week"
+    assert results[0].data == b"imagem"
+    assert results[0].source_url == "https://umamusume.com/characters/special-week/"
+    assert ICON_URL in client.calls
+
+
+def test_iter_images_escopo_missing_ignora_imagem_valida(source):
+    client = make_client()
+    client.bytes_responses[ICON_URL] = image_bytes()
+    adapter = build_adapter(source, client)
+    with_valid = CharacterFactory(stable_id="special-week", display_name="Special Week")
+    without_image = CharacterFactory(stable_id="tokai-teio", display_name="Tokai Teio")
+    ImageAssetFactory(character=with_valid, is_current=True, status=ImageAsset.Status.VALID)
+
+    results = list(adapter.iter_images([with_valid, without_image], only_missing=True))
+
+    assert [item.character_stable_id for item in results] == ["tokai-teio"]
+
+
+def test_iter_images_404_vira_image_fetch_error(source):
+    client = make_client()
+    client.bytes_responses[ICON_URL] = SourceHTTPError("404", status=404, url=ICON_URL)
+    adapter = build_adapter(source, client)
+
+    results = list(
+        adapter.iter_images(
+            [CharacterFactory(stable_id="special-week", display_name="Special Week")],
+            only_missing=False,
+        )
+    )
+
+    assert len(results) == 1
+    assert isinstance(results[0], ImageFetchError)
+    assert "404" in results[0].message
+    assert results[0].source_url == ICON_URL
+
+
+def test_iter_images_timeout_vira_image_fetch_error(source):
+    client = make_client()
+    client.bytes_responses[ICON_URL] = SourceHTTPError("tempo esgotado", url=ICON_URL)
+    adapter = build_adapter(source, client)
+
+    results = list(
+        adapter.iter_images(
+            [CharacterFactory(stable_id="special-week", display_name="Special Week")],
+            only_missing=False,
+        )
+    )
+
+    assert isinstance(results[0], ImageFetchError)
+    assert "tempo esgotado" in results[0].message
+
+
+def test_iter_images_personagem_fora_da_lista_vira_erro(source):
+    adapter = build_adapter(source, make_client())
+
+    results = list(
+        adapter.iter_images(
+            [CharacterFactory(stable_id="desconhecida", display_name="Desconhecida")],
+            only_missing=False,
+        )
+    )
+
+    assert isinstance(results[0], ImageFetchError)
+    assert "não encontrada" in results[0].message
+
+
+def test_iter_images_detalhe_404_usa_fallback(source):
+    client = make_client(
+        detail_errors={"tokai-teio": SourceHTTPError("sumiu", status=404, url="x")}
+    )
+    fallback = (
+        "https://en-portal.g.kuroco-img.app/files/user/character/tokai-teio/tokai-teio_icon.png"
+    )
+    client.bytes_responses[fallback] = image_bytes(b"fallback")
+    adapter = build_adapter(source, client)
+
+    results = list(
+        adapter.iter_images(
+            [CharacterFactory(stable_id="tokai-teio", display_name="Tokai Teio")],
+            only_missing=False,
+        )
+    )
+
+    assert isinstance(results[0], ImageCandidate)
+    assert results[0].data == b"fallback"
+    assert results[0].source_url == "https://umamusume.com/characters/tokai-teio/"

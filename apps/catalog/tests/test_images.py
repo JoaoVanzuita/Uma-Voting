@@ -347,3 +347,53 @@ def test_store_image_bytes_exige_licenca_para_fonte_externa(tmp_path, settings):
 
     with pytest.raises(ValueError, match="license_note"):
         store_image_bytes(character, image_bytes(), source=source, license_note="")
+
+
+# ---------------------------------------------------------------------------
+# Idempotência e substituição pela importação por manifesto (T044)
+# ---------------------------------------------------------------------------
+def _source_dir(tmp_path):
+    source_dir = tmp_path / "source"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    return source_dir
+
+
+@pytest.mark.django_db
+def test_importacao_repetida_reutiliza_sem_duplicar(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path / "media"
+    CharacterFactory(stable_id="tokai-teio")
+    CatalogSourceFactory(name="curadoria-local")
+    source_dir = _source_dir(tmp_path)
+    (source_dir / "tokai.png").write_bytes(image_bytes())
+    manifest = write_manifest(tmp_path, "tokai-teio,tokai.png,curadoria-local,,,true\n")
+
+    first = import_images(manifest, source_dir, dry_run=False)
+    second = import_images(manifest, source_dir, dry_run=False)
+
+    assert first.created == 1
+    assert second.reused == 1
+    assert ImageAsset.objects.filter(character__stable_id="tokai-teio").count() == 1
+    assert (tmp_path / "media" / first.items[0].destination).exists()
+
+
+@pytest.mark.django_db
+def test_importacao_substitui_corrente_e_preserva_arquivo_anterior(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path / "media"
+    character = CharacterFactory(stable_id="tokai-teio")
+    CatalogSourceFactory(name="curadoria-local")
+    source_dir = _source_dir(tmp_path)
+    manifest = write_manifest(tmp_path, "tokai-teio,tokai.png,curadoria-local,,,true\n")
+
+    (source_dir / "tokai.png").write_bytes(image_bytes(color=(10, 20, 30)))
+    first = import_images(manifest, source_dir, dry_run=False)
+
+    (source_dir / "tokai.png").write_bytes(image_bytes(color=(200, 30, 40)))
+    second = import_images(manifest, source_dir, dry_run=False)
+
+    assert first.created == 1
+    assert second.replaced == 1
+    assert first.items[0].checksum != second.items[0].checksum
+    assert (tmp_path / "media" / first.items[0].destination).exists()
+    assert (tmp_path / "media" / second.items[0].destination).exists()
+    current = ImageAsset.objects.get(character=character, is_current=True)
+    assert current.checksum_sha256 == second.items[0].checksum

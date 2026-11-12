@@ -300,7 +300,18 @@ def test_detalhe_exibe_relatorio_vinculo_e_ultima_falha(client, adapter, enabled
                 "total_rows": 3,
                 "new_characters": 1,
                 "warnings": ["Detalhe ausente (HTTP 404)."],
-            }
+            },
+            "images": {
+                "total": 1,
+                "created": 0,
+                "errors": [
+                    {
+                        "character": "special-week",
+                        "url": "https://example.com/404.png",
+                        "message": "Resposta HTTP 404.",
+                    }
+                ],
+            },
         },
     )
     _login(client, admin)
@@ -315,3 +326,70 @@ def test_detalhe_exibe_relatorio_vinculo_e_ultima_falha(client, adapter, enabled
     assert reverse("admin:catalog_sync_detail", args=[sync_run.pk]) in html
     assert reverse("admin:catalog_import_detail", args=[failure.pk]) in html
     assert "GameTora indisponível." in html
+    assert "Relatório de imagens" in html
+    assert reverse("admin:catalog_images_validate") in html
+    assert "Resposta HTTP 404." in html
+
+
+# ---------------------------------------------------------------------------
+# Escopo das imagens no formulário (T045)
+# ---------------------------------------------------------------------------
+def test_formulario_tem_escopo_padrao_missing(client, adapter, enabled):
+    admin = AdminUserFactory()
+    CatalogSourceFactory(adapter=FakeAdapter.key)
+    _login(client, admin)
+
+    response = client.get(reverse("admin:catalog_import"))
+    html = response.content.decode()
+
+    assert 'value="missing" selected' in html
+    assert "Somente personagens sem imagem válida" in html
+    assert 'value="all"' in html
+
+
+def test_escopo_omitido_vira_missing(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key, license_note="Uso interno.")
+    _login(client, admin)
+
+    client.post(
+        reverse("admin:catalog_import"),
+        {"source": source.pk, "kind": "images", "license_ack": "on"},
+    )
+
+    job = ImportJob.objects.get(source=source)
+    assert job.options["image_scope"] == "missing"
+
+
+def test_escopo_all_e_persistido(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key, license_note="Uso interno.")
+    _login(client, admin)
+
+    client.post(
+        reverse("admin:catalog_import"),
+        {
+            "source": source.pk,
+            "kind": "full",
+            "image_scope": "all",
+            "license_ack": "on",
+        },
+    )
+
+    job = ImportJob.objects.get(source=source)
+    assert job.kind == ImportJob.Kind.FULL
+    assert job.options["image_scope"] == "all"
+
+
+def test_escopo_invalido_e_normalizado_para_missing(client, adapter, enabled):
+    admin = AdminUserFactory()
+    source = CatalogSourceFactory(adapter=FakeAdapter.key)
+    _login(client, admin)
+
+    client.post(
+        reverse("admin:catalog_import"),
+        {"source": source.pk, "kind": "catalog", "image_scope": "invalido"},
+    )
+
+    job = ImportJob.objects.get(source=source)
+    assert job.options["image_scope"] == "missing"
