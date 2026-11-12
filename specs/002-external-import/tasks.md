@@ -72,7 +72,7 @@ Projeto Django único na raiz do repositório:
 - [X] T023 Criar esqueletos de rotas em `apps/catalog/urls.py` e views em `apps/catalog/views.py` para iniciar, listar, detalhar, status, cancelar, repetir e verificar fonte
 - [X] T024 [P] Criar `templates/admin/catalog/import_form.html`, `import_detail.html`, `import_list.html` e `_import_status.html` seguindo o admin existente
 - [X] T025 [P] Criar `static/js/catalog-import.js` com polling de status, atualização de progresso e parada em estado terminal
-- [X] T026 Adicionar `ImportJobForm` em `apps/catalog/forms.py` com fonte, modo, escopo e confirmação de licença
+- [X] T026 Adicionar `ImportJobForm` em `apps/catalog/forms.py` com fonte, modo e escopo
 - [X] T027 Adicionar o painel "Fontes externas" em `templates/admin/catalog/status.html` e o contexto correspondente em `apps/catalog/views.py`
 
 **Checkpoint**: modelos, serviços, worker, rotas e templates base prontos.
@@ -173,23 +173,23 @@ falho; simular worker interrompido e verificar stale recovery.
 
 ## Phase 6: User Story 4 — Diagnosticar e manter fontes (Priority: P3)
 
-**Goal**: verificar disponibilidade, exibir licença, diagnosticar fonte indisponível e respeitar
-o kill switch.
+**Goal**: verificar disponibilidade, diagnosticar fonte indisponível e respeitar o kill switch
+com aviso discreto.
 
-**Independent Test**: verificar fonte disponível e indisponível, tentar importar fonte sem
-licença e desabilitar a feature por configuração.
+**Independent Test**: verificar fonte disponível e indisponível, confirmar que a licença não
+bloqueia a importação e desabilitar a feature por configuração.
 
 ### Tests for User Story 4 ⚠️
 
 - [ ] T065 [P] [US4] Testar `check_source` e a rota de verificação em `apps/catalog/tests/test_import_jobs.py` e `test_ui_admin_import.py`
-- [ ] T066 [US4] Testar bloqueio por licença ausente e por `EXTERNAL_IMPORT_ENABLED=False`
+- [ ] T066 [US4] Testar bloqueio por `EXTERNAL_IMPORT_ENABLED=False` e ausência de bloqueio por licença
 - [ ] T067 [US4] Testar exibição de todas as fontes no painel e de somente fontes elegíveis no seletor
 
 ### Implementation for User Story 4
 
 - [ ] T068 [US4] Implementar `check_source()` e `catalog_source_check` com timeout curto, mensagem resumida e diagnóstico de fonte desabilitada que possua conector
-- [ ] T069 [US4] Exibir no painel todas as fontes com nome, licença, última execução, situação, conector e motivo da última falha; o seletor do formulário usa apenas fontes elegíveis
-- [ ] T070 [US4] Implementar a confirmação de licença no formulário e a validação server-side
+- [ ] T069 [US4] Exibir no painel todas as fontes com nome, última execução, situação, conector e motivo da última falha; o seletor do formulário usa apenas fontes elegíveis
+- [ ] T070 [US4] Remover a confirmação de licença do fluxo externo e exibir o kill switch como aviso discreto (sem banner de alerta)
 - [ ] T071 [US4] Implementar o kill switch na view, no serviço e na interface
 - [ ] T072 [US4] Documentar no próprio painel como resolver fonte sem conector ou desabilitada
 

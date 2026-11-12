@@ -21,7 +21,7 @@
 |---|---|---|---|---|---|
 | GET | `/admin/catalogo/` | `admin:catalog_status` | — | Página de catálogo com painel de fontes externas | Painel exibe todas as fontes, inclusive inelegíveis |
 | GET | `/admin/catalogo/importar/` | `admin:catalog_import` | — | Formulário de importação | Seletor lista somente fontes elegíveis |
-| POST | `/admin/catalogo/importar/` | `admin:catalog_import` | `source`, `kind`, `image_scope`, `license_ack` | `302` para o detalhe da execução | Cria `ImportJob` e retorna imediatamente |
+| POST | `/admin/catalogo/importar/` | `admin:catalog_import` | `source`, `kind`, `image_scope` | `302` para o detalhe da execução | Cria `ImportJob` e retorna imediatamente |
 | GET | `/admin/catalogo/importacoes/` | `admin:catalog_import_list` | `status?`, `source?`, `page?` | Histórico paginado | Ordenado por `-created_at` |
 | GET | `/admin/catalogo/importacoes/<int:job_id>/` | `admin:catalog_import_detail` | — | Detalhe com progresso e relatório | Atualização automática enquanto ativo |
 | GET | `/admin/catalogo/importacoes/<int:job_id>/status/` | `admin:catalog_import_status` | — | JSON de progresso | Usado pelo polling |
@@ -38,14 +38,12 @@
 | `source` | select | Sim | Apenas fontes `enabled=True`, com `adapter` registrado |
 | `kind` | select | Sim | `catalog`, `images`, `full` |
 | `image_scope` | select | Condicional | `missing` (padrão) ou `all`; usado quando `kind` inclui imagens |
-| `license_ack` | checkbox | Sim para imagens | Confirma que a nota de licença foi lida |
 
 ### 3.2 Validação
 
 - Fonte inexistente, desabilitada ou sem conector: erro de formulário.
 - `EXTERNAL_IMPORT_ENABLED=False`: erro "Importação externa desabilitada."
-- `kind=images|full` e `license_note` vazio: erro de licença.
-- `kind=catalog` não exige `license_ack`.
+- A licença não é exibida nem usada como critério de bloqueio.
 - `image_scope` inválido é normalizado para `missing`.
 - Se já existir execução `queued` ou `running` para a mesma fonte, redireciona para ela com
   mensagem informativa, sem criar duplicata.

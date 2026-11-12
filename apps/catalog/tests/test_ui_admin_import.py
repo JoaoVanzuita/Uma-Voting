@@ -237,11 +237,9 @@ def test_fonte_sem_conector_nao_pode_ser_enviada(client, adapter, enabled):
     assert not ImportJob.objects.filter(source=source).exists()
 
 
-def test_importacao_de_imagens_exige_confirmacao_de_licenca(client, adapter, enabled):
+def test_importacao_de_imagens_nao_exige_confirmacao_de_licenca(client, adapter, enabled):
     admin = AdminUserFactory()
-    source = CatalogSourceFactory(
-        name="fonte-elegivel", adapter=FakeAdapter.key, license_note="Uso interno."
-    )
+    source = CatalogSourceFactory(adapter=FakeAdapter.key, license_note="")
     _login(client, admin)
 
     response = client.post(
@@ -249,9 +247,9 @@ def test_importacao_de_imagens_exige_confirmacao_de_licenca(client, adapter, ena
         {"source": source.pk, "kind": "images", "image_scope": "missing"},
     )
 
-    assert response.status_code == 200
-    assert "Confirme a leitura da nota de licença" in response.content.decode()
-    assert not ImportJob.objects.filter(source=source).exists()
+    job = ImportJob.objects.get(source=source)
+    assert response.status_code == 302
+    assert job.kind == ImportJob.Kind.IMAGES
 
 
 def test_usuario_nao_administrador_recebe_403(client, adapter, enabled):
@@ -361,7 +359,7 @@ def test_escopo_omitido_vira_missing(client, adapter, enabled):
 
     client.post(
         reverse("admin:catalog_import"),
-        {"source": source.pk, "kind": "images", "license_ack": "on"},
+        {"source": source.pk, "kind": "images"},
     )
 
     job = ImportJob.objects.get(source=source)
@@ -379,7 +377,6 @@ def test_escopo_all_e_persistido(client, adapter, enabled):
             "source": source.pk,
             "kind": "full",
             "image_scope": "all",
-            "license_ack": "on",
         },
     )
 
@@ -624,3 +621,20 @@ def test_acoes_do_detalhe_dependem_do_estado(client, adapter, enabled):
 
     assert "Repetir importação" in failed_html
     assert "Cancelar importação" not in failed_html
+
+
+def test_licenca_nao_aparece_na_interface_de_importacao(client, adapter, enabled):
+    admin = AdminUserFactory()
+    CatalogSourceFactory(
+        name="fonte-elegivel",
+        adapter=FakeAdapter.key,
+        license_note="Texto de licença que não deve aparecer.",
+    )
+    _login(client, admin)
+
+    form_html = client.get(reverse("admin:catalog_import")).content.decode()
+    status_html = client.get(reverse("admin:catalog_status")).content.decode()
+
+    assert "Texto de licença que não deve aparecer." not in form_html
+    assert "Texto de licença que não deve aparecer." not in status_html
+    assert "Licença:" not in form_html

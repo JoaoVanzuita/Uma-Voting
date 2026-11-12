@@ -335,6 +335,7 @@ def store_image_bytes(
     license_note: str = "",
     is_current: bool = True,
     max_bytes: int | None = None,
+    require_license: bool = True,
     dry_run: bool = False,
 ) -> ImageStoreResult:
     """Valida, normaliza e grava uma imagem recebida em memória.
@@ -344,7 +345,7 @@ def store_image_bytes(
     arquivo anterior. O chamador converte ``ValueError``/``OSError`` em item do
     relatório e continua.
     """
-    if source.name != LOCAL_SOURCE and not license_note.strip():
+    if require_license and source.name != LOCAL_SOURCE and not license_note.strip():
         raise ValueError("Fonte externa exige license_note e revisão manual antes de --apply.")
 
     limit = MAX_IMAGE_BYTES if max_bytes is None else max_bytes

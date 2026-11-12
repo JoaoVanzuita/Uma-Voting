@@ -244,8 +244,9 @@ para reutilizar o padrão operacional já usado por `run_scheduler`.
 ### Fase 4 — Diagnóstico e endurecimento (US4)
 
 - Implementar verificação de disponibilidade da fonte.
-- Exibir todas as fontes no painel, com licença, última execução, situação e motivo; o seletor
-  do formulário lista apenas fontes elegíveis.
+- Exibir todas as fontes no painel, com última execução, situação e motivo; o seletor do
+  formulário lista apenas fontes elegíveis.
+- Bloquear novas execuções pelo kill switch com aviso discreto, sem banners de alerta.
 - Aplicar limites, allowlist, bloqueio de IP privado e validação de redirecionamento.
 - Atualizar documentação operacional.
 - Executar revisão de segurança e validação de quickstart.
@@ -254,8 +255,7 @@ para reutilizar o padrão operacional já usado por `run_scheduler`.
 
 ### Criação da execução
 
-1. A view valida permissão, CSRF, fonte habilitada, conector registrado, configuração global e
-   nota de licença.
+1. A view valida permissão, CSRF, fonte habilitada, conector registrado e configuração global.
 2. O painel de fontes exibe todas as fontes cadastradas, com situação e último resultado; o
    seletor do formulário usa apenas fontes habilitadas com conector registrado.
 3. `create_import_job()` cria `ImportJob(status=queued, phase=queued)` em transação.
@@ -351,9 +351,8 @@ para reutilizar o padrão operacional já usado por `run_scheduler`.
 
 ### Licença e auditoria
 
-- `CatalogSource.license_note` é obrigatório para importar imagens.
-- A nota é exibida na confirmação.
-- `ImageAsset` registra `source`, `source_url` e `license_note`.
+- `CatalogSource.license_note` é um metadado interno, sem exibição ou bloqueio no fluxo externo.
+- `ImageAsset` registra `source`, `source_url` e `license_note`, quando cadastrada.
 - `ImportJob` registra `triggered_by`, timestamps, tentativas e relatório.
 - `SyncRun.origin` distingue importação manual de externa.
 
@@ -379,7 +378,7 @@ para reutilizar o padrão operacional já usado por `run_scheduler`.
 
 ### Integração
 
-- Criação de job pela view com fonte válida, inválida, desabilitada e sem licença.
+- Criação de job pela view com fonte válida, inválida e desabilitada.
 - Painel de fontes exibe todas; formulário lista somente fontes elegíveis.
 - Worker executando catálogo e imagens com HTTP mockado.
 - Matriz erro × aviso: falha sistêmica aborta; detalhe 404/metadados ausentes geram aviso.
@@ -436,7 +435,7 @@ para reutilizar o padrão operacional já usado por `run_scheduler`.
 | GameTora muda HTML/JSON ou bloqueia o agente | Catálogo falha | Conector isolado, fixtures, mensagem clara, verificação de fonte, atualização pontual |
 | Portal oficial muda o schema | Catálogo falha | Contract tests com fixtures e validação explícita de campos obrigatórios |
 | Fonte limita requisições | Importação lenta ou parcial | Concorrência limitada, backoff, cache por execução |
-| Imagens sem autorização de uso | Risco jurídico | Nota de licença obrigatória, revisão manual, registro de origem |
+| Imagens sem autorização de uso | Risco jurídico | Metadados de origem e URL registrados no acervo; revisão operacional fora do fluxo |
 | Worker cai no meio | Execução órfã | Heartbeat, stale recovery e retry idempotente |
 | Catálogo muito maior que 85 personagens | Execução longa | Progresso, concorrência controlada e limites |
 | Fonte muda nome canônico | Duplicidade de personagem | `stable_id` determinístico + relatório de conflitos; revisão manual |

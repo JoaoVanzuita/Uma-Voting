@@ -58,9 +58,6 @@ def create_import_job(
     scope = normalized_options.get("image_scope", "missing")
     normalized_options["image_scope"] = scope if scope in {"missing", "all"} else "missing"
 
-    if kind in IMAGE_KINDS and not source.license_note.strip():
-        raise ImportSourceError(f"A fonte '{source.name}' não possui nota de licença registrada.")
-
     with transaction.atomic():
         existing = (
             ImportJob.objects.select_for_update()
@@ -449,6 +446,7 @@ def run_images_phase(job: ImportJob, adapter) -> None:
                 license_note=job.source.license_note,
                 is_current=True,
                 max_bytes=settings.EXTERNAL_IMPORT_MAX_IMAGE_BYTES,
+                require_license=False,
             )
         except (OSError, ValueError) as exc:
             images_report["errors"].append(

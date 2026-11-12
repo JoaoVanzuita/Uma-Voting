@@ -37,7 +37,7 @@
 - [x] O GameTora está explicitamente no escopo
 - [x] As imagens são baixadas automaticamente
 - [x] A fonte não pode ser informada por URL livre
-- [x] A licença é registrada e exibida
+- [x] A licença permanece como metadado interno, sem bloquear a importação
 - [x] O fluxo manual por CSV permanece disponível
 - [x] O uso normal por participantes não depende de serviços externos
 - [x] Snapshots, cédulas e resultados históricos são preservados e testados

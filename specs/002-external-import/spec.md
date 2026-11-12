@@ -23,6 +23,7 @@
 - Q: O cancelamento interrompe a coleta do catálogo? → A: O critério de interrupção em até 1 item vale para a fase de imagens. Na fase de catálogo, o cancelamento é verificado antes da aplicação e nenhuma alteração é gravada após a solicitação.
 - Q: Qual é o limite entre erro e aviso no catálogo? → A: Falha sistêmica, schema global inválido, conflito de identidade ou de versão são erros que abortam a fase. Detalhe 404, metadados opcionais ausentes e data desconhecida são avisos; a personagem é ignorada e as demais continuam.
 - Q: Como garantir as invariantes da execução de importação? → A: Além do advisory lock e das transações, invariantes viáveis são reforçadas por constraints e trigger de imutabilidade terminal no banco.
+- Q: A licença deve bloquear ou gerar avisos na importação externa? → A: Não. A nota permanece apenas como metadado interno, sem exibição, confirmação ou bloqueio na interface.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -126,8 +127,8 @@ outra execução e repetir uma execução falha.
 
 ### User Story 4 - Diagnosticar e manter fontes externas (Priority: P3)
 
-O administrador consulta quais fontes externas estão disponíveis, vê a licença registrada,
-verifica a conectividade e entende por que uma fonte não pode ser usada.
+O administrador consulta quais fontes externas estão disponíveis, verifica a conectividade
+e entende por que uma fonte não pode ser usada.
 
 **Why this priority**: a importação depende de fontes externas que podem mudar; o diagnóstico
 reduz tentativas repetidas e facilita a manutenção.
@@ -138,15 +139,13 @@ de uma fonte indisponível, e confirmar as mensagens exibidas.
 **Acceptance Scenarios**:
 
 1. **Given** uma fonte habilitada com conector suportado, **When** o administrador abre o painel
-   de fontes, **Then** a fonte aparece com nome, nota de licença, última execução e pode ser
-   selecionada no formulário de importação.
+   de fontes, **Then** a fonte aparece com nome, última execução e pode ser selecionada no
+   formulário de importação.
 2. **Given** uma fonte sem conector ou desabilitada, **When** o administrador abre o painel,
    **Then** ela aparece com situação e motivo, mas não pode ser selecionada no formulário de
    importação.
 3. **Given** uma fonte selecionada, **When** o administrador solicita a verificação,
    **Then** o sistema testa a disponibilidade e informa sucesso ou o motivo da falha.
-4. **Given** uma fonte externa sem nota de licença, **When** o administrador tenta importar,
-   **Then** a importação é bloqueada com mensagem sobre a revisão de licença.
 
 ---
 
@@ -185,10 +184,10 @@ de uma fonte indisponível, e confirmar as mensagens exibidas.
   importação externa sem remover dados já importados.
 - **FR-004**: O sistema MUST permitir importar somente fontes previamente suportadas; o
   administrador MUST NOT informar URL, caminho de arquivo ou credencial de fonte.
-- **FR-005**: O sistema MUST exigir que a fonte tenha uma nota de licença registrada antes de
-  permitir a importação de imagens.
-- **FR-006**: O sistema MUST exibir a nota de licença da fonte antes da confirmação da
-  importação.
+- **FR-005**: A nota de licença MUST permanecer registrada como metadado interno da fonte e da
+  imagem, sem ser exibida na interface de importação.
+- **FR-006**: O sistema MUST NOT exigir confirmação de licença nem bloquear a importação por
+  ausência de nota de licença.
 
 #### Fontes e coleta
 
@@ -398,8 +397,8 @@ de uma fonte indisponível, e confirmar as mensagens exibidas.
 - O servidor de aplicação possui saída HTTPS para os domínios das fontes suportadas.
 - O portal oficial Global e o GameTora continuam disponíveis e com formato compatível; mudanças
   de formato exigem atualização do conector.
-- As imagens continuam sujeitas à revisão manual de licença; a nota de licença é registrada e
-  exibida, mas não substitui a autorização de uso.
+- A nota de licença permanece registrada como metadado interno; a interface de importação não a
+  exibe nem a usa como critério de bloqueio.
 - A importação é iniciada manualmente por um administrador; agendamento automático de
   importações externas está fora do escopo desta versão.
 - O cadastro de novas fontes é feito por código (novo conector), não pela interface.

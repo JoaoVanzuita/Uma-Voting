@@ -107,11 +107,12 @@ def test_fonte_desabilitada_ou_sem_conector_e_rejeitada(adapter, enabled):
 
 
 @pytest.mark.django_db
-def test_importacao_de_imagens_exige_nota_de_licenca(adapter, enabled):
+def test_importacao_de_imagens_nao_exige_nota_de_licenca(adapter, enabled):
     source = CatalogSourceFactory(adapter=FakeAdapter.key, license_note="")
 
-    with pytest.raises(ImportSourceError, match="licença"):
-        create_import_job(source, ImportJob.Kind.IMAGES)
+    job = create_import_job(source, ImportJob.Kind.IMAGES)
+
+    assert job.status == ImportJob.Status.QUEUED
 
 
 @pytest.mark.django_db

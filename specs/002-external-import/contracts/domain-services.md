@@ -58,7 +58,6 @@ Valida:
 - `source.enabled` é `True`;
 - existe conector para `source.adapter`;
 - `kind` em `catalog|images|full`;
-- `kind` inclui imagens ⇒ `source.license_note` não vazio;
 - `image_scope` em `missing|all`.
 
 Comportamento:
@@ -82,7 +81,7 @@ Comportamento:
 
 - Permitido para `partial|failed|cancelled`.
 - Bloqueado para `queued|running`.
-- Usa `create_import_job` para validar configuração, licença e duplicata ativa.
+- Usa `create_import_job` para validar configuração e duplicata ativa.
 - Cria novo `ImportJob` com a mesma fonte, `kind` e `options`.
 - `attempts=0`, `triggered_by=admin`, `retry_of=job`.
 - Não copia relatório nem vínculo `sync_run`.
@@ -195,7 +194,7 @@ Para cada `PlannedChange` aplicada, incrementar:
 
 ## 6. Armazenamento de imagens
 
-### 6.1 `store_image_bytes(character, data, *, source, source_url, license_note, is_current=True, max_bytes=None) -> ImageStoreResult`
+### 6.1 `store_image_bytes(character, data, *, source, source_url, license_note, is_current=True, max_bytes=None, require_license=True) -> ImageStoreResult`
 
 Extraído do miolo de `import_images`.
 
@@ -203,7 +202,8 @@ Responsabilidades:
 
 - validar formato e integridade com Pillow;
 - aplicar `max_bytes` (ou `MAX_IMAGE_BYTES` quando omitido) e `MAX_PIXELS`;
-- exigir `license_note` quando a fonte não for `curadoria-local`;
+- exigir `license_note` quando `require_license=True` e a fonte não for `curadoria-local`
+  (mantido apenas para o fluxo manual por CSV);
 - normalizar para WebP 256×256;
 - calcular SHA-256;
 - calcular destino `characters/<stable_id>/<sha256>.webp`;

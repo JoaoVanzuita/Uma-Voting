@@ -53,7 +53,6 @@ Acesse `http://localhost:8000/admin/entrar/`.
 2. No painel "Fontes externas", confirme:
    - `umamusume-global` listada;
    - situação habilitada;
-   - nota de licença visível;
    - conector reconhecido.
 3. Clique em "Verificar fonte".
 4. Resultado esperado: "Fonte disponível."
@@ -70,10 +69,10 @@ Se a fonte não aparecer, confira a migration `0005` e o registry do conector.
    - Fonte: `umamusume-global`;
    - Modo: `Catálogo + imagens`;
    - Escopo: `Apenas personagens sem imagem válida` (primeira carga: equivalente a todas).
-3. Marque a confirmação de licença.
-4. Clique em "Iniciar importação".
-5. Você será redirecionado para `/admin/catalogo/importacoes/<id>/`.
-6. Acompanhe fase, progresso e passo atual. A página atualiza automaticamente a cada 3 segundos.
+3. Clique em "Iniciar importação".
+4. Você será redirecionado para `/admin/catalogo/importacoes/<id>/`.
+5. Acompanhe fase, progresso e passo atual. A página atualiza automaticamente enquanto a
+   execução estiver ativa.
 
 ### O que esperar
 
@@ -188,7 +187,6 @@ reutilizam o asset.
 |---|---|---|
 | Fonte não aparece | `adapter` vazio ou não registrado | Conferir migration e registry |
 | "Importação externa desabilitada" | `EXTERNAL_IMPORT_ENABLED=False` | Ajustar `.env` e reiniciar |
-| Botão de importar desabilitado | Fonte sem licença | Preencher `license_note` |
 | Job fica `queued` | Worker não está rodando | `docker compose up -d import-worker` |
 | Job fica `running` sem progresso | Worker caiu | Aguardar stale recovery ou reiniciar o worker |
 | `failed` na fase de catálogo | Fonte oficial/GameTora indisponível ou mudou | Verificar fonte, logs e conector |
@@ -198,7 +196,7 @@ reutilizam o asset.
 
 ## 14. Critérios de aceite da validação
 
-- [ ] A fonte `umamusume-global` aparece com licença e conector.
+- [ ] A fonte `umamusume-global` aparece com conector e situação.
 - [ ] A importação completa roda sem arquivo e sem shell.
 - [ ] O progresso aparece em até 5 segundos.
 - [ ] O catálogo é aplicado automaticamente e sem pendências.

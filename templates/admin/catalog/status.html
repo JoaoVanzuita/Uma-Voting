@@ -82,7 +82,7 @@
             </p>
           </div>
           {% if not import_enabled %}
-            <span class="badge badge--danger">Importação desabilitada</span>
+            <span class="text-muted text-small">Importação externa desabilitada</span>
           {% endif %}
         </div>
 
@@ -105,9 +105,6 @@
                       <strong>{{ row.source.name }}</strong>
                       {% if row.source.adapter %}
                         <span class="text-muted text-small">· {{ row.source.adapter }}</span>
-                      {% endif %}
-                      {% if row.source.license_note %}
-                        <p class="text-muted text-small">{{ row.source.license_note }}</p>
                       {% endif %}
                     </td>
                     <td data-label="Situação">

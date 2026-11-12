@@ -159,7 +159,7 @@ URL remota
 - Um asset corrente por personagem.
 - Imagem anterior vira histórica; arquivo não é apagado.
 - Checksum igual reutiliza o arquivo existente.
-- `license_note` obrigatório para fonte externa.
+- `license_note` mantido como metadado interno; o fluxo externo não bloqueia por licença.
 - Imagem inválida não impede as demais.
 
 ### 5.3 Escopos

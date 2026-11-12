@@ -397,3 +397,21 @@ def test_importacao_substitui_corrente_e_preserva_arquivo_anterior(tmp_path, set
     assert (tmp_path / "media" / second.items[0].destination).exists()
     current = ImageAsset.objects.get(character=character, is_current=True)
     assert current.checksum_sha256 == second.items[0].checksum
+
+
+@pytest.mark.django_db
+def test_store_image_bytes_pode_dispensar_licenca_no_fluxo_externo(tmp_path, settings):
+    settings.MEDIA_ROOT = tmp_path
+    character = CharacterFactory()
+    source = CatalogSourceFactory(name="umamusume-global", license_note="")
+
+    result = store_image_bytes(
+        character,
+        image_bytes(),
+        source=source,
+        license_note="",
+        require_license=False,
+    )
+
+    assert result.action == "create"
+    assert ImageAsset.objects.get(character=character).license_note == ""

@@ -18,9 +18,9 @@
 
 {% block content %}
   {% if not import_enabled %}
-    <div class="alert alert-danger" role="alert">
-      Importação externa desabilitada. Ative <code>EXTERNAL_IMPORT_ENABLED</code> para criar execuções.
-    </div>
+    <p class="text-muted text-small">
+      Importação externa desabilitada por configuração. Execuções existentes continuam disponíveis.
+    </p>
   {% endif %}
 
   <div class="catalog-columns">
@@ -57,13 +57,6 @@
             <p class="form-help">Usado quando o modo inclui imagens.</p>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="{{ form.license_ack.id_for_label }}">
-              {{ form.license_ack }} {{ form.license_ack.label }}
-            </label>
-            {% for error in form.license_ack.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
-          </div>
-
           <div class="form-actions">
             <button class="btn btn-primary" type="submit" {% if not import_enabled %}disabled{% endif %}>
               Iniciar importação
@@ -96,9 +89,6 @@
               </div>
             </div>
             {% if row.reason %}<p class="text-muted text-small">{{ row.reason }}</p>{% endif %}
-            {% if row.source.license_note %}
-              <p class="text-small"><strong>Licença:</strong> {{ row.source.license_note }}</p>
-            {% endif %}
             {% if row.last_job %}
               <p class="text-muted text-small">
                 Última execução: #{{ row.last_job.pk }} ·

@@ -49,11 +49,6 @@ class ImportJobForm(forms.Form):
             attrs={"class": "form-control"},
         ),
     )
-    license_ack = forms.BooleanField(
-        label="Li e revisei a nota de licença da fonte",
-        required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check"}),
-    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,15 +60,9 @@ class ImportJobForm(forms.Form):
         if not settings.EXTERNAL_IMPORT_ENABLED:
             raise forms.ValidationError("Importação externa desabilitada.")
 
-        kind = cleaned.get("kind")
         scope = cleaned.get("image_scope") or "missing"
         cleaned["image_scope"] = scope if scope in {"missing", "all"} else "missing"
 
-        if kind in {ImportJob.Kind.IMAGES, ImportJob.Kind.FULL} and not cleaned.get("license_ack"):
-            self.add_error(
-                "license_ack",
-                "Confirme a leitura da nota de licença para importar imagens.",
-            )
         return cleaned
 
     def clean_source(self):

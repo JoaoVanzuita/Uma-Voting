@@ -46,7 +46,6 @@ Campos existentes preservados: `name`, `kind`, `base_url`, `terms_url`, `license
   - `enabled=True`;
   - `adapter` não vazio;
   - existir um conector registrado para o valor de `adapter`;
-  - `license_note` não vazio quando o modo incluir imagens.
 - `adapter` não é `unique` porque mais de uma fonte pode reutilizar o mesmo conector com
   `options` diferentes.
 - `options` não pode conter credenciais.
