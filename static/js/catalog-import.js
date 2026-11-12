@@ -33,6 +33,12 @@
     const fill = root.querySelector("[data-progress-fill]");
     if (bar) {
       bar.setAttribute("aria-valuenow", String(percent));
+      if (payload.progress) {
+        bar.setAttribute(
+          "aria-valuetext",
+          `${payload.progress.done} de ${payload.progress.total}`,
+        );
+      }
     }
     if (fill) {
       fill.style.width = `${percent}%`;

@@ -132,3 +132,31 @@ def test_cache_evita_segunda_requisicao(client, monkeypatch):
     client.get_bytes("https://example.com/cache")
     client.get_bytes("https://example.com/cache")
     assert calls["count"] == 1
+
+
+def test_redirect_levantado_como_httperror_e_seguido(client, monkeypatch):
+    redirect = urllib.error.HTTPError(
+        "https://example.com/start",
+        302,
+        "Found",
+        {"Location": "https://example.com/next"},
+        None,
+    )
+    responses = [redirect, FakeResponse(b"ok")]
+    monkeypatch.setattr(client, "_open", lambda request: responses.pop(0))
+
+    assert client.get_bytes("https://example.com/start") == b"ok"
+
+
+def test_limite_de_redirecionamentos(client, monkeypatch):
+    def always_redirect(request):
+        return FakeResponse(
+            b"",
+            status=302,
+            headers={"Location": "https://example.com/loop"},
+        )
+
+    monkeypatch.setattr(client, "_open", always_redirect)
+
+    with pytest.raises(SourceHTTPError, match="redirecionamentos"):
+        client.get_bytes("https://example.com/start")

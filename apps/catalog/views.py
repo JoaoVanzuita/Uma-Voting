@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 from datetime import date
@@ -46,6 +47,8 @@ from apps.catalog.services.sync import (
     sync_from_file,
 )
 from apps.core.permissions import admin_required
+
+logger = logging.getLogger("apps.catalog.imports")
 
 DEFAULT_CUTOFF = date(2026, 12, 1)
 
@@ -452,8 +455,9 @@ def catalog_source_check(request, source_id: int):
         result = check_source(source)
     except ImportSourceError as exc:
         return HttpResponse(str(exc), status=409)
-    except Exception as exc:  # pragma: no cover - falha inesperada do conector
-        messages.error(request, f"Falha ao verificar a fonte: {exc}")
+    except Exception:  # pragma: no cover - falha inesperada do conector
+        logger.exception("Falha inesperada ao verificar a fonte %s", source.pk)
+        messages.error(request, "Não foi possível verificar a fonte; consulte os logs.")
         return redirect("admin:catalog_status")
 
     if result.ok:

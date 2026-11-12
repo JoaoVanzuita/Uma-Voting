@@ -109,6 +109,9 @@ uv run pytest -m e2e
 - Sincronização diária do catálogo: `scripts/sync_catalog.sh` às 03:00.
 - Backup: `scripts/backup.sh`; restauração: `scripts/restore.sh`.
 - Limpeza de sessões: `python manage.py clearsessions` diariamente.
+- Importação externa: serviço `import-worker` processa a fila
+  (`python manage.py run_import_worker --interval 5`). Variáveis `EXTERNAL_IMPORT_*` em
+  `.env.example`; kill switch `EXTERNAL_IMPORT_ENABLED=False`.
 
 Catálogo Global oficial (portal `umamusume.com`):
 
@@ -119,9 +122,9 @@ uv run python scripts/fetch_global_assets.py
 
 O script gera `catalog.csv`, `images.csv` e `global-metadata.json`. Datas e
 aptidões vêm do GameTora; as personagens ainda não lançadas no Global ficam com
-data futura e são filtradas pela data de corte da votação. Registre a fonte
-`umamusume-global` antes da primeira importação (o docstring do script traz o
-comando pronto).
+data futura e são filtradas pela data de corte da votação. A fonte
+`umamusume-global` é criada pela migration `0005` e também pode ser importada
+pela interface em `/admin/catalogo/importar/`.
 
 Detalhes em `docs/operations.md`.
 
@@ -132,7 +135,8 @@ Detalhes em `docs/operations.md`.
 - Não há cadastro público.
 - Imagens são locais; a aplicação não busca imagens externas em runtime.
 - Licenças de imagens externas exigem revisão manual antes de `import_images --apply`
-  (risco G5 aceito, sem gate técnico no MVP).
+  (risco G5 aceito, sem gate técnico no MVP). A importação externa pela interface não
+  exibe nem bloqueia por licença; a nota permanece como metadado interno.
 - Resultados são agregados; nenhuma visão administrativa expõe escolhas individuais.
 - O risco residual de inferência por comparação de agregados é aceito na emenda 2.0.0.
 

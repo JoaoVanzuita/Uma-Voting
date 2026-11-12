@@ -178,6 +178,10 @@ class HttpClient:
             try:
                 response = self._open(request)
             except urllib.error.HTTPError as exc:
+                if exc.code in {301, 302, 303, 307, 308}:
+                    # O handler de redirect devolve None; o urllib converte o 3xx em
+                    # HTTPError. Devolvemos o objeto para _fetch revalidar o destino.
+                    return exc
                 if exc.code in RETRY_STATUSES and attempt + 1 < self.retries:
                     last_error = exc
                     self._sleep(min(2**attempt, 8))

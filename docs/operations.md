@@ -112,3 +112,71 @@ Registrar data, operador, ambiente e duração neste documento.
 - Rotacionar `SECRET_KEY` com janela de manutenção e invalidação de sessões.
 - Rotacionar credenciais de banco e do proxy.
 - Nunca commitar `.env` ou certificados privados.
+
+## 10. Importação externa de catálogo e imagens
+
+### 10.1 Worker
+
+- Serviço `import-worker` no Compose: `python manage.py run_import_worker --interval 5`.
+- Não serve HTTP; compartilha o volume `media_data` com `web`.
+- Cada ciclo: advisory lock global, stale recovery, claim do job mais antigo e processamento.
+- Diagnóstico de um ciclo:
+
+```bash
+docker compose exec import-worker python manage.py run_import_worker --once --json
+```
+
+### 10.2 Variáveis
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `EXTERNAL_IMPORT_ENABLED` | `False` | Kill switch global; bloqueia novas execuções |
+| `EXTERNAL_IMPORT_HTTP_TIMEOUT` | `15` | Timeout por requisição (segundos) |
+| `EXTERNAL_IMPORT_MAX_IMAGE_BYTES` | `5242880` | Limite por imagem (bytes) |
+| `EXTERNAL_IMPORT_CONCURRENCY` | `4` | Downloads simultâneos |
+| `EXTERNAL_IMPORT_STALE_SECONDS` | `600` | Tempo sem heartbeat para considerar órfã |
+
+- O kill switch bloqueia criação de jobs na interface e no serviço; catálogo, imagens e votações
+  existentes continuam funcionando.
+- A interface mostra o bloqueio como texto discreto, sem banner.
+
+### 10.3 Cancelamento e recuperação
+
+- `queued`: cancelamento encerra a execução imediatamente.
+- `running`/imagens: encerra entre um item e outro, preservando o que já foi gravado.
+- `running`/catálogo: nenhuma alteração é aplicada depois da solicitação.
+- Execução `running` sem heartbeat por `EXTERNAL_IMPORT_STALE_SECONDS` é marcada como `failed`
+  no próximo ciclo do worker.
+- Repetição cria uma nova execução (`partial`, `failed` ou `cancelled`); a anterior não muda.
+
+### 10.4 Logs
+
+Logger `apps.catalog.imports`, sem credenciais, cookies ou escolhas de cédula:
+
+```text
+import_job.created job_id=42 source=umamusume-global kind=full
+import_job.claimed job_id=42 source=umamusume-global kind=full worker=...
+import_job.phase.started job_id=42 phase=catalog
+import_job.phase.finished job_id=42 phase=images errors=0 cancelled=False
+import_job.completed job_id=42 status=success error=
+import_job.stale job_id=42
+```
+
+### 10.5 Diagnóstico
+
+| Sintoma | Ação |
+|---|---|
+| Fonte inelegível no painel | Conferir `enabled` e `adapter` da fonte |
+| "Importação externa desabilitada" | Ajustar `EXTERNAL_IMPORT_ENABLED` e reiniciar `web` e `import-worker` |
+| Job `queued` parado | Verificar se o `import-worker` está ativo |
+| Job `running` sem progresso | Aguardar stale recovery ou reiniciar o worker |
+| `failed` no catálogo | Verificar disponibilidade do portal oficial/GameTora e os logs |
+| `partial` com erros de imagem | Ver o relatório do job; repetir ou corrigir a fonte |
+| Muitos HTTP 429 | Reduzir `EXTERNAL_IMPORT_CONCURRENCY` e tentar novamente |
+
+### 10.6 Licença
+
+- `CatalogSource.license_note` e `ImageAsset.license_note` permanecem como metadados internos.
+- A interface de importação externa não exibe, não solicita confirmação e não bloqueia por
+  licença.
+- O fluxo manual por CSV mantém a revisão de licença descrita na seção 5.

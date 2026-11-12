@@ -199,14 +199,14 @@ bloqueia a importação e desabilitar a feature por configuração.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T073 [P] Atualizar `docs/operations.md` com worker, variáveis, logs, cancelamento, stale recovery e kill switch
-- [ ] T074 [P] Atualizar `.env.example` e `README.md` com o novo fluxo
-- [ ] T075 [P] Revisar segurança: SSRF, redirect, IP privado, limites, Pillow, caminhos e logs
-- [ ] T076 [P] Adicionar testes de concorrência para advisory lock e claim em `apps/catalog/tests/test_import_worker.py`
-- [ ] T077 Executar `ruff check`, `python manage.py makemigrations --check`, `python manage.py check` e a suíte completa
-- [ ] T078 Validar o quickstart em staging com banco `uma_voting_staging` e worker dedicado
-- [ ] T079 [P] Adicionar smoke E2E opcional do fluxo administrativo em `tests/e2e/`
-- [ ] T080 Revisar mensagens PT-BR, acessibilidade da barra de progresso e estados vazios
+- [X] T073 [P] Atualizar `docs/operations.md` com worker, variáveis, logs, cancelamento, stale recovery e kill switch
+- [X] T074 [P] Atualizar `.env.example` e `README.md` com o novo fluxo
+- [X] T075 [P] Revisar segurança: SSRF, redirect, IP privado, limites, Pillow, caminhos e logs
+- [X] T076 [P] Adicionar testes de concorrência para advisory lock e claim em `apps/catalog/tests/test_import_worker.py`
+- [X] T077 Executar `ruff check`, `python manage.py makemigrations --check`, `python manage.py check` e a suíte completa
+- [X] T078 Validar o quickstart em staging com banco `uma_voting_staging` e worker dedicado
+- [X] T079 [P] Adicionar smoke E2E opcional do fluxo administrativo em `tests/e2e/`
+- [X] T080 Revisar mensagens PT-BR, acessibilidade da barra de progresso e estados vazios
 
 ---
 

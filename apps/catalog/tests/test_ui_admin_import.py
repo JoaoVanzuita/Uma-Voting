@@ -135,6 +135,7 @@ def test_detalhe_e_status_json(client, adapter, enabled):
 
     assert detail.status_code == 200
     assert "Progresso" in detail.content.decode()
+    assert 'aria-valuetext="4 de 10"' in detail.content.decode()
     assert status.status_code == 200
     assert status["Cache-Control"] == "no-store"
     payload = status.json()

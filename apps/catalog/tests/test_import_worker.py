@@ -543,3 +543,71 @@ def test_fase_de_imagens_roda_sem_nota_de_licenca(monkeypatch, source):
     assert result.report["images"]["created"] == 1
     asset = ImageAsset.objects.get(character=character, is_current=True)
     assert asset.license_note == ""
+
+
+# ---------------------------------------------------------------------------
+# Concorrência (T076)
+# ---------------------------------------------------------------------------
+@pytest.mark.django_db(transaction=True)
+def test_claim_concorrente_entrega_um_unico_job():
+    import threading
+
+    from django.db import connections
+
+    from apps.catalog.services.imports import claim_next_job
+
+    source = CatalogSourceFactory(adapter="fake-source")
+    job = ImportJobFactory(source=source)
+    barrier = threading.Barrier(2)
+    claimed: list = []
+    errors: list[Exception] = []
+
+    def worker(name: str) -> None:
+        try:
+            barrier.wait(timeout=5)
+            claimed.append(claim_next_job(name))
+        except Exception as exc:  # pragma: no cover - diagnóstico do teste
+            errors.append(exc)
+        finally:
+            connections.close_all()
+
+    threads = [threading.Thread(target=worker, args=(f"worker-{index}",)) for index in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+
+    assert not errors
+    winners = [result for result in claimed if result is not None]
+    assert len(winners) == 1
+    assert winners[0].pk == job.pk
+
+
+@pytest.mark.django_db(transaction=True)
+def test_advisory_lock_global_impede_segundo_worker():
+    import json
+    from io import StringIO
+
+    import psycopg
+    from django.conf import settings as django_settings
+    from django.core.management import call_command
+
+    from apps.catalog.management.commands.run_import_worker import ADVISORY_LOCK_KEY
+
+    database = django_settings.DATABASES["default"]
+    with psycopg.connect(
+        host=database["HOST"],
+        port=database["PORT"],
+        dbname=database["NAME"],
+        user=database["USER"],
+        password=database["PASSWORD"],
+    ) as connection:
+        connection.execute("SELECT pg_advisory_lock(%s)", [ADVISORY_LOCK_KEY])
+        connection.commit()
+
+        output = StringIO()
+        call_command("run_import_worker", "--once", "--json", stdout=output)
+
+    payload = json.loads(output.getvalue())
+    assert any("Outro worker" in error for error in payload["errors"])
+    assert payload["processed"] == []

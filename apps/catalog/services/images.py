@@ -310,13 +310,15 @@ def _inspect_bytes(data: bytes, *, max_bytes: int) -> tuple[Image.Image, str]:
             probe.verify()
 
         image = Image.open(io.BytesIO(data))
+        # Metadados de dimensão são lidos sem decodificar os pixels.
+        if image.width * image.height > MAX_PIXELS:
+            image.close()
+            raise ValueError("Imagem excede o limite de 4096×4096 pixels.")
         image.load()
+    except Image.DecompressionBombError as exc:
+        raise ValueError("Imagem excede o limite de pixels.") from exc
     except UnidentifiedImageError as exc:
         raise ValueError("Imagem inválida ou formato não reconhecido.") from exc
-
-    if image.width * image.height > MAX_PIXELS:
-        image.close()
-        raise ValueError("Imagem excede o limite de 4096×4096 pixels.")
 
     fmt = (image.format or "").upper()
     if fmt not in ALLOWED_FORMATS:
