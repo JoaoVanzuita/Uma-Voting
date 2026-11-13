@@ -47,12 +47,20 @@
   </form>
 
   {% if rows %}
-    <div class="catalog-list-header">
-      <p class="text-muted text-small">
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">01</span>
+          <h2>Acervo consultável</h2>
+        </div>
+        <p class="section-header__lead">
+          Data de referência: {{ cutoff|date_br }}. Versões e aptidões consolidadas até essa data.
+        </p>
+      </div>
+      <span class="text-muted text-small">
         Página {{ page.number }} de {{ page.paginator.num_pages }} ·
-        {{ page.paginator.count }} personagem(ns) no catálogo.
-      </p>
-      <p class="text-muted text-small">Data de referência: {{ cutoff|date_br }}</p>
+        {{ page.paginator.count }} personagem(ns)
+      </span>
     </div>
 
     <div class="table-wrap admin-data-table-wrap">

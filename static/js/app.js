@@ -25,27 +25,60 @@
   /* -----------------------------------------------------------------------
    * Contador e limite de seleção
    * --------------------------------------------------------------------- */
-  function selectedValues(form) {
-    var values = {};
+  function selectionOrder(form) {
+    var order = [];
+    var seen = {};
     if (!form) {
-      return values;
+      return order;
+    }
+
+    function add(value) {
+      if (value && !seen[value]) {
+        seen[value] = true;
+        order.push(value);
+      }
     }
 
     var hiddenInputs = form.querySelectorAll(
       '[data-selected-inputs] input[name="selected"]'
     );
     Array.prototype.forEach.call(hiddenInputs, function (input) {
-      values[input.value] = true;
+      add(input.value);
     });
 
     var checkboxes = form.querySelectorAll(CHARACTER_CHECKBOX);
     Array.prototype.forEach.call(checkboxes, function (checkbox) {
       if (checkbox.checked) {
-        values[checkbox.value] = true;
+        add(checkbox.value);
       }
     });
 
-    return values;
+    return order;
+  }
+
+  function selectionMetadata(form) {
+    var metadata = {};
+    if (!form) {
+      return metadata;
+    }
+
+    function remember(element) {
+      if (!element || !element.value || metadata[element.value]) {
+        return;
+      }
+      metadata[element.value] = {
+        name: element.getAttribute("data-character-name") || "",
+        image: element.getAttribute("data-character-image") || "",
+        fallback: element.getAttribute("data-character-fallback") || "",
+      };
+    }
+
+    Array.prototype.forEach.call(
+      form.querySelectorAll('[data-selected-inputs] input[name="selected"]'),
+      remember
+    );
+    Array.prototype.forEach.call(form.querySelectorAll(CHARACTER_CHECKBOX), remember);
+    return metadata;
   }
 
   function syncHiddenSelection(form, checkbox) {
@@ -67,9 +100,61 @@
       input.type = "hidden";
       input.name = "selected";
       input.value = checkbox.value;
+      input.setAttribute(
+        "data-character-name",
+        checkbox.getAttribute("data-character-name") || ""
+      );
+      input.setAttribute(
+        "data-character-image",
+        checkbox.getAttribute("data-character-image") || ""
+      );
+      input.setAttribute(
+        "data-character-fallback",
+        checkbox.getAttribute("data-character-fallback") || ""
+      );
       holder.appendChild(input);
     } else if (!checkbox.checked && existing) {
       existing.remove();
+    }
+  }
+
+  function renderSelectionPreview(form, order) {
+    var preview = form.querySelector("[data-selection-preview]");
+    if (!preview) {
+      return;
+    }
+
+    var metadata = selectionMetadata(form);
+    preview.textContent = "";
+
+    order.slice(0, 3).forEach(function (value) {
+      var item = metadata[value];
+      if (!item) {
+        return;
+      }
+
+      var thumb = document.createElement("span");
+      thumb.className = "selection-summary__thumb";
+
+      var image = document.createElement("img");
+      image.src = item.image || item.fallback;
+      image.alt = "";
+      image.width = 32;
+      image.height = 32;
+      image.loading = "lazy";
+      if (item.fallback) {
+        image.setAttribute("data-fallback-src", item.fallback);
+      }
+
+      thumb.appendChild(image);
+      preview.appendChild(thumb);
+    });
+
+    if (order.length > 3) {
+      var more = document.createElement("span");
+      more.className = "selection-summary__more";
+      more.textContent = "+" + (order.length - 3);
+      preview.appendChild(more);
     }
   }
 
@@ -82,8 +167,12 @@
     var checkboxes = Array.prototype.slice.call(
       form.querySelectorAll(CHARACTER_CHECKBOX)
     );
-    var selected = selectedValues(form);
-    var count = Object.keys(selected).length;
+    var order = selectionOrder(form);
+    var positions = {};
+    order.forEach(function (value, index) {
+      positions[value] = index + 1;
+    });
+    var count = order.length;
     var limitReached = max > 0 && count >= max;
 
     var counter = form.querySelector("[data-selection-counter]");
@@ -100,19 +189,37 @@
         option.setAttribute("data-selected", checkbox.checked ? "true" : "false");
         option.setAttribute("data-disabled", disabled ? "true" : "false");
       }
+
+      var position = checkbox.checked ? positions[checkbox.value] : null;
+      var orderBadge = option
+        ? option.querySelector("[data-character-order]")
+        : null;
+      if (orderBadge) {
+        orderBadge.textContent = position ? String(position) : "";
+      }
+
+      var name = checkbox.getAttribute("data-character-name") || "";
+      if (name) {
+        checkbox.setAttribute(
+          "aria-label",
+          position ? name + " — Escolha " + position : name
+        );
+      }
     });
 
     var status = form.querySelector("[data-selection-status]");
     if (status) {
       if (limitReached) {
         status.textContent =
-          "Limite de " + max + " escolhas atingido. Desmarque uma opção para trocar.";
+          "Limite atingido. Desmarque uma escolha para alterar.";
       } else if (count === 0) {
         status.textContent = "Nenhuma personagem selecionada.";
       } else {
         status.textContent = count + " de " + max + " escolhas selecionadas.";
       }
     }
+
+    renderSelectionPreview(form, order);
   }
 
   function refreshAllSelectionForms() {

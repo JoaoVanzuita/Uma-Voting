@@ -1,8 +1,10 @@
 {% load ui_tags %}
+{% placeholder_url as fallback_src %}
 
 {% if characters %}
   <ul class="character-grid" aria-label="Personagens disponíveis">
     {% for character in characters %}
+      {% image_url character.image_asset as image_src %}
       <li>
         <label
           class="character-option"
@@ -14,13 +16,16 @@
             type="checkbox"
             name="character_ids"
             value="{{ character.pk }}"
+            data-character-name="{{ character.display_name }}"
+            data-character-image="{{ image_src }}"
+            data-character-fallback="{{ fallback_src }}"
+            aria-label="{{ character.display_name }}{% if character.selected %} — Escolha {{ character.selection_order }}{% endif %}"
             {% if character.selected %}checked{% endif %}
           >
           <span class="character-option__media">
-            {% image_url character.image_asset as image_src %}
             <img
               src="{{ image_src }}"
-              data-fallback-src="{% placeholder_url %}"
+              data-fallback-src="{{ fallback_src }}"
               alt="Retrato de {{ character.display_name }}"
               width="256"
               height="256"
@@ -28,6 +33,7 @@
             >
           </span>
           <span class="character-option__check" aria-hidden="true">✓</span>
+          <span class="character-option__order" data-character-order aria-hidden="true">{% if character.selected %}{{ character.selection_order }}{% endif %}</span>
           <span class="character-option__name">{{ character.display_name }}</span>
         </label>
       </li>

@@ -16,7 +16,14 @@
 
 {% block content %}
   <section class="panel stack" aria-labelledby="filters-title">
-    <h2 id="filters-title" class="catalog-section-title">Filtros</h2>
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">01</span>
+          <h2 id="filters-title">Filtros</h2>
+        </div>
+      </div>
+    </div>
     <form method="get" class="form-row">
       <div class="form-group">
         <label class="form-label" for="filter-status">Situação</label>
@@ -45,8 +52,16 @@
   </section>
 
   <section class="stack" aria-labelledby="jobs-title">
-    <div class="catalog-section-header">
-      <h2 id="jobs-title" class="catalog-section-title">Execuções</h2>
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">02</span>
+          <h2 id="jobs-title">Execuções</h2>
+        </div>
+        <p class="section-header__lead">
+          Da mais recente para a mais antiga. Abra uma execução para ver relatórios e falhas.
+        </p>
+      </div>
     </div>
 
     {% if page.object_list %}
@@ -72,9 +87,11 @@
                 <td data-label="Situação">{% status_badge job.status %}</td>
                 <td data-label="Criada em">{{ job.created_at|datetime_br }}</td>
                 <td data-label="Ações">
-                  <a class="btn btn-tertiary" href="{% url 'admin:catalog_import_detail' job.pk %}">
-                    Detalhes
-                  </a>
+                  <div class="table__actions">
+                    <a class="btn btn-tertiary" href="{% url 'admin:catalog_import_detail' job.pk %}">
+                      Detalhes
+                    </a>
+                  </div>
                 </td>
               </tr>
             {% endfor %}
@@ -89,7 +106,7 @@
               Anterior
             </a>
           {% endif %}
-          <span class="text-muted text-small">Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
+          <span class="pagination__status">Página {{ page.number }} de {{ page.paginator.num_pages }}</span>
           {% if page.has_next %}
             <a class="btn btn-tertiary" href="?page={{ page.next_page_number }}{% if status %}&status={{ status }}{% endif %}{% if source_id %}&source={{ source_id }}{% endif %}">
               Próxima

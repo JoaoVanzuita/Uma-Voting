@@ -30,12 +30,19 @@
     </li>
   </ol>
 
-  <section class="panel stack import-upload" aria-labelledby="upload-title">
-    <h2 id="upload-title" class="catalog-section-title">1. Validar arquivo</h2>
-    <p class="text-muted text-small">
-      Envie um arquivo CSV em UTF-8 com uma coluna <code>username</code> e até 1 MB.
-      O cabeçalho é opcional. A importação é atômica: qualquer erro impede a gravação.
-    </p>
+  <section class="panel stack" aria-labelledby="upload-title">
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">01</span>
+          <h2 id="upload-title">1. Validar arquivo</h2>
+        </div>
+        <p class="section-header__lead">
+          Envie um arquivo CSV em UTF-8 com uma coluna <code>username</code> e até 1 MB.
+          O cabeçalho é opcional. A importação é atômica: qualquer erro impede a gravação.
+        </p>
+      </div>
+    </div>
 
     <form method="post" enctype="multipart/form-data" data-submit-once>
       {% csrf_token %}
@@ -58,7 +65,7 @@
       </div>
     </form>
 
-    {% if report and not report.errors %}
+    {% if report and not report.errors and not report.applied %}
       <div class="alert alert-success" role="status">
         Arquivo validado. Nenhum participante foi gravado ainda.
       </div>
@@ -68,8 +75,16 @@
   {% if report %}
     {% if report.errors %}
       <section class="panel stack import-report" aria-labelledby="report-title">
-        <div class="catalog-section-header">
-          <h2 id="report-title" class="catalog-section-title">2. Corrigir arquivo</h2>
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <span class="section-header__index" aria-hidden="true">02</span>
+              <h2 id="report-title">2. Corrigir arquivo</h2>
+            </div>
+            <p class="section-header__lead">
+              Nenhuma linha foi gravada. Corrija os pontos abaixo e envie o arquivo novamente.
+            </p>
+          </div>
           <span class="badge badge--danger">Revisão necessária</span>
         </div>
 
@@ -93,7 +108,7 @@
         </div>
 
         <div class="table-wrap admin-data-table-wrap">
-          <table class="table admin-data-table import-issues-table">
+          <table class="table admin-data-table">
             <caption class="visually-hidden">Linhas com erro na validação do CSV</caption>
             <thead>
               <tr>
@@ -132,8 +147,16 @@
       </section>
     {% elif report.applied %}
       <section class="panel stack import-report" aria-labelledby="report-title">
-        <div class="catalog-section-header">
-          <h2 id="report-title" class="catalog-section-title">2. Importação concluída</h2>
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <span class="section-header__index" aria-hidden="true">02</span>
+              <h2 id="report-title">2. Importação concluída</h2>
+            </div>
+            <p class="section-header__lead">
+              Os usernames abaixo já estão disponíveis para acesso.
+            </p>
+          </div>
           <span class="badge badge--success">Concluída</span>
         </div>
 
@@ -148,9 +171,6 @@
           </div>
         </div>
 
-        <p class="text-muted text-small">
-          Os usernames abaixo já estão disponíveis para acesso.
-        </p>
         <ul class="plain-list import-preview-list">
           {% for username in report.valid_rows %}
             <li><code>{{ username }}</code></li>
@@ -168,8 +188,16 @@
       </section>
     {% else %}
       <section class="panel stack import-report" aria-labelledby="report-title">
-        <div class="catalog-section-header">
-          <h2 id="report-title" class="catalog-section-title">2. Conferir prévia e importar</h2>
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <span class="section-header__index" aria-hidden="true">02</span>
+              <h2 id="report-title">2. Conferir prévia e importar</h2>
+            </div>
+            <p class="section-header__lead">
+              Revise os usernames antes de confirmar. A gravação acontece somente no próximo passo.
+            </p>
+          </div>
           <span class="badge badge--success">Pronto para importar</span>
         </div>
 
@@ -188,12 +216,21 @@
           </div>
         </div>
 
-        <h3 class="catalog-subsection-title">Usernames que serão criados</h3>
-        <ul class="plain-list import-preview-list">
-          {% for username in report.valid_rows %}
-            <li><code>{{ username }}</code></li>
-          {% endfor %}
-        </ul>
+        <div class="import-preview">
+          <div class="section-header">
+            <div class="section-header__text">
+              <div class="section-header__title section-header__title--sub">
+                <h3>Usernames que serão criados</h3>
+              </div>
+            </div>
+            <span class="text-muted text-small">{{ report.valid_rows|length }} username(s)</span>
+          </div>
+          <ul class="plain-list import-preview-list">
+            {% for username in report.valid_rows %}
+              <li><code>{{ username }}</code></li>
+            {% endfor %}
+          </ul>
+        </div>
 
         <div class="alert alert-info" role="status">
           A importação é atômica: todos os usernames acima serão gravados juntos ou nenhum será.

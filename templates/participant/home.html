@@ -4,60 +4,140 @@
 {% block title %}Votações — Uma Voting{% endblock %}
 
 {% block content %}
-  <div class="welcome">
-    <div>
+  <header class="home-header">
+    <div class="home-header__copy">
+      <p class="home-header__kicker">Circuito de votações</p>
       <h1>Votações</h1>
-      <p>Acompanhe as votações disponíveis para o seu username.</p>
+      <p class="text-muted">
+        Acompanhe as votações abertas e agendadas para o seu username.
+      </p>
     </div>
-  </div>
+    {% if votings %}
+      <div class="home-header__actions">
+        <a class="btn btn-secondary" href="{% url 'participant:history' %}">Ver histórico</a>
+      </div>
+    {% endif %}
+  </header>
 
-  {% if votings %}
-    <ul class="voting-list voting-list--home">
-      {% for voting in votings %}
-        <li>
-          <article class="card voting-card voting-card--{{ voting.status }}">
-            <div class="card__body">
-              <div class="voting-card__top">
-                {% status_badge voting.status %}
-                <span class="voting-card__choices">{{ voting.choices_count }} escolhas</span>
-              </div>
-
-              <h2 class="card__title voting-card__title">{{ voting.title }}</h2>
-
-              {% if voting.description %}
-                <p class="text-muted voting-card__description">{{ voting.description|truncatechars:120 }}</p>
+  {% if featured_voting %}
+    <section class="home-stage" aria-labelledby="featured-voting-title">
+      <article class="card card--featured voting-card voting-card--{{ featured_voting.status }} home-featured track-motif">
+        <div class="card__body home-featured__body">
+          <div class="stage-band stage-band--thick stage-band--{{ featured_voting.status }}">
+            <p class="stage-kicker">
+              {% if featured_voting.status == "open" %}
+                <span class="stage-kicker__dot" aria-hidden="true"></span>
+                Votação aberta
+              {% else %}
+                Votação agendada
               {% endif %}
-
-              <p class="voting-card__date">
-                {% if voting.status == "open" and voting.closes_at %}
-                  Encerra em {{ voting.closes_at|datetime_br }}
-                {% elif voting.status == "open" %}
-                  Aberta agora
-                {% elif voting.status == "scheduled" and voting.opens_at %}
-                  Abre em {{ voting.opens_at|datetime_br }}
+            </p>
+            <p class="stage-meta">
+              <span>
+                {% if featured_voting.status == "open" and featured_voting.closes_at %}
+                  Encerra em <strong>{{ featured_voting.closes_at|datetime_br }}</strong>
+                {% elif featured_voting.status == "open" %}
+                  <strong>Aberta agora</strong>
+                {% elif featured_voting.opens_at %}
+                  Abre em <strong>{{ featured_voting.opens_at|datetime_br }}</strong>
                 {% else %}
-                  Aguardando abertura
+                  <strong>Aguardando abertura</strong>
                 {% endif %}
-              </p>
+              </span>
+              <span>
+                <strong>{{ featured_voting.choices_count }}</strong>
+                escolha{{ featured_voting.choices_count|pluralize }} por participante
+              </span>
+            </p>
+          </div>
 
-              <div class="card__actions">
-                {% if voting.status == "open" %}
-                  <a class="btn btn-primary" href="{% url 'participant:voting_detail' voting.id %}">
-                    Votar agora
-                  </a>
-                {% else %}
-                  <a class="btn btn-secondary" href="{% url 'participant:voting_detail' voting.id %}">
-                    Ver detalhes
-                  </a>
-                {% endif %}
-              </div>
+          <div class="home-featured__content">
+            <div class="home-featured__copy">
+              <h2 id="featured-voting-title" class="card__title voting-card__title">
+                {{ featured_voting.title }}
+              </h2>
+              {% if featured_voting.description %}
+                <p class="text-muted voting-card__description">
+                  {{ featured_voting.description|truncatechars:180 }}
+                </p>
+              {% endif %}
             </div>
-          </article>
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <div class="empty-state">
+
+            <div class="card__actions home-featured__actions">
+              {% if featured_voting.status == "open" %}
+                <a
+                  class="btn btn-primary"
+                  href="{% url 'participant:voting_detail' featured_voting.id %}"
+                >Votar agora</a>
+              {% else %}
+                <a
+                  class="btn btn-secondary"
+                  href="{% url 'participant:voting_detail' featured_voting.id %}"
+                >Ver detalhes</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  {% endif %}
+
+  {% if other_votings %}
+    <section class="home-section" aria-labelledby="other-votings-title">
+      <div class="home-section__header">
+        <h2 id="other-votings-title">Outras votações</h2>
+        <p class="text-muted">Também disponíveis para o seu username.</p>
+      </div>
+
+      <ul class="voting-list voting-list--home">
+        {% for voting in other_votings %}
+          <li>
+            <article class="card card--list voting-card voting-card--{{ voting.status }} home-voting">
+              <div class="card__body home-voting__body">
+                <div class="home-voting__content">
+                  <div class="home-voting__meta">
+                    {% status_badge voting.status %}
+                    <span class="voting-card__choices">
+                      {{ voting.choices_count }} escolha{{ voting.choices_count|pluralize }}
+                    </span>
+                  </div>
+
+                  <h3 class="card__title voting-card__title">{{ voting.title }}</h3>
+
+                  <p class="voting-card__date">
+                    {% if voting.status == "open" and voting.closes_at %}
+                      Encerra em {{ voting.closes_at|datetime_br }}
+                    {% elif voting.status == "open" %}
+                      Aberta agora
+                    {% elif voting.status == "scheduled" and voting.opens_at %}
+                      Abre em {{ voting.opens_at|datetime_br }}
+                    {% else %}
+                      Aguardando abertura
+                    {% endif %}
+                  </p>
+                </div>
+
+                <div class="card__actions home-voting__actions">
+                  {% if voting.status == "open" %}
+                    <a class="btn btn-secondary" href="{% url 'participant:voting_detail' voting.id %}">
+                      Abrir votação
+                    </a>
+                  {% else %}
+                    <a class="btn btn-secondary" href="{% url 'participant:voting_detail' voting.id %}">
+                      Ver detalhes
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+  {% endif %}
+
+  {% if not votings %}
+    <div class="empty-state home-empty track-motif">
       <h2>Nenhuma votação disponível</h2>
       <p>Não há votações abertas ou agendadas para você neste momento.</p>
       <a class="btn btn-secondary" href="{% url 'participant:history' %}">Ver histórico</a>

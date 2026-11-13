@@ -15,19 +15,37 @@
 
 {% block content %}
   <section class="panel stack" aria-labelledby="summary-title">
-    <h2 id="summary-title" class="visually-hidden">Resumo</h2>
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <h2 id="summary-title">Quem pode votar</h2>
+        </div>
+        <p class="section-header__lead">
+          Participantes cadastrados depois da criação não entram automaticamente. A inclusão
+          e a remoção são congeladas na abertura.
+        </p>
+      </div>
+      <span class="text-muted text-small">{{ eligibilities|length }} com acesso</span>
+    </div>
     <p>
       <strong>{{ eligibilities|length }}</strong> participante(s) com acesso.
       A lista pode ser alterada somente enquanto a votação está em rascunho.
     </p>
-    <p class="text-muted text-small">
-      Participantes cadastrados depois da criação não entram automaticamente. A inclusão
-      e a remoção são congeladas na abertura.
-    </p>
   </section>
 
   <section class="panel stack" aria-labelledby="add-title">
-    <h2 id="add-title">Adicionar elegíveis</h2>
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">01</span>
+          <h2 id="add-title">Adicionar elegíveis</h2>
+        </div>
+        <p class="section-header__lead">
+          Marque uma ou mais pessoas para liberar o acesso nesta votação.
+        </p>
+      </div>
+    </div>
+
     <form method="post" data-submit-once>
       {% csrf_token %}
       <input type="hidden" name="action" value="add">
@@ -52,16 +70,21 @@
 
   <section class="panel stack" aria-labelledby="current-title">
     <div class="section-header">
-      <h2 id="current-title">Com acesso</h2>
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">02</span>
+          <h2 id="current-title">Com acesso</h2>
+        </div>
+      </div>
       <span class="text-small text-muted">{{ eligibilities|length }} participante(s)</span>
     </div>
 
     {% if eligibilities %}
-      <ul class="av-user-list">
+      <ul class="person-list">
         {% for eligibility in eligibilities %}
-          <li class="av-user-item">
-            <div class="av-user-item__identity">
-              <span class="av-user-item__name">{{ eligibility.user.username }}</span>
+          <li class="person-item">
+            <div class="person-item__identity">
+              <span class="person-item__name">{{ eligibility.user.username }}</span>
               {% if eligibility.user.is_active %}
                 <span class="badge badge--success">Ativo</span>
               {% else %}
@@ -71,7 +94,7 @@
                 <span class="badge badge--info">Administrador</span>
               {% endif %}
             </div>
-            <div class="av-user-item__actions">
+            <div class="person-item__actions">
               <form class="inline-form" method="post" data-submit-once>
                 {% csrf_token %}
                 <input type="hidden" name="action" value="remove">

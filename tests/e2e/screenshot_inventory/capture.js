@@ -43,6 +43,61 @@ const CHROME =
 
 const manifest = [];
 const failures = [];
+const pageAudits = new WeakMap();
+
+// Capturas que intencionalmente retornam 4xx/5xx ou carregam um recurso
+// ausente (por exemplo, /health/ não serve favicon).
+const ERROR_CAPTURES = new Set([
+  "I01-01",
+  "I02-01",
+  "I02-02",
+  "I02-03",
+  "I03-01",
+  "I04-01",
+  "P02-04",
+  "P02-06",
+  "P02-07",
+  "P05-02",
+  "P06-03",
+  "P08-01",
+]);
+
+function ensurePageAudit(page) {
+  let state = pageAudits.get(page);
+  if (!state) {
+    state = { console: [], pageerrors: [] };
+    page.on("console", (message) => {
+      if (message.type() === "error") state.console.push(message.text());
+    });
+    page.on("pageerror", (error) => state.pageerrors.push(error.message));
+    pageAudits.set(page, state);
+  }
+  return state;
+}
+
+function resetPageAudit(page) {
+  const state = ensurePageAudit(page);
+  state.console.length = 0;
+  state.pageerrors.length = 0;
+}
+
+async function measureOverflow(page) {
+  return page.evaluate(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    const scrollWidth = Math.max(
+      root ? root.scrollWidth : 0,
+      body ? body.scrollWidth : 0
+    );
+    const clientWidth = root ? root.clientWidth : 0;
+    return Math.max(0, scrollWidth - clientWidth);
+  });
+}
+
+function auditedConsoleErrors(errors, id) {
+  if (!ERROR_CAPTURES.has(id)) return errors;
+  return errors.filter((message) => !message.startsWith("Failed to load resource:"));
+}
 
 const FLOW = [
   {
@@ -107,8 +162,8 @@ const FLOW = [
   {
     phase: "10. Responsivo",
     description:
-      "Telas principais em viewport móvel (390×844) e tablet (820×1180).",
-    screens: ["R01-R14"],
+      "Telas principais em viewport móvel (390×844), tablet (820×1180) e matriz de breakpoints 360–1280 px.",
+    screens: ["R01-R14", "W01-W20"],
   },
 ];
 
@@ -190,6 +245,18 @@ async function clickNavigate(page, locator, { timeout = 15000 } = {}) {
   await page.waitForLoadState("networkidle").catch(() => {});
 }
 
+async function releaseParticipantBallot(page, votingId, userId) {
+  await go(page, `/admin/votacoes/${votingId}/`);
+  const form = page.locator(`form[action$="/cedulas/${userId}/excluir/"]`).first();
+  if (!(await form.count())) return false;
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "domcontentloaded", timeout: 15000 }),
+    form.locator('button[type="submit"]').click(),
+  ]);
+  await page.waitForLoadState("networkidle").catch(() => {});
+  return true;
+}
+
 async function shot(page, options) {
   const {
     id,
@@ -213,8 +280,11 @@ async function shot(page, options) {
     throw new Error(`Screenshot sem metadados obrigatórios: ${JSON.stringify(options)}`);
   }
 
+  resetPageAudit(page);
+
   if (beforeGoto) await beforeGoto(page);
-  if (target) await go(page, target);
+  let response = null;
+  if (target) response = await go(page, target);
   if (before) await before(page);
   if (wait) await page.waitForTimeout(wait);
   await settle(page, { scroll: fullPage });
@@ -258,6 +328,18 @@ async function shot(page, options) {
   }
 
   const stat = fs.statSync(file);
+  const auditState = ensurePageAudit(page);
+  const overflow = await measureOverflow(page);
+  const httpStatus = response ? response.status() : null;
+  const httpError = Boolean(httpStatus && httpStatus >= 400 && !ERROR_CAPTURES.has(id));
+  const audit = {
+    http_status: httpStatus,
+    overflow,
+    console_errors: [...auditState.console],
+    page_errors: [...auditState.pageerrors],
+  };
+  resetPageAudit(page);
+
   manifest.push({
     id,
     group,
@@ -273,8 +355,23 @@ async function shot(page, options) {
     bounds,
     bytes: stat.size,
     captured_at: new Date().toISOString(),
+    audit,
   });
   console.log(`  ✓ ${id} — ${title}`);
+
+  const auditIssues = [];
+  if (httpError) auditIssues.push(`HTTP ${httpStatus}`);
+  if (overflow > 1) auditIssues.push(`overflow horizontal de ${overflow}px`);
+  const consoleErrors = auditedConsoleErrors(audit.console_errors, id);
+  if (consoleErrors.length) {
+    auditIssues.push(`console: ${consoleErrors.join(" | ")}`);
+  }
+  if (audit.page_errors.length) {
+    auditIssues.push(`pageerror: ${audit.page_errors.join(" | ")}`);
+  }
+  if (auditIssues.length) {
+    throw new Error(`auditoria da captura: ${auditIssues.join("; ")}`);
+  }
 }
 
 async function safeShot(page, options) {
@@ -435,6 +532,10 @@ async function main() {
   });
   const mobileAdminContext = await browser.newContext({ viewport: MOBILE, deviceScaleFactor: 1 });
   const tabletContext = await browser.newContext({ viewport: TABLET, deviceScaleFactor: 1 });
+  const tabletAdminContext = await browser.newContext({
+    viewport: TABLET,
+    deviceScaleFactor: 1,
+  });
 
   const guest = await guestContext.newPage();
   const admin = await loginAdmin(adminContext);
@@ -526,7 +627,7 @@ async function main() {
     title: "Dashboard administrativo",
     state: "Visão inicial",
     description:
-      "Indicadores de participantes, votações, catálogo e imagens, atalhos e listas de votações.",
+      "Ação necessária, votações em andamento, panorama da operação e saúde do catálogo.",
     target: "/admin/",
   });
 
@@ -706,7 +807,7 @@ async function main() {
     title: "Catálogo",
     state: "Status inicial",
     description:
-      "Indicadores, formulário de sincronização, última execução e histórico recente.",
+      "Métricas com número e frase, sincronização, fontes, pendências e histórico recente.",
     target: "/admin/catalogo/",
   });
 
@@ -867,7 +968,8 @@ async function main() {
     screen: "D08",
     title: "Imagens do catálogo",
     state: "Acervo completo",
-    description: "Indicadores, validação, lista de assets e personagens sem imagem válida.",
+    description:
+      "Métricas com link, validação, assets em moldura e personagens sem imagem válida.",
     target: "/admin/catalogo/imagens/",
   });
 
@@ -940,7 +1042,7 @@ async function main() {
     screen: "V01",
     title: "Lista de votações",
     state: "Todos os estados",
-    description: "Tabela com rascunho, agendada, aberta, encerrada e cancelada.",
+    description: "Lista editorial com índice, estado, metadados compactos e duas ações no máximo.",
     target: "/admin/votacoes/",
   });
 
@@ -1284,7 +1386,7 @@ async function main() {
     screen: "P01",
     title: "Home de votações",
     state: "Votações disponíveis",
-    description: "Cards de votações abertas e agendadas para o participante elegível.",
+    description: "Votação em destaque e demais votações em lista para o participante elegível.",
     target: "/",
   });
 
@@ -1307,7 +1409,8 @@ async function main() {
     screen: "P02",
     title: "Seleção de personagens",
     state: "Limite de escolhas atingido",
-    description: "Três personagens selecionadas; demais cards ficam desabilitados.",
+    description:
+      "Três personagens selecionadas e numeradas; demais cards ficam desabilitados.",
     staticSelectors: [".selection-summary"],
     before: async (page) => {
       await selectCharacters(page, 3);
@@ -1361,7 +1464,7 @@ async function main() {
     title: "Grid de personagens",
     state: "Busca sem seleção prévia",
     description: "Fragmento HTMX com resultado normal, sem o limite de escolhas atingido.",
-    target: `/votacoes/2/`,
+    target: `/votacoes/${V.open.id}/`,
     before: async (page) => {
       await htmxSearch(page, "special");
     },
@@ -1435,7 +1538,8 @@ async function main() {
     screen: "P04",
     title: "Revisão da cédula",
     state: "Três escolhas",
-    description: "Lista definitiva com imagens, nomes, aviso e ações de confirmar/cancelar.",
+    description:
+      "Revisão com faixa de etapa, ordem das escolhas, aviso de confirmação definitiva e ações de confirmar/voltar.",
     target: `/votacoes/${V.open.id}/`,
     before: async (page) => {
       await selectCharacters(page, 3);
@@ -1456,7 +1560,8 @@ async function main() {
     screen: "P05",
     title: "Minha cédula",
     state: "Votação aberta",
-    description: "Cédula registrada com escolhas, estado e data de envio.",
+    description:
+      "Voto registrado com faixa de etapa, escolhas em ordem, badge definitivo e data de envio.",
     before: async (page) => {
       await confirmBallot(page);
     },
@@ -1492,9 +1597,8 @@ async function main() {
     screen: "P06",
     title: "Resultado final",
     state: "Ranking com votos",
-    description: "Ranking final com posição, imagem, nome e votos.",
-    notes:
-      "O template usa .result-item sem regra CSS dedicada; as imagens preservam o tamanho intrínseco. A lacuna está documentada em docs/screen-inventory.md §20.",
+    description:
+      "Resultado com estado encerrado, participação agregada e ranking com barras proporcionais.",
     target: `/votacoes/${V.closed.id}/resultado/`,
   });
 
@@ -1647,9 +1751,8 @@ async function main() {
     screen: "P06",
     title: "Resultado final",
     state: "Ranking da votação encerrada",
-    description: "Resultado final da votação votada pelo participante.",
-    notes:
-      "O template usa .result-item sem regra CSS dedicada; as imagens preservam o tamanho intrínseco. A lacuna está documentada em docs/screen-inventory.md §20.",
+    description:
+      "Resultado final da votação votada pelo participante, com participação e ranking.",
     target: `/votacoes/${V.open.id}/resultado/`,
   });
 
@@ -1669,7 +1772,8 @@ async function main() {
     screen: "D01",
     title: "Dashboard administrativo",
     state: "Após o fluxo completo",
-    description: "Indicadores atualizados após votos, encerramentos e revisões.",
+    description:
+      "Ação necessária e panorama atualizados após votos, encerramentos e revisões.",
     target: "/admin/",
   });
 
@@ -1834,6 +1938,10 @@ async function main() {
   /* --------------------------------------------------------------------- */
   console.log("\n[10] Componentes");
 
+  await safely("liberar seleção do participante", async () => {
+    await releaseParticipantBallot(admin, V.open_ballots.id, USERS.participant_id);
+  });
+
   await safeShot(guest, {
     id: "C01",
     group: "Componentes",
@@ -1885,7 +1993,7 @@ async function main() {
     title: "Barra de filtros",
     state: "Componente",
     description: "Busca, chips de aptidão e limpeza de filtros.",
-    target: `/votacoes/2/`,
+    target: `/votacoes/${V.open_ballots.id}/`,
     selector: ".filters",
   });
 
@@ -1896,7 +2004,7 @@ async function main() {
     title: "Grupo de chips",
     state: "Componente",
     description: "Checkboxes visuais de aptidão com estado marcado.",
-    target: `/votacoes/2/`,
+    target: `/votacoes/${V.open_ballots.id}/`,
     selector: ".filter-panel",
     before: async (page) => {
       await page.locator('.filter-panel__summary').first().click();
@@ -1910,7 +2018,7 @@ async function main() {
     title: "Card de personagem",
     state: "Não selecionado",
     description: "Imagem, nome e checkbox oculto do card de personagem.",
-    target: `/votacoes/2/`,
+    target: `/votacoes/${V.open_ballots.id}/`,
     selector: ".character-option",
   });
 
@@ -1920,8 +2028,8 @@ async function main() {
     screen: "C",
     title: "Card de personagem",
     state: "Selecionado",
-    description: "Card com check visual e estado selecionado.",
-    target: `/votacoes/2/`,
+    description: "Card com número de ordem, check visual e estado selecionado.",
+    target: `/votacoes/${V.open_ballots.id}/`,
     before: async (page) => {
       await page.locator('input[name="character_ids"]').first().check();
     },
@@ -1934,8 +2042,8 @@ async function main() {
     screen: "C",
     title: "Card de personagem",
     state: "Desabilitado pelo limite",
-    description: "Card desabilitado quando o limite de escolhas é atingido.",
-    target: `/votacoes/2/`,
+    description: "Card desabilitado pelo limite, com borda tracejada e conteúdo legível.",
+    target: `/votacoes/${V.open_ballots.id}/`,
     before: async (page) => {
       await selectCharacters(page, 3);
     },
@@ -1948,8 +2056,8 @@ async function main() {
     screen: "C",
     title: "Resumo de seleção",
     state: "Componente",
-    description: "Contador, status acessível e botão de revisão.",
-    target: `/votacoes/2/`,
+    description: "Contador, miniaturas, status acessível e botão de revisão.",
+    target: `/votacoes/${V.open_ballots.id}/`,
     before: async (page) => {
       await selectCharacters(page, 2);
     },
@@ -1962,8 +2070,8 @@ async function main() {
     screen: "C",
     title: "Lista de revisão",
     state: "Componente",
-    description: "Escolhas com miniatura e nome antes da confirmação.",
-    target: `/votacoes/2/`,
+    description: "Escolhas ordenadas com posição, retrato e nome antes da confirmação.",
+    target: `/votacoes/${V.open_ballots.id}/`,
     before: async (page) => {
       await selectCharacters(page, 3);
       await submitReview(page);
@@ -1977,9 +2085,9 @@ async function main() {
     screen: "C",
     title: "Resumo da cédula",
     state: "Componente",
-    description: "Estado da votação e data de envio da cédula.",
-    target: `/votacoes/${V.open_ballots.id}/cedula/`,
-    selector: ".ballot-summary",
+    description: "Voto registrado com estado, data de envio e escolhas definitivas.",
+    target: `/votacoes/${V.closed.id}/cedula/`,
+    selector: ".ballot-panel",
   });
 
   await safeShot(participant, {
@@ -1988,9 +2096,7 @@ async function main() {
     screen: "C",
     title: "Lista de resultado",
     state: "Componente",
-    description: "Ranking com posição, miniatura, nome e votos.",
-    notes:
-      "O componente .result-list/.result-item não possui regra CSS dedicada; a captura registra o comportamento atual.",
+    description: "Ranking com posição ampliada, retrato, nome, votos e barra proporcional.",
     target: `/votacoes/${V.closed.id}/resultado/`,
     selector: ".result-list",
   });
@@ -2001,9 +2107,9 @@ async function main() {
     screen: "C",
     title: "Grade de indicadores",
     state: "Componente",
-    description: "Cards de métricas do dashboard.",
+    description: "Faixa de métricas número + frase + link do dashboard.",
     target: "/admin/",
-    selector: ".stats-grid",
+    selector: ".dashboard-metrics",
   });
 
   await safeShot(admin, {
@@ -2167,7 +2273,7 @@ async function main() {
     title: "Cabeçalho de página",
     state: "Componente",
     description: "Título, contexto e ação de retorno.",
-    target: `/votacoes/${V.closed.id}/resultado/`,
+    target: "/historico/",
     selector: ".page-header",
   });
 
@@ -2178,7 +2284,7 @@ async function main() {
     title: "Status de seleção",
     state: "Componente",
     description: "Texto acessível com aria-live sobre a seleção atual.",
-    target: `/votacoes/2/`,
+    target: `/votacoes/${V.open_ballots.id}/`,
     before: async (page) => {
       await selectCharacters(page, 1);
     },
@@ -2208,6 +2314,7 @@ async function main() {
   );
   const mobileAdmin = await loginAdmin(mobileAdminContext);
   const tablet = await loginParticipant(tabletContext, CREDENTIALS.participant.username);
+  const tabletAdmin = await loginAdmin(tabletAdminContext);
 
   await safeShot(mobileGuest, {
     id: "R01",
@@ -2237,7 +2344,7 @@ async function main() {
     state: "Móvel 390×844",
     description: "Filtros, grid e resumo de seleção em viewport móvel.",
     staticSelectors: [".selection-summary"],
-    target: `/votacoes/2/`,
+    target: `/votacoes/${V.open_ballots.id}/`,
   });
 
   await safeShot(mobileParticipant, {
@@ -2247,7 +2354,7 @@ async function main() {
     title: "Minha cédula",
     state: "Móvel 390×844",
     description: "Cédula e cabeçalho em viewport móvel.",
-    target: `/votacoes/${V.open_ballots.id}/cedula/`,
+    target: `/votacoes/${V.closed.id}/cedula/`,
   });
 
   await safeShot(mobileParticipant, {
@@ -2276,7 +2383,7 @@ async function main() {
     screen: "R",
     title: "Dashboard administrativo",
     state: "Móvel 390×844",
-    description: "Shell administrativo em coluna única.",
+    description: "Shell administrativo em coluna única, com ação necessária na primeira dobra.",
     target: "/admin/",
   });
 
@@ -2307,18 +2414,94 @@ async function main() {
     title: "Seleção de personagens",
     state: "Tablet 820×1180",
     description: "Grid de personagens em largura intermediária.",
-    target: `/votacoes/2/`,
+    target: `/votacoes/${V.open_ballots.id}/`,
   });
 
-  await safeShot(tablet, {
+  await safeShot(tabletAdmin, {
     id: "R11",
     group: "Responsivo",
     screen: "R",
     title: "Lista de votações",
     state: "Tablet 820×1180",
-    description: "Tabela administrativa em largura intermediária.",
+    description: "Lista editorial administrativa em largura intermediária.",
     target: "/admin/votacoes/",
   });
+
+  await safeShot(mobileAdmin, {
+    id: "R12",
+    group: "Responsivo",
+    screen: "R",
+    title: "Participantes",
+    state: "Móvel 390×844",
+    description: "Filtros e tabela de participantes convertida em cartões.",
+    target: "/admin/participantes/",
+  });
+
+  await safeShot(mobileAdmin, {
+    id: "R13",
+    group: "Responsivo",
+    screen: "R",
+    title: "Catálogo",
+    state: "Móvel 390×844",
+    description: "Métricas, sincronização e fontes em coluna única.",
+    target: "/admin/catalogo/",
+  });
+
+  await safeShot(mobileAdmin, {
+    id: "R14",
+    group: "Responsivo",
+    screen: "R",
+    title: "Lista de votações",
+    state: "Móvel 390×844",
+    description: "Lista editorial com índice, estado e ações empilhadas.",
+    target: "/admin/votacoes/",
+  });
+
+  /* Matriz de breakpoints: 360, 480, 768, 1024 e 1280 px. */
+  const BREAKPOINT_WIDTHS = [360, 480, 768, 1024, 1280];
+  const BREAKPOINT_PAGES = [
+    {
+      page: participant,
+      path: "/",
+      title: "Home de votações",
+      description: "Cards, destaque e histórico em largura de breakpoint.",
+    },
+    {
+      page: participant,
+      path: `/votacoes/${V.open_ballots.id}/`,
+      title: "Seleção de personagens",
+      description: "Grid, busca, filtros e barra de escolhas no breakpoint.",
+    },
+    {
+      page: admin,
+      path: "/admin/",
+      title: "Dashboard administrativo",
+      description: "Shell, sidebar/drawer, ação necessária e métricas no breakpoint.",
+    },
+    {
+      page: admin,
+      path: "/admin/votacoes/",
+      title: "Lista de votações",
+      description: "Lista editorial e ações administrativas no breakpoint.",
+    },
+  ];
+  let breakpointIndex = 0;
+  for (const width of BREAKPOINT_WIDTHS) {
+    await participant.setViewportSize({ width, height: 900 });
+    await admin.setViewportSize({ width, height: 900 });
+    for (const item of BREAKPOINT_PAGES) {
+      breakpointIndex += 1;
+      await safeShot(item.page, {
+        id: `W${String(breakpointIndex).padStart(2, "0")}`,
+        group: "Breakpoints",
+        screen: "W",
+        title: item.title,
+        state: `${width}×900`,
+        description: item.description,
+        target: item.path,
+      });
+    }
+  }
 
   /* --------------------------------------------------------------------- */
   /* Fechamento                                                            */
@@ -2327,6 +2510,7 @@ async function main() {
   await mobileParticipantContext.close();
   await mobileAdminContext.close();
   await tabletContext.close();
+  await tabletAdminContext.close();
   await guestContext.close();
   await adminContext.close();
   await participantContext.close();

@@ -110,7 +110,19 @@ echo "==> Capturando telas"
   node "$ROOT/tests/e2e/screenshot_inventory/capture.js"
 )
 
+if [[ "${SKIP_QA:-0}" != "1" ]]; then
+  echo "==> Auditoria de acessibilidade e responsividade"
+  (
+    cd "$HARNESS"
+    NODE_PATH="$HARNESS/node_modules" \
+    SCREENSHOT_BASE_URL="$BASE_URL" \
+    SCREENSHOT_OUTPUT="$OUTPUT" \
+    node "$ROOT/tests/e2e/screenshot_inventory/qa.js"
+  )
+fi
+
 echo
 echo "Inventário disponível em:"
 echo "  $OUTPUT/index.html"
 echo "  $OUTPUT/manifest.json"
+echo "  $OUTPUT/qa-report.json"

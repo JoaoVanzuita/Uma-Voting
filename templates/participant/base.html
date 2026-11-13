@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 {% load static %}
+{% url 'participant:home' as brand_url %}
 
 {% block body_class %}layout-participant{% endblock %}
 
 {% block body %}
   <header class="site-header">
     <div class="container-page site-header__inner">
-      <a class="brand site-header__brand" href="{% url 'participant:home' %}">Uma Voting</a>
+      {% include "components/brand.html" with brand_url=brand_url brand_class="site-header__brand" %}
 
       <nav class="site-nav" aria-label="Navegação principal">
         <a

@@ -5,13 +5,17 @@
 
 {% block page_title %}Participantes{% endblock %}
 
+{% block page_subtitle %}
+  <p class="text-muted text-small">Pessoas com acesso ao sistema, sem senha individual.</p>
+{% endblock %}
+
 {% block page_actions %}
   <a class="btn btn-primary" href="{% url 'admin:participant_create' %}">Novo participante</a>
   <a class="btn btn-secondary" href="{% url 'admin:participant_import' %}">Importar CSV</a>
 {% endblock %}
 
 {% block content %}
-  <form class="filters participant-filters" method="get" role="search">
+  <form class="filters" method="get" role="search">
     <div class="filters__row">
       <div class="filters__search form-group">
         <label class="form-label" for="participant-search">Buscar por username</label>
@@ -33,8 +37,23 @@
   </form>
 
   {% if participants %}
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">01</span>
+          <h2>Lista de participantes</h2>
+        </div>
+        <p class="section-header__lead">
+          Contas administrativas aparecem como somente leitura.
+        </p>
+      </div>
+      <span class="text-muted text-small">
+        {{ participants|length }} conta{{ participants|length|pluralize }}
+      </span>
+    </div>
+
     <div class="table-wrap admin-data-table-wrap">
-      <table class="table admin-data-table participant-table">
+      <table class="table admin-data-table">
         <caption class="visually-hidden">Lista de participantes</caption>
         <thead>
           <tr>
@@ -47,7 +66,7 @@
           {% for participant in participants %}
             <tr>
               <td data-label="Username">
-                <span class="participant-name">{{ participant.username }}</span>
+                <span class="person-item__name">{{ participant.username }}</span>
                 {% if participant.is_admin %}
                   <span class="badge badge--info">Administrador — somente leitura</span>
                 {% endif %}
@@ -73,6 +92,7 @@
                         class="inline-form"
                         method="post"
                         action="{% url 'admin:participant_deactivate' participant.pk %}"
+                        data-confirm="Desativar este participante? Ele perde o acesso ao sistema."
                       >
                         {% csrf_token %}
                         <button class="btn btn-danger" type="submit">Desativar</button>

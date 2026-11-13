@@ -23,6 +23,7 @@
       <section class="stat-card">
         <p class="stat-card__label">Participantes com acesso</p>
         <p class="stat-card__value">{{ eligible_count }}</p>
+        <p class="stat-card__hint">pessoas habilitadas a votar</p>
         {% if can_edit %}
           <a class="text-small" href="{% url 'admin:voting_eligible' voting.pk %}">Gerenciar acesso</a>
         {% elif voting.status == "open" or voting.status == "closed" %}
@@ -32,6 +33,7 @@
       <section class="stat-card">
         <p class="stat-card__label">Votos registrados</p>
         <p class="stat-card__value">{{ ballot_count }}</p>
+        <p class="stat-card__hint">cédulas recebidas</p>
         {% if voting.status == "open" or voting.status == "closed" %}
           <a class="text-small" href="{% url 'admin:voting_participation' voting.pk %}">Ver participação</a>
         {% endif %}
@@ -39,12 +41,14 @@
       <section class="stat-card">
         <p class="stat-card__label">Escolhas por voto</p>
         <p class="stat-card__value">{{ voting.choices_count }}</p>
+        <p class="stat-card__hint">personagens por cédula</p>
       </section>
       <section class="stat-card">
         <p class="stat-card__label">Data de corte</p>
         <p class="stat-card__value stat-card__value--text">
           {{ voting.catalog_cutoff_date|date_br }}
         </p>
+        <p class="stat-card__hint">versões lançadas até esta data</p>
       </section>
     </div>
   </section>
@@ -52,7 +56,14 @@
   {% if voting.status == "draft" %}
     <section class="panel stack" aria-labelledby="preconditions-title">
       <div class="section-header">
-        <h2 id="preconditions-title">Pré-condições de abertura</h2>
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="preconditions-title">Pré-condições de abertura</h2>
+          </div>
+          <p class="section-header__lead">
+            Tudo o que precisa estar válido antes de abrir ou agendar.
+          </p>
+        </div>
         {% if preconditions.ok %}
           <span class="badge badge--success">Pronto para abrir</span>
         {% else %}
@@ -117,6 +128,7 @@
     </section>
 
     <section class="panel av-action-panel av-action-panel--primary" aria-labelledby="primary-action-title">
+      <p class="av-action-panel__eyebrow">Ação principal</p>
       <h2 id="primary-action-title">Próximo passo</h2>
       {% if can_open %}
         <p>A abertura manual congela os participantes com acesso e o catálogo, e cria os snapshots.</p>
@@ -159,7 +171,11 @@
   {% elif voting.status == "scheduled" %}
     <section class="panel stack" aria-labelledby="monitoring-title">
       <div class="section-header">
-        <h2 id="monitoring-title">Acompanhamento</h2>
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="monitoring-title">Acompanhamento</h2>
+          </div>
+        </div>
         <span class="badge badge--info">Abertura automática</span>
       </div>
       <p>
@@ -169,26 +185,21 @@
       <p class="text-muted">
         A configuração e os participantes com acesso ficam congelados até a abertura.
       </p>
-      <dl class="av-meta">
-        <div>
-          <dt>Abertura prevista</dt>
-          <dd>{{ voting.opens_at|datetime_br }}</dd>
-        </div>
-        <div>
-          <dt>Encerramento previsto</dt>
-          <dd>{{ voting.closes_at|datetime_br }}</dd>
-        </div>
-        <div>
-          <dt>Participantes com acesso</dt>
-          <dd>{{ eligible_count }}</dd>
-        </div>
+      <dl class="detail-list">
+        <dt>Abertura prevista</dt><dd>{{ voting.opens_at|datetime_br }}</dd>
+        <dt>Encerramento previsto</dt><dd>{{ voting.closes_at|datetime_br }}</dd>
+        <dt>Participantes com acesso</dt><dd>{{ eligible_count }}</dd>
       </dl>
     </section>
 
   {% elif voting.status == "open" %}
     <section class="panel stack" aria-labelledby="monitoring-title">
       <div class="section-header">
-        <h2 id="monitoring-title">Acompanhamento</h2>
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="monitoring-title">Acompanhamento</h2>
+          </div>
+        </div>
         <span class="badge badge--success">Em andamento</span>
       </div>
       <p>
@@ -211,7 +222,11 @@
   {% elif voting.status == "closed" %}
     <section class="panel stack" aria-labelledby="official-result-title">
       <div class="section-header">
-        <h2 id="official-result-title">Resultado oficial</h2>
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="official-result-title">Resultado oficial</h2>
+          </div>
+        </div>
         <span class="badge badge--neutral">Encerrada</span>
       </div>
       <p>
@@ -231,7 +246,11 @@
   {% elif voting.status == "cancelled" %}
     <section class="panel stack" aria-labelledby="cancelled-title">
       <div class="section-header">
-        <h2 id="cancelled-title">Situação</h2>
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="cancelled-title">Situação</h2>
+          </div>
+        </div>
         <span class="badge badge--danger">Cancelada</span>
       </div>
       <p>
@@ -248,27 +267,36 @@
   {% if voting.status == "open" or voting.status == "closed" %}
     <section class="panel stack" aria-labelledby="ballots-title">
       <div class="section-header">
-        <h2 id="ballots-title">Votos registrados</h2>
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="ballots-title">Votos registrados</h2>
+          </div>
+          <p class="section-header__lead">
+            Apenas quem votou e quando; nenhuma escolha individual é exibida.
+          </p>
+        </div>
         <span class="text-small text-muted">{{ ballot_count }} registro(s)</span>
       </div>
 
       {% if ballots %}
-        <div class="table-wrap av-table-wrap">
-          <table class="table av-table">
+        <div class="table-wrap admin-data-table-wrap">
+          <table class="table admin-data-table">
             <caption class="visually-hidden">Votos registrados</caption>
             <thead>
               <tr>
                 <th scope="col">Participante</th>
                 <th scope="col">Registrado em</th>
-                <th scope="col">Ações</th>
+                <th scope="col" class="table__actions">Ações</th>
               </tr>
             </thead>
             <tbody>
               {% for ballot in ballots %}
                 <tr>
-                  <td class="av-cell-primary" data-label="">{{ ballot.participant.username }}</td>
+                  <td data-label="Participante">
+                    <span class="person-item__name">{{ ballot.participant.username }}</span>
+                  </td>
                   <td data-label="Registrado em">{{ ballot.created_at|datetime_br }}</td>
-                  <td class="av-cell-actions" data-label="">
+                  <td data-label="Ações">
                     {% if can_close %}
                       <div class="table__actions">
                         <form
@@ -304,6 +332,7 @@
 
   {% if voting.status == "open" %}
     <section class="panel av-action-panel av-action-panel--primary" aria-labelledby="primary-action-title">
+      <p class="av-action-panel__eyebrow">Ação principal</p>
       <h2 id="primary-action-title">Encerrar votação</h2>
       <p>
         O encerramento bloqueia novos votos e publica o resultado oficial. Esta ação não
@@ -323,9 +352,31 @@
     </section>
   {% endif %}
 
+  <section class="panel stack" aria-labelledby="config-title">
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <h2 id="config-title">Configuração</h2>
+        </div>
+      </div>
+    </div>
+    <dl class="detail-list">
+      <dt>Descrição</dt><dd>{{ voting.description|default:"—"|linebreaksbr }}</dd>
+      <dt>Escolhas por participante</dt><dd>{{ voting.choices_count }}</dd>
+      <dt>Data de corte do catálogo</dt><dd>{{ voting.catalog_cutoff_date|date_br }}</dd>
+      <dt>Modo de abertura</dt><dd>{{ voting.get_open_mode_display }}</dd>
+      <dt>Abertura</dt><dd>{{ voting.opens_at|datetime_br }}</dd>
+      <dt>Modo de encerramento</dt><dd>{{ voting.get_close_mode_display }}</dd>
+      <dt>Encerramento</dt><dd>{{ voting.closes_at|datetime_br }}</dd>
+      <dt>Criada por</dt><dd>{{ voting.created_by.username }}</dd>
+      <dt>Criada em</dt><dd>{{ voting.created_at|datetime_br }}</dd>
+    </dl>
+  </section>
+
   {% if can_cancel %}
     <section class="panel av-action-panel av-action-panel--danger" aria-labelledby="secondary-actions-title">
-      <h2 id="secondary-actions-title">Outras ações</h2>
+      <p class="av-action-panel__eyebrow">Zona de risco</p>
+      <h2 id="secondary-actions-title">Cancelar votação</h2>
       <p class="text-muted">
         Ações destrutivas ficam separadas das ações do dia a dia. Revise antes de confirmar.
       </p>
@@ -349,19 +400,4 @@
       </form>
     </section>
   {% endif %}
-
-  <section class="panel stack" aria-labelledby="config-title">
-    <h2 id="config-title">Configuração</h2>
-    <dl class="detail-list">
-      <dt>Descrição</dt><dd>{{ voting.description|default:"—"|linebreaksbr }}</dd>
-      <dt>Escolhas por participante</dt><dd>{{ voting.choices_count }}</dd>
-      <dt>Data de corte do catálogo</dt><dd>{{ voting.catalog_cutoff_date|date_br }}</dd>
-      <dt>Modo de abertura</dt><dd>{{ voting.get_open_mode_display }}</dd>
-      <dt>Abertura</dt><dd>{{ voting.opens_at|datetime_br }}</dd>
-      <dt>Modo de encerramento</dt><dd>{{ voting.get_close_mode_display }}</dd>
-      <dt>Encerramento</dt><dd>{{ voting.closes_at|datetime_br }}</dd>
-      <dt>Criada por</dt><dd>{{ voting.created_by.username }}</dd>
-      <dt>Criada em</dt><dd>{{ voting.created_at|datetime_br }}</dd>
-    </dl>
-  </section>
 {% endblock %}

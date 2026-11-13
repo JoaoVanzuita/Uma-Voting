@@ -19,18 +19,26 @@
     <section class="stat-card">
       <p class="stat-card__label">Válidas</p>
       <p class="stat-card__value">{{ stats.valid }}</p>
+      <p class="stat-card__hint">assets prontos para uso</p>
+      <a class="text-small" href="{% url 'admin:catalog_images' %}?status=valid">Ver válidas</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Inválidas</p>
       <p class="stat-card__value">{{ stats.invalid }}</p>
+      <p class="stat-card__hint">arquivos com problema</p>
+      <a class="text-small" href="{% url 'admin:catalog_images' %}?status=invalid">Ver inválidas</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Ausentes</p>
       <p class="stat-card__value">{{ stats.missing }}</p>
+      <p class="stat-card__hint">referências sem arquivo local</p>
+      <a class="text-small" href="{% url 'admin:catalog_images' %}?status=missing">Ver ausentes</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Personagens sem imagem válida</p>
       <p class="stat-card__value">{{ characters_without_image|length }}</p>
+      <p class="stat-card__hint">podem ficar sem retrato nas cédulas</p>
+      <a class="text-small" href="#without-title">Ver personagens</a>
     </section>
   </div>
 
@@ -59,8 +67,16 @@
 
   {% if report %}
     <section class="panel stack catalog-report" aria-labelledby="report-title">
-      <div class="catalog-section-header">
-        <h2 id="report-title" class="catalog-section-title">Relatório de validação</h2>
+      <div class="section-header">
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <span class="section-header__index" aria-hidden="true">01</span>
+            <h2 id="report-title">Relatório de validação</h2>
+          </div>
+          <p class="section-header__lead">
+            Resultado da última verificação do acervo local. Nada é alterado sem nova validação.
+          </p>
+        </div>
         {% if report.issues or report.orphans or report.broken_references or report.duplicate_checksums %}
           <span class="badge badge--warning">Requer atenção</span>
         {% else %}
@@ -144,8 +160,16 @@
   {% endif %}
 
   <section class="panel stack" aria-labelledby="assets-title">
-    <div class="catalog-section-header">
-      <h2 id="assets-title" class="catalog-section-title">Assets de imagem</h2>
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">02</span>
+          <h2 id="assets-title">Assets de imagem</h2>
+        </div>
+        <p class="section-header__lead">
+          Arquivos correntes e anteriores, com situação e origem de cada registro.
+        </p>
+      </div>
       {% if assets %}
         <span class="text-muted text-small">Exibindo até 500 registros</span>
       {% endif %}
@@ -205,8 +229,16 @@
   </section>
 
   <section class="panel stack" aria-labelledby="without-title">
-    <div class="catalog-section-header">
-      <h2 id="without-title" class="catalog-section-title">Personagens sem imagem válida</h2>
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">03</span>
+          <h2 id="without-title">Personagens sem imagem válida</h2>
+        </div>
+        <p class="section-header__lead">
+          Personagens que podem aparecer sem retrato até receberem um asset corrente válido.
+        </p>
+      </div>
       {% if characters_without_image %}
         <span class="badge badge--warning">{{ characters_without_image|length }}</span>
       {% endif %}

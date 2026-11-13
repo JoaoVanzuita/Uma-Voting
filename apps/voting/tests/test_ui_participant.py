@@ -88,6 +88,63 @@ def test_home_diferencia_abertas_e_agendadas_e_mantem_acoes(client):
     assert "Abre em" in html
 
 
+def test_home_destaca_a_aberta_com_encerramento_mais_proximo(client):
+    participant = ParticipantFactory()
+    now = timezone.now()
+    featured = OpenVotingFactory(
+        title="Aberta com prazo próximo",
+        closes_at=now + timedelta(days=1),
+    )
+    other = OpenVotingFactory(
+        title="Aberta com prazo distante",
+        closes_at=now + timedelta(days=7),
+    )
+    scheduled = OpenVotingFactory(
+        title="Agendada visual",
+        status=VotingStatus.SCHEDULED,
+        opens_at=now + timedelta(hours=2),
+    )
+    for voting in (featured, other, scheduled):
+        VotingEligibilityFactory(voting=voting, user=participant)
+
+    _login(client, participant)
+    response = client.get(reverse("participant:home"))
+    html = response.content.decode()
+
+    assert response.context["featured_voting"] == featured
+    assert response.context["other_votings"] == [other, scheduled]
+    assert "home-featured" in html
+    assert "card--list" in html
+    assert "stage-band--open" in html
+    assert html.count("card card--featured") == 1
+
+
+def test_home_usa_agendada_como_destaque_quando_nao_ha_aberta(client):
+    participant = ParticipantFactory()
+    now = timezone.now()
+    later = OpenVotingFactory(
+        title="Agendada mais distante",
+        status=VotingStatus.SCHEDULED,
+        opens_at=now + timedelta(days=5),
+    )
+    featured = OpenVotingFactory(
+        title="Agendada mais próxima",
+        status=VotingStatus.SCHEDULED,
+        opens_at=now + timedelta(days=1),
+    )
+    for voting in (later, featured):
+        VotingEligibilityFactory(voting=voting, user=participant)
+
+    _login(client, participant)
+    response = client.get(reverse("participant:home"))
+    html = response.content.decode()
+
+    assert response.context["featured_voting"] == featured
+    assert response.context["other_votings"] == [later]
+    assert "stage-band--scheduled" in html
+    assert "Ver detalhes" in html
+
+
 def test_home_vazio_oferece_acesso_ao_historico(client):
     participant = ParticipantFactory()
     _login(client, participant)
@@ -129,7 +186,10 @@ def test_selecao_preserva_contratos_de_htmx_ids_e_selecao(client):
     assert "data-selected=" in html
     assert "data-disabled=" in html
     assert "data-selected-inputs" in html
-    assert f'<input type="hidden" name="selected" value="{selected.pk}">' in html
+    hidden_section = html.split("data-selected-inputs", 1)[1].split("</div>", 1)[0]
+    assert 'name="selected"' in hidden_section
+    assert f'value="{selected.pk}"' in hidden_section
+    assert f'data-character-name="{selected.display_name}"' in hidden_section
 
     # Resumo persistente e linguagem.
     assert 'id="selection-summary"' in html
@@ -194,7 +254,66 @@ def test_limite_de_selecao_aparece_no_resumo(client):
 
     assert "3 de 3 escolhas" in html
     assert 'data-limit-reached="true"' in html
-    assert "Limite de 3 escolhas atingido" in html
+    assert "Limite atingido. Desmarque uma escolha para alterar." in html
+
+
+def test_selecao_preserva_ordem_e_numera_as_escolhas(client):
+    voting, participant, snapshots = create_open_voting(choices_count=3, candidates=5)
+    _login(client, participant)
+    chosen = [snapshots[2], snapshots[0], snapshots[1]]
+
+    response = client.get(
+        reverse("participant:voting_detail", args=[voting.pk]),
+        {"selected": [str(snapshot.pk) for snapshot in chosen]},
+    )
+    html = response.content.decode()
+
+    assert response.context["selected_snapshots"] == chosen
+    assert response.context["selected_ids"] == [snapshot.pk for snapshot in chosen]
+
+    hidden_section = html.split("data-selected-inputs", 1)[1].split("</div>", 1)[0]
+    positions = [hidden_section.index(f'value="{snapshot.pk}"') for snapshot in chosen]
+    assert positions == sorted(positions)
+
+    for index, snapshot in enumerate(chosen, start=1):
+        assert f'aria-label="{snapshot.display_name} — Escolha {index}"' in html
+        assert f'data-character-name="{snapshot.display_name}"' in hidden_section
+
+
+def test_resumo_mostra_ate_tres_miniaturas_e_contador(client):
+    voting, participant, snapshots = create_open_voting(choices_count=5, candidates=6)
+    _login(client, participant)
+    chosen = snapshots[:4]
+
+    response = client.get(
+        reverse("participant:character_grid", args=[voting.pk]),
+        {"selected": [str(snapshot.pk) for snapshot in chosen]},
+    )
+    html = response.content.decode()
+
+    assert response.context["selected_preview"] == chosen[:3]
+    assert response.context["selected_more_count"] == 1
+    assert html.count('class="selection-summary__thumb"') == 3
+    assert 'class="selection-summary__more">+1</span>' in html
+    # O limite não remove opções do grid.
+    assert html.count('name="character_ids"') == 6
+
+
+def test_revisao_respeita_ordem_dos_inputs_ocultos(client):
+    voting, participant, snapshots = create_open_voting(choices_count=3, candidates=5)
+    _login(client, participant)
+    chosen = [snapshots[2], snapshots[0], snapshots[1]]
+
+    response = client.post(
+        reverse("participant:review", args=[voting.pk]),
+        {
+            "selected": [str(snapshot.pk) for snapshot in chosen],
+            "character_ids": [str(snapshot.pk) for snapshot in snapshots[:3]],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.context["snapshots"] == chosen
 
 
 def test_grid_de_votacao_encerrada_retorna_409_e_resumo_oob(client):
@@ -243,10 +362,15 @@ def test_revisao_usa_linguagem_nova_e_preserva_confirmacao(client):
     ).content.decode()
 
     assert "Revisar escolhas" in html
-    assert "Seu voto será definitivo" in html
+    assert "A confirmação é definitiva" in html
     assert "Confirmar voto" in html
     assert "Voltar e ajustar" in html
     assert reverse("participant:confirm", args=[voting.pk]) in html
+    assert "review-shell" in html
+    assert "stage-band stage-band--open" in html
+    assert "review-list--ordered" in html
+    assert "portrait-frame--md" in html
+    assert "Escolha 1 de 3" in html
     for snapshot in snapshots[:3]:
         assert snapshot.display_name in html
         assert f'name="character_ids" value="{snapshot.pk}"' in html
@@ -263,6 +387,10 @@ def test_meu_voto_aberto_nao_oferece_edicao_nem_resultado(client):
     assert "Voto registrado" in html
     assert "Registrado em" in html
     assert "definitiva" in html
+    assert "Escolhas registradas" in html
+    assert "Definitivo" in html
+    assert "stage-band stage-band--open" in html
+    assert "portrait-frame--md" in html
     assert "Confirmar voto" not in html
     assert "Reenviar" not in html
     assert "Ver resultado" not in html
@@ -278,6 +406,7 @@ def test_meu_voto_encerrado_oferece_resultado(client):
 
     assert "Ver resultado" in html
     assert reverse("participant:result", args=[voting.pk]) in html
+    assert "stage-band stage-band--closed" in html
 
 
 # ---------------------------------------------------------------------------
@@ -288,15 +417,21 @@ def test_meu_voto_encerrado_oferece_resultado(client):
 def test_resultado_mantem_dense_rank_empate_e_barra_proporcional(client):
     voting, participant, snapshots = create_open_voting(choices_count=1, candidates=3)
     other = ParticipantFactory()
+    non_voter = ParticipantFactory()
     VotingEligibilityFactory(voting=voting, user=other)
+    VotingEligibilityFactory(voting=voting, user=non_voter)
 
     submit_ballot(voting, participant, [snapshots[0].pk])
     submit_ballot(voting, other, [snapshots[0].pk])
     close_voting(voting, "admin")
     _login(client, participant)
 
-    html = client.get(reverse("participant:result", args=[voting.pk])).content.decode()
+    response = client.get(reverse("participant:result", args=[voting.pk]))
+    html = response.content.decode()
 
+    assert response.context["participation"].ballots == 2
+    assert response.context["participation"].eligible == 3
+    assert response.context["participation"].percent == 67
     assert "Ranking final" in html
     assert "1º" in html
     assert "2 votos" in html
@@ -305,6 +440,12 @@ def test_resultado_mantem_dense_rank_empate_e_barra_proporcional(client):
     assert 'value="2"' in html
     assert "Meu voto" in html
     assert "result-item__media" in html
+    assert "result-list--final" in html
+    assert "result-item--leader" in html
+    assert "result-item__accent" in html
+    assert "cédulas registradas" in html
+    assert "(<strong>67%</strong>)" in html
+    assert f'aria-label="{snapshots[0].display_name}: 2 votos de 2 do primeiro colocado"' in html
 
 
 def test_resultado_vazio_mostra_estado_claro(client):
@@ -312,10 +453,16 @@ def test_resultado_vazio_mostra_estado_claro(client):
     close_voting(voting, "admin")
     _login(client, participant)
 
-    html = client.get(reverse("participant:result", args=[voting.pk])).content.decode()
+    response = client.get(reverse("participant:result", args=[voting.pk]))
+    html = response.content.decode()
 
+    assert response.context["participation"].ballots == 0
+    assert response.context["participation"].eligible == 1
+    assert response.context["participation"].percent == 0
     assert "Nenhum voto registrado" in html
     assert "sem votos válidos" in html
+    assert "cédulas registradas" in html
+    assert "(<strong>0%</strong>)" in html
 
 
 def test_historico_usa_secoes_novas_e_mantem_estados_vazios(client):

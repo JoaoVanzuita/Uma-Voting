@@ -11,38 +11,54 @@
 
 {% block page_actions %}
   <a class="btn btn-primary" href="{% url 'admin:catalog_import' %}">Importar de fonte externa</a>
-  <a class="btn btn-secondary" href="{% url 'admin:catalog_import_list' %}">Importações</a>
   <a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Personagens</a>
-  <a class="btn btn-secondary" href="{% url 'admin:catalog_images' %}">Imagens</a>
 {% endblock %}
 
 {% block content %}
+  <nav class="cluster catalog-shortcuts" aria-label="Outras áreas do catálogo">
+    <a class="btn btn-tertiary" href="{% url 'admin:catalog_import_list' %}">Importações</a>
+    <a class="btn btn-tertiary" href="{% url 'admin:catalog_images' %}">Imagens</a>
+  </nav>
+
   <div class="stats-grid catalog-stats">
     <section class="stat-card">
       <p class="stat-card__label">Personagens</p>
       <p class="stat-card__value">{{ character_count }}</p>
+      <p class="stat-card__hint">registros no catálogo</p>
+      <a class="text-small" href="{% url 'admin:catalog_characters' %}">Ver personagens</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Alterações pendentes</p>
       <p class="stat-card__value">{{ pending_count }}</p>
+      <p class="stat-card__hint">aguardando revisão</p>
+      <a class="text-small" href="#pending-title">Revisar pendências</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Imagens válidas</p>
       <p class="stat-card__value">{{ image_stats.valid }}</p>
+      <p class="stat-card__hint">assets correntes no acervo</p>
+      <a class="text-small" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Sem imagem válida</p>
       <p class="stat-card__value">{{ characters_without_image }}</p>
+      <p class="stat-card__hint">personagens sem retrato corrente</p>
+      <a class="text-small" href="{% url 'admin:catalog_images' %}?status=missing">
+        Ver ausências
+      </a>
     </section>
   </div>
 
   <div class="catalog-columns">
     <div class="stack">
       <section class="panel stack" aria-labelledby="sync-title">
-        <div class="catalog-section-header">
-          <div>
-            <h2 id="sync-title" class="catalog-section-title">Sincronização manual</h2>
-            <p class="text-muted text-small">
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <span class="section-header__index" aria-hidden="true">01</span>
+              <h2 id="sync-title">Sincronização manual</h2>
+            </div>
+            <p class="section-header__lead">
               Personagens novas são aplicadas automaticamente; alterações em personagens
               existentes ficam pendentes de revisão.
             </p>
@@ -74,10 +90,13 @@
       </section>
 
       <section class="panel stack" aria-labelledby="external-sources-title">
-        <div class="catalog-section-header">
-          <div>
-            <h2 id="external-sources-title" class="catalog-section-title">Fontes externas</h2>
-            <p class="text-muted text-small">
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <span class="section-header__index" aria-hidden="true">02</span>
+              <h2 id="external-sources-title">Fontes externas</h2>
+            </div>
+            <p class="section-header__lead">
               Todas as fontes cadastradas; apenas habilitadas com conector podem ser importadas.
             </p>
           </div>
@@ -160,8 +179,16 @@
       </section>
 
       <section class="panel stack" aria-labelledby="pending-title">
-        <div class="catalog-section-header">
-          <h2 id="pending-title" class="catalog-section-title">Alterações pendentes</h2>
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <span class="section-header__index" aria-hidden="true">03</span>
+              <h2 id="pending-title">Alterações pendentes</h2>
+            </div>
+            <p class="section-header__lead">
+              Diferenças que esperam aprovação antes de alterar o catálogo publicado.
+            </p>
+          </div>
           {% if pending_count %}
             <span class="badge badge--warning">{{ pending_count }} aguardando revisão</span>
           {% endif %}
@@ -212,8 +239,13 @@
 
     <div class="stack">
       <section class="panel stack" aria-labelledby="last-sync-title">
-        <div class="catalog-section-header">
-          <h2 id="last-sync-title" class="catalog-section-title">Última sincronização</h2>
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <span class="section-header__index" aria-hidden="true">04</span>
+              <h2 id="last-sync-title">Última sincronização</h2>
+            </div>
+          </div>
           {% if last_sync %}{% status_badge last_sync.status %}{% endif %}
         </div>
 
@@ -243,7 +275,14 @@
       </section>
 
       <section class="panel stack" aria-labelledby="runs-title">
-        <h2 id="runs-title" class="catalog-section-title">Histórico recente</h2>
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <span class="section-header__index" aria-hidden="true">05</span>
+              <h2 id="runs-title">Histórico recente</h2>
+            </div>
+          </div>
+        </div>
         {% if recent_runs %}
           <div class="table-wrap admin-data-table-wrap">
             <table class="table admin-data-table">
@@ -254,23 +293,17 @@
                   <th scope="col">Fonte</th>
                   <th scope="col">Situação</th>
                   <th scope="col">Início</th>
-                  <th scope="col"></th>
                 </tr>
               </thead>
               <tbody>
                 {% for run in recent_runs %}
                   <tr>
-                    <td data-label="Execução">#{{ run.pk }}</td>
+                    <td data-label="Execução">
+                      <a href="{% url 'admin:catalog_sync_detail' run.pk %}">#{{ run.pk }}</a>
+                    </td>
                     <td data-label="Fonte">{{ run.source.name }}</td>
                     <td data-label="Situação">{% status_badge run.status %}</td>
                     <td data-label="Início">{{ run.started_at|datetime_br }}</td>
-                    <td data-label="Ações">
-                      <div class="table__actions">
-                        <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' run.pk %}">
-                          Detalhes
-                        </a>
-                      </div>
-                    </td>
                   </tr>
                 {% endfor %}
               </tbody>

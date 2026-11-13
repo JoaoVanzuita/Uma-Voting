@@ -14,8 +14,12 @@
   {% endif %}
 {% endblock %}
 
+{% block page_actions %}
+  <a class="btn btn-secondary" href="{% url 'admin:participant_list' %}">Voltar</a>
+{% endblock %}
+
 {% block content %}
-  <section class="panel admin-form-panel">
+  <section class="panel form-panel">
     <form method="post" data-submit-once>
       {% csrf_token %}
 
@@ -24,7 +28,13 @@
       {% endif %}
 
       <fieldset class="fieldset">
-        <legend class="fieldset__legend">Dados do participante</legend>
+        <legend class="form-section__legend">
+          <span class="form-section__index" aria-hidden="true">01</span>
+          <span>Dados do participante</span>
+        </legend>
+        <p class="form-section__lead">
+          O username é o único dado armazenado e serve para identificar a pessoa no acesso.
+        </p>
 
         <div class="form-group">
           <label class="form-label" for="{{ form.username.id_for_label }}">

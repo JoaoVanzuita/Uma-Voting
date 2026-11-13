@@ -4,64 +4,80 @@
 {% block title %}Meu voto — {{ voting.title }}{% endblock %}
 
 {% block content %}
-  <div class="page-header ballot-header">
-    <div>
-      <p class="text-muted text-small">Meu voto</p>
-      <h1>{{ voting.title }}</h1>
-      <div class="ballot-summary">
-        {% status_badge voting.status %}
-        {% if ballot %}
-          <span class="text-muted">Registrado em {{ ballot.created_at|datetime_br }}</span>
-        {% endif %}
+  <div class="ballot-shell">
+    <header class="ballot-header">
+      <div class="stage-band stage-band--{{ voting.status }} stage-band--thick">
+        <p class="stage-kicker">
+          {% if voting.status == "open" %}
+            <span class="stage-kicker__dot" aria-hidden="true"></span>
+          {% endif %}
+          {% if ballot %}Voto registrado{% else %}Meu voto{% endif %}
+        </p>
+        <p class="stage-meta">
+          <span>{{ voting.title }}</span>
+          {% if ballot %}
+            <span>Registrado em <strong>{{ ballot.created_at|datetime_br }}</strong></span>
+          {% endif %}
+        </p>
       </div>
-    </div>
-    <div class="cluster">
-      <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
-      {% if voting.status == "closed" %}
-        <a class="btn btn-primary" href="{% url 'participant:result' voting.pk %}">
-          Ver resultado
-        </a>
-      {% endif %}
-    </div>
+
+      <div class="ballot-header__main">
+        <div>
+          <h1>Meu voto</h1>
+          <div class="voting-header__meta">{% status_badge voting.status %}</div>
+        </div>
+        <div class="cluster">
+          <a class="btn btn-tertiary" href="{% url 'participant:home' %}">Voltar</a>
+          {% if voting.status == "closed" %}
+            <a class="btn btn-primary" href="{% url 'participant:result' voting.pk %}">
+              Ver resultado
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+
+    {% if ballot %}
+      <section class="panel ballot-panel" aria-labelledby="ballot-title">
+        <div class="review-panel__header">
+          <h2 id="ballot-title">Escolhas registradas</h2>
+          <span class="badge badge--success">Definitivo</span>
+        </div>
+        <p class="text-muted ballot-note">
+          A confirmação é definitiva para esta votação. Você pode consultar este voto enquanto a
+          votação estiver aberta e após o encerramento. Não é possível editá-lo ou reenviá-lo.
+        </p>
+
+        <ul class="review-list">
+          {% for choice in ballot.choices.all %}
+            <li class="review-item">
+              <span class="portrait-frame portrait-frame--md review-item__media">
+                {% image_url choice.character_snapshot.image_asset as image_src %}
+                <img
+                  src="{{ image_src }}"
+                  data-fallback-src="{% placeholder_url %}"
+                  alt="Retrato de {{ choice.character_snapshot.display_name }}"
+                  width="56"
+                  height="56"
+                  loading="lazy"
+                >
+              </span>
+              <span class="review-item__name">
+                {{ choice.character_snapshot.display_name }}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% else %}
+      <div class="empty-state">
+        <h2>Nenhum voto registrado</h2>
+        <p>Você ainda não enviou um voto para esta votação.</p>
+      </div>
+    {% endif %}
   </div>
-
-  {% if error %}
-    <div class="alert alert-danger" role="alert">{{ error }}</div>
-  {% endif %}
-
-  {% if ballot %}
-    <section class="panel ballot-panel" aria-labelledby="ballot-title">
-      <div class="review-panel__header">
-        <h2 id="ballot-title">Voto registrado</h2>
-        <span class="badge badge--success">Definitivo</span>
-      </div>
-      <p class="text-muted">
-        A confirmação é definitiva para esta votação. Você pode consultar este voto enquanto a
-        votação estiver aberta e após o encerramento. Não é possível editá-lo ou reenviá-lo.
-      </p>
-
-      <ul class="review-list">
-        {% for choice in ballot.choices.all %}
-          <li class="review-item">
-            <span class="review-item__media">
-              {% image_url choice.character_snapshot.image_asset as image_src %}
-              <img
-                src="{{ image_src }}"
-                data-fallback-src="{% placeholder_url %}"
-                alt="Retrato de {{ choice.character_snapshot.display_name }}"
-                width="56"
-                height="56"
-              >
-            </span>
-            <p class="review-item__name">{{ choice.character_snapshot.display_name }}</p>
-          </li>
-        {% endfor %}
-      </ul>
-    </section>
-  {% else %}
-    <div class="empty-state">
-      <h2>Nenhum voto registrado</h2>
-      <p>Você ainda não enviou um voto para esta votação.</p>
-    </div>
-  {% endif %}
 {% endblock %}

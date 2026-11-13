@@ -1,101 +1,128 @@
-# Umam Voting --- Design System
+# Uma Voting — Sistema de Design
 
-> Guia visual e de interação para orientar o desenvolvimento da
-> interface do Uma Voting.
-> Idioma da interface: **português brasileiro (PT-BR)**.
-> Direção visual: **minimalista, moderna, funcional e responsiva**.
-> Tema: **light-first**.
+> Direção visual: **Circuito editorial** — uma identidade original para uma
+> comunidade competitiva de Umamusume: Pretty Derby, inspirada em corrida,
+> preparação e eventos, sem reproduzir interfaces, símbolos ou padrões visuais
+> proprietários do jogo ou de ferramentas existentes.
 
-## 1. Princípios
+**Idioma:** português brasileiro (PT-BR)
 
-1.  Clareza antes de decoração: cada tela deve deixar evidente seu
-    propósito e sua ação principal.
-2.  Simplicidade: evitar excesso de painéis, bordas, cores, ícones e
-    informações simultâneas.
-3.  Consistência: componentes equivalentes devem ter a mesma aparência e
-    comportamento.
-4.  Hierarquia: títulos, conteúdo, metadados e ações precisam ser
-    facilmente diferenciados.
-5.  Feedback: ações, carregamentos, erros e confirmações devem ter
-    estados visuais claros.
-6.  Responsividade: projetar para telas pequenas e ampliar
-    progressivamente para desktop.
-7.  Acessibilidade: considerar contraste, teclado, foco e áreas de toque
-    desde o início.
-8.  Conteúdo em destaque: personagens, nomes e informações da votação
-    devem prevalecer sobre elementos decorativos.
+**Tema inicial:** claro
+**Objetivo:** transformar a votação em uma etapa reconhecível de campeonato,
+não em um formulário genérico, preservando clareza e acessibilidade.
 
-Este documento orienta a apresentação e a interação. Não altera regras
-de negócio nem autoriza funcionalidades fora do escopo do produto.
+## 1. Fundamento da identidade
 
-## 2. Identidade visual
+O Uma Voting deve lembrar um programa de corrida contemporâneo: calmo, preciso
+e energético. A identidade é construída por três sinais visuais discretos:
 
-A interface deve transmitir organização e simplicidade, usando uma base
-neutra e um tom violeta como destaque.
+1. **Pista abstrata:** linhas curvas, segmentos e marcações em baixa opacidade.
+2. **Informação editorial:** títulos, índices, faixas e metadados organizam a
+   tela como um evento, não como um dashboard corporativo.
+3. **Elenco em destaque:** os retratos das personagens ancoram o contexto de
+   Umamusume, mas controles e resultados mantêm prioridade funcional.
 
-**Preferir** - Fundos neutros e superfícies brancas. - Bordas discretas
-e sombras muito suaves. - Espaçamento generoso e alinhamentos
-consistentes. - Ícones simples, usados somente quando ajudarem a
-compreensão. - Animações curtas e funcionais, quando necessárias.
+O usuário deve perceber “competição organizada” antes de perceber decoração.
 
-**Evitar** - Gradientes decorativos. - Sombras fortes ou muitos níveis
-de elevação. - Muitas cores de destaque na mesma tela. - Animações
-desnecessárias. - Ícones sem função clara. - Painéis e cards quando uma
-lista simples for suficiente.
+### O que comunicar
 
-Usar tema claro no MVP. Tema escuro não é necessário.
+- Uma etapa comunitária organizada, e não um produto financeiro ou CRUD.
+- Movimento e competição sem neon, HUD de jogo ou agressividade visual.
+- Prazos, estados e resultados fáceis de escanear.
+- Personagens como assunto; interface como infraestrutura silenciosa.
 
-## 3. Cores
+### Limites de originalidade
 
-  Token                     Valor       Aplicação
-  ------------------------- ----------- ----------------------------------------
-  `--color-white`           `#FFFFFF`   Superfícies principais, cards e campos
-  `--color-surface`         `#F5F6FA`   Fundo secundário e áreas de apoio
-  `--color-ink`             `#202431`   Texto principal e títulos
-  `--color-primary`         `#7771D8`   Ações primárias, seleção e destaque
-  `--color-primary-hover`   `#655FC5`   Hover de ações primárias
-  `--color-muted`           `#747B8C`   Texto secundário e metadados
-  `--color-border`          `#E5E7EF`   Bordas e divisores
-  `--color-success`         `#27845D`   Sucesso e confirmação
-  `--color-warning`         `#C58A32`   Atenção e pendências
-  `--color-danger`          `#C64F5B`   Erros e ações destrutivas
-  `--color-info`            `#5484C7`   Mensagens informativas
+- Não copiar layouts, componentes, iconografia, códigos de cor, nomes de
+  sistemas visuais ou assets de interface do jogo, wikis ou simuladores.
+- Não usar vocabulário específico como elemento de marca. Os labels continuam
+  genéricos: “votação”, “escolhas”, “resultado” e “histórico”.
+- Não usar troféus, ferraduras, bandeiras, hipódromos literais ou “speed lines”
+  como ornamento recorrente.
+- Não transformar a aplicação em uma vitrine de cards colecionáveis.
 
-### Regras de aplicação
+## 2. Princípios de composição
 
--   Usar `--color-ink` para texto principal e `--color-muted` para
-    informações secundárias.
--   Reservar a cor primária para ações principais, seleção e orientação.
--   Usar vermelho somente para erros e ações destrutivas.
--   Não comunicar estados apenas por cor: combinar cor com texto, ícone
-    ou rótulo.
--   Verificar contraste dos pares realmente utilizados, inclusive texto
-    sobre botões, badges e fundos coloridos.
+1. **Informação antes de decoração.** Ação, título, estado e prazo aparecem
+   antes de qualquer recurso temático.
+2. **Um pulso por viewport.** Só um elemento de alto destaque por tela:
+   votação atual, ação administrativa ou topo de resultado.
+3. **Pista, não fantasia literal.** Curvas e faixas são abstratas.
+4. **Retrato com propósito.** Imagem melhora reconhecimento; nunca compete com
+   a ação principal, o nome ou o ranking.
+5. **Cor orienta.** Violeta organiza interação; coral dá energia; cores
+   semânticas permanecem exclusivas de estados.
+6. **Densidade contextual.** Participante privilegia foco e imagem;
+   administração privilegia varredura e operação.
+7. **Originalidade sistêmica.** A marca vem dos tokens e composições próprios,
+   não de uma referência superficial.
 
-### Variáveis CSS iniciais
+## 3. Tokens visuais
 
-``` css
+### 3.1 Paleta
+
+| Papel | Token | Valor | Aplicação |
+|---|---|---:|---|
+| Canvas | `--color-canvas` | `#F7F5F2` | Fundo quente e discreto. |
+| Superfície | `--color-surface` | `#FFFEFC` | Cards, menus, campos e painéis. |
+| Apoio | `--color-surface-muted` | `#F0EDF4` | Faixas, agrupamentos e fundos de retrato. |
+| Tinta | `--color-ink` | `#28243A` | Títulos e texto principal. |
+| Texto auxiliar | `--color-muted` | `#6A6578` | Metadados e ajuda. |
+| Violeta de pista | `--color-primary` | `#5646A8` | CTA, foco e seleção. |
+| Violeta profundo | `--color-primary-strong` | `#40337F` | Hover e texto em fundo suave. |
+| Coral de impulso | `--color-accent` | `#C85B6F` | Índice e destaque editorial não semântico. |
+| Azul de apoio | `--color-support` | `#3B759A` | Informação secundária. |
+| Linha | `--color-border` | `#E2DDE8` | Divisores e contornos passivos. |
+| Linha ativa | `--color-border-strong` | `#8D849D` | Limite de controles interativos. |
+| Sucesso | `--color-success` | `#18745C` | Confirmação e estado positivo. |
+| Atenção | `--color-warning` | `#8A5709` | Prazo, pendência e cuidado. |
+| Perigo | `--color-danger` | `#A63E55` | Erro e ação destrutiva. |
+
+```css
 :root {
-  color-scheme: light;
+  --color-primary-soft: #eeebfa;
+  --color-accent-soft: #f9e9ec;
+  --color-support-soft: #e8f1f6;
+  --color-success-soft: #e6f3ee;
+  --color-warning-soft: #f8efdf;
+  --color-danger-soft: #f8e9ed;
+  --color-track-line: rgb(86 70 168 / 12%);
+}
+```
 
-  --color-white: #ffffff;
-  --color-surface: #f5f6fa;
-  --color-ink: #202431;
-  --color-primary: #7771d8;
-  --color-primary-hover: #655fc5;
-  --color-muted: #747b8c;
-  --color-border: #e5e7ef;
-  --color-success: #27845d;
-  --color-warning: #c58a32;
-  --color-danger: #c64f5b;
-  --color-info: #5484c7;
+#### Regras de cor
 
-  --font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+- Violeta é a única cor de ação principal.
+- Coral não comunica erro, urgência ou seleção: é apenas acento editorial.
+- Verde, amarelo e vermelho expressam somente estados semânticos.
+- Não usar mais de uma superfície colorida forte por agrupamento.
+- Todo significado expresso por cor deve ter texto e/ou ícone complementar.
+- Garantir WCAG 2.2 AA para texto e 3:1 para limites de controles.
 
-  --radius-card: 10px;
-  --radius-control: 8px;
+### 3.2 Tipografia
 
+A tipografia é contemporânea e funcional. A fonte local Inter pode continuar
+como padrão; não introduzir uma fonte decorativa para “parecer anime”.
+
+| Estilo | Desktop | Mobile | Peso | Uso |
+|---|---:|---:|---:|---|
+| Display | 32 px | 26 px | 700 | Página e votação em destaque. |
+| Título de seção | 20 px | 18 px | 650/700 | Blocos de conteúdo. |
+| Título de card | 16 px | 16 px | 650 | Votações e personagens. |
+| Corpo | 14 px | 14 px | 400 | Conteúdo corrente. |
+| Legenda | 12 px | 12 px | 500 | Metadados e etiquetas. |
+| Índice | 11 px | 11 px | 700 | Etapa e sobrelinha. |
+
+- Usar números tabulares em prazos, contadores, posições e votos.
+- Usar caixa alta somente em índices/sobrelinhas, com `letter-spacing` entre
+  `0.06em` e `0.1em`.
+- Títulos permanecem em frase normal; evitar caixa alta integral.
+- O nome da personagem tem prioridade sobre atributos e metadados.
+
+### 3.3 Escala, formas e elevação
+
+```css
+:root {
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -103,338 +130,275 @@ Usar tema claro no MVP. Tema escuro não é necessário.
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
+  --space-16: 64px;
+
+  --radius-control: 10px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --control-height: 44px;
+  --touch-target: 44px;
+
+  --shadow-card: 0 1px 2px rgb(40 36 58 / 5%), 0 8px 20px rgb(40 36 58 / 5%);
+  --shadow-raised: 0 12px 28px rgb(40 36 58 / 10%);
+  --focus-ring: 0 0 0 3px rgb(64 51 127 / 25%);
 }
 ```
 
-## 4. Tipografia
-
-Fonte preferencial: **Inter**, com fallback para fontes sans-serif do
-sistema.
+- Cards usam raio de 16 px; painéis densos podem usar 12 px.
+- Superfícies normais usam borda ou sombra, nunca ambas de forma forte.
+- Hover pode elevar até 2 px e reforçar a borda.
+- Alvos interativos têm no mínimo 44 × 44 px.
 
-  Uso                  Tamanho   Peso
-  ------------------ --------- ------
-  Título de página       28 px    700
-  Título de seção        20 px    600
-  Título de card         16 px    600
-  Texto padrão           14 px    400
-  Texto auxiliar         12 px    400
-  Texto de botão         14 px    600
-
-### Diretrizes
-
--   Manter hierarquia tipográfica consistente.
--   Usar frases curtas e linguagem direta em PT-BR.
--   Evitar textos auxiliares longos quando o próprio rótulo puder
-    explicar o controle.
--   Não reduzir excessivamente o texto em telas mobile.
--   Usar números tabulares quando isso facilitar a leitura de contadores
-    e resultados.
-
-## 5. Espaçamento, dimensões e elevação
-
-Escala base de espaçamento:
-
-  Token          Valor
-  ------------ -------
-  `space-1`       4 px
-  `space-2`       8 px
-  `space-3`      12 px
-  `space-4`      16 px
-  `space-6`      24 px
-  `space-8`      32 px
-  `space-12`     48 px
-
-Dimensões e formas:
-
--   Cards: raio de borda de 10 px.
--   Botões e controles: raio de 8 px.
--   Campos e controles: altura mínima de 40 px.
--   Alvos de toque: preferencialmente pelo menos 44 × 44 px.
--   Bordas finas e discretas.
--   Sombras suaves, apenas quando necessárias para separar superfícies.
-
-Manter espaçamento consistente entre títulos, conteúdo, grupos de campos
-e ações. Evitar compactar excessivamente formulários e cards.
-
-## 6. Layout e navegação
-
-### Estrutura geral
-
--   Usar uma largura de conteúdo confortável e centralizada.
--   Manter cabeçalhos compactos.
--   Separar claramente navegação, conteúdo e ações.
--   Evitar múltiplas barras de navegação ou cabeçalhos empilhados sem
-    necessidade.
--   Manter o contexto da página visível em telas menores.
-
-### Área do participante
-
-Navegação simples com: - Votações disponíveis. - Histórico. -
-Identificação pelo username. - Ação de logout.
-
-A página inicial deve priorizar as votações abertas e agendadas
-disponíveis ao participante. O histórico deve ficar separado.
-
-### Área administrativa
-
--   Sidebar em desktop.
--   Navegação compacta ou recolhível em telas menores.
--   Seções principais: Dashboard, Participantes, Catálogo e Votações.
--   Acesso explícito para alternar à experiência de participante.
--   Ações frequentes devem ser fáceis de localizar, sem sobrecarregar o
-    dashboard.
-
-## 7. Componentes
-
-### 7.1 Botões
-
-Variantes:
-
--   **Primário:** ação principal da tela; fundo na cor primária e texto
-    com contraste adequado.
--   **Secundário:** ação alternativa; aparência neutra, contorno ou
-    fundo discreto.
--   **Destrutivo:** ações como cancelar votação; usar cor de perigo e
-    confirmação quando apropriado.
--   **Discreto/terciário:** ações auxiliares, sem competir com a ação
-    principal.
-
-Estados obrigatórios: - Normal. - Hover. - Focus visível. - Active. -
-Disabled. - Loading.
-
-Regras: - Usar verbos claros: "Criar votação", "Salvar", "Confirmar
-voto". - Não usar vários botões primários concorrentes na mesma área. -
-Exibir indicador de carregamento e impedir envios repetidos durante
-processamento. - Não depender apenas de ícones para ações importantes.
-
-### 7.2 Formulários
+## 4. Assinaturas visuais
 
--   Cada campo deve ter rótulo visível e associado ao controle.
--   Placeholder é exemplo ou orientação complementar, não substituto do
-    rótulo.
--   Agrupar campos relacionados.
--   Apresentar erros próximos ao campo correspondente.
--   Preservar valores preenchidos quando ocorrer erro de validação.
--   Indicar campos obrigatórios de forma consistente.
--   Usar mensagens curtas, específicas e acionáveis.
+### 4.1 Motivo de pista
 
-### 7.3 Cards de votação
+O motivo de pista é uma camada decorativa de fundo, não conteúdo. Pode aparecer
+no card de votação em destaque, no cabeçalho de resultado e em um estado vazio
+discreto. Nunca usar em listas, formulários, tabelas ou sob textos longos.
 
-Um card deve apresentar somente informações necessárias para decidir se
-o usuário deseja acessar a votação, como:
+Ele deve ter uma ou duas curvas finas abstratas, com opacidade máxima de 12%:
 
--   Título.
--   Descrição curta, quando houver.
--   Estado da votação.
--   Prazo ou datas relevantes.
--   Situação do participante, quando aplicável.
--   Ação principal para abrir ou consultar.
-
-Usar badges discretos para estados. Não repetir a mesma informação em
-texto e badge sem necessidade.
-
-### 7.4 Cards de personagem
+```css
+.track-motif::before {
+  position: absolute;
+  inset: auto -8% -42% 32%;
+  width: 78%;
+  height: 150%;
+  border: 1px solid var(--color-track-line);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+```
 
--   Imagem com proporção consistente.
--   Nome legível.
--   Estado selecionado claramente identificável.
--   Área clicável confortável.
--   Foco de teclado visível.
--   Não depender apenas de mudança de cor para indicar seleção.
-
-A grade deve adaptar o número de colunas à largura disponível. Imagens
-devem manter dimensões consistentes para evitar saltos no layout.
+Não usar bitmap externo, pistas realistas, logos, números de cavalo ou símbolos
+do jogo.
 
-### 7.5 Busca e filtros
+### 4.2 Faixa de etapa
 
--   Busca por nome com resposta instantânea.
--   Campo de busca facilmente identificável.
--   Filtros combináveis apresentados de forma compacta.
--   Em telas pequenas, filtros podem ficar recolhidos em um painel.
--   Deve ser fácil perceber quais filtros estão ativos e limpar a
-    seleção.
--   A aplicação dos filtros não deve duplicar personagens.
+A faixa de etapa é o principal sinal autoral: uma linha de 4 px ou faixa de
+8 px na borda de um card/painel, acompanhada de uma sobrelinha curta.
 
-### 7.6 Contadores e progresso
+```text
+ETAPA 02 · VOTAÇÃO ABERTA
+ENCERRA EM 04H 18M
+3 ESCOLHAS POR PARTICIPANTE
+```
 
--   Exibir escolhas realizadas e limite permitido de forma clara, por
-    exemplo: "2 de 3 escolhas".
--   Atualizar o contador imediatamente após seleção ou remoção.
--   Quando o limite for atingido, explicar visualmente por que novas
-    escolhas não podem ser adicionadas.
--   Não usar indicadores de progresso decorativos sem significado
-    funcional.
-
-### 7.7 Mensagens e confirmações
-
-Criar padrões para: - Sucesso. - Informação. - Atenção. - Erro. - Estado
-vazio. - Confirmação de ação irreversível.
-
-Mensagens devem ser objetivas e explicar, quando necessário, como
-prosseguir.
-
-Para o envio da cédula, destacar que a confirmação torna o voto
-definitivo. A confirmação deve ser clara, sem linguagem alarmista.
-
-## 8. Estados de interface
-
-Todo componente interativo deve considerar, quando aplicável:
-
-  Estado            Comportamento visual
-  ----------------- -----------------------------------------------------
-  Normal            Aparência padrão
-  Hover             Destaque sutil em dispositivos com ponteiro
-  Focus             Contorno de foco claramente visível
-  Active/Selected   Seleção perceptível e consistente
-  Disabled          Aparência atenuada e interação bloqueada
-  Loading           Indicador de processamento e prevenção de repetição
-  Success           Confirmação positiva
-  Error             Indicação de erro e orientação para correção
-  Empty             Mensagem simples explicando que não há conteúdo
-
-### Estados vazios
-
--   Não deixar áreas vazias sem explicação.
--   Usar uma frase curta e contextual.
--   Evitar ilustrações grandes ou chamadas promocionais.
--   Quando não houver votações disponíveis, apresentar somente uma
-    mensagem simples, sem destacar votações futuras.
-
-### Estados de votação
-
-Usar rótulos textuais consistentes para rascunho, agendada, aberta,
-encerrada e cancelada. A cor pode reforçar o estado, mas não substitui o
-rótulo.
-
-## 9. Responsividade
-
-Breakpoints de referência:
-
-  Faixa                Largura
-  --------- ------------------
-  Mobile      abaixo de 768 px
-  Tablet          768--1023 px
-  Desktop      1024 px ou mais
-
-### Mobile
-
--   Uma coluna para conteúdo principal quando necessário.
--   Cards de personagem em grade compacta, mas com alvos de toque
-    confortáveis.
--   Filtros recolhíveis.
--   Navegação administrativa compacta.
--   Botões principais acessíveis sem rolagem excessiva.
--   Formulários em coluna única.
--   Evitar tabelas largas; converter em listas ou cards quando isso
-    melhorar a leitura.
-
-### Tablet
-
--   Usar grades com número intermediário de colunas.
--   Permitir navegação administrativa compacta.
--   Manter formulários e tabelas dentro da largura disponível.
-
-### Desktop
-
--   Aproveitar o espaço horizontal sem esticar linhas de texto
-    excessivamente.
--   Usar sidebar administrativa.
--   Grades de personagens com mais colunas.
--   Manter largura máxima confortável para leitura.
-
-### Regras gerais
-
--   Não depender de hover para revelar informação ou permitir ações.
--   Evitar rolagem horizontal da página.
--   Testar em larguras intermediárias, não apenas nos breakpoints
-    exatos.
--   Preservar a ordem lógica e a hierarquia do conteúdo em todos os
-    tamanhos.
-
-## 10. Acessibilidade
-
-Alvo de referência: **WCAG 2.2 nível AA**, dentro do escopo razoável do
-MVP.
-
-Requisitos:
-
--   Contraste adequado para texto e componentes.
--   Navegação por teclado.
--   Foco visível e não encoberto.
--   Labels programaticamente associados aos campos.
--   Botões e links com nomes acessíveis.
--   Texto alternativo para imagens informativas.
--   Estados e erros não comunicados somente por cor.
--   Alvos de toque confortáveis.
--   Ordem de foco coerente com a ordem visual.
--   Mensagens de validação compreensíveis.
--   Respeitar `prefers-reduced-motion` caso existam animações.
-
-## 11. Ícones e imagens
-
--   Preferir uma biblioteca consistente de ícones, como Lucide.
--   Usar ícones familiares e acompanhados de texto quando a ação não for
-    universalmente reconhecível.
--   Não misturar estilos de ícones.
--   Imagens de personagens devem preservar proporção e não ser
-    distorcidas.
--   Definir fallback para imagens ausentes ou inválidas.
--   Usar texto alternativo adequado.
--   Não usar imagens genéricas como se fossem retratos oficiais das
-    personagens.
-
-## 12. Diretrizes de implementação
-
-A direção técnica visual inicialmente prevista é:
-
--   Bootstrap 5 para grid e componentes básicos.
--   CSS próprio com variáveis para aplicar os tokens deste documento.
--   Django Templates para estrutura das páginas.
--   HTMX para interações pontuais, mantendo a experiência integrada.
--   Inter como fonte principal.
--   Lucide para ícones.
-
-Essas tecnologias são uma recomendação de implementação, não uma
-exigência do design system. Caso o plano técnico escolha alternativas,
-preservar os tokens, padrões, estados e comportamentos definidos aqui.
-
-### Organização sugerida do CSS
-
-Separar, de forma compatível com a estrutura do projeto:
-
-1.  Tokens e variáveis.
-2.  Tipografia e estilos base.
-3.  Layout e responsividade.
-4.  Componentes.
-5.  Estados e utilitários.
-6.  Ajustes específicos de páginas.
-
-Evitar estilos duplicados e seletores excessivamente específicos.
-Componentes devem reutilizar os mesmos tokens.
-
-## 13. Checklist de revisão visual
-
-Antes de considerar uma tela concluída, verificar:
-
--   [ ] A ação principal está evidente?
--   [ ] A hierarquia de títulos e conteúdo está clara?
--   [ ] O espaçamento segue a escala definida?
--   [ ] Cores e tipografia usam os tokens?
--   [ ] Estados de hover, foco, loading, erro e disabled foram
-    considerados?
--   [ ] A tela funciona em mobile, tablet e desktop?
--   [ ] Não existe rolagem horizontal desnecessária?
--   [ ] A navegação por teclado funciona?
--   [ ] Contraste e foco são perceptíveis?
--   [ ] Textos estão em PT-BR e são objetivos?
--   [ ] Há feedback para ações importantes?
--   [ ] A tela evita elementos decorativos ou funcionalidades não
-    previstas?
-
-## 14. Critério de qualidade
-
-A interface estará alinhada a este design system quando for visualmente
-consistente, simples de compreender, responsiva e acessível; quando os
-componentes compartilharem padrões de aparência e comportamento; e
-quando a apresentação apoiar os fluxos do produto sem introduzir
-complexidade ou alterar as regras funcionais.
+- Votação em destaque: faixa violeta e pequeno ponto coral.
+- Agendada: faixa de atenção, sem coral.
+- Encerrada: faixa neutra; o ranking ganha a hierarquia.
+- Administração: aplicar somente em ações que precisam de atenção.
+- Sobrelinhas não substituem título e não duplicam badge/metadados.
+
+### 4.3 Retratos
+
+As imagens de personagem usam uma moldura consistente:
+
+- fundo `--color-surface-muted`;
+- `object-fit: contain`, sem recorte agressivo;
+- legenda/nome sempre fora da imagem;
+- borda de 1 px e raio de 12–14 px;
+- placeholder com silhueta simples, nunca emoji.
+
+Na grade, retratos são utilitários. Em votação em destaque e resultado podem
+ser maiores, mas não podem ocupar mais de 35% da largura de conteúdo no desktop
+nem deslocar nome, votos ou ação.
+
+## 5. Componentes
+
+### 5.1 Marca e navegação
+
+A marca é tipográfica: `Uma Voting` em tinta, com marcador abstrato próprio
+(por exemplo, duas curvas interrompidas). O wordmark permanece textual e
+acessível.
+
+- Participante: cabeçalho compacto, claro, com linha inferior fina.
+- Item ativo: fundo violeta suave e texto violeta profundo; não apenas
+  sublinhado.
+- Administração: sidebar neutra e faixa/índice somente na área ativa.
+- As duas áreas pertencem ao mesmo sistema, mas não têm a mesma densidade.
+
+### 5.2 Botões
+
+| Variante | Aparência | Uso |
+|---|---|---|
+| Primário | Fundo violeta e texto branco | Uma ação principal por contexto. |
+| Secundário | Superfície clara e borda forte | Voltar, consultar, alternativa. |
+| Terciário | Sem caixa; fundo suave no hover | Navegação e ação auxiliar. |
+| Perigo | Fundo vermelho semântico | Cancelamento e exclusão confirmados. |
+
+- Coral nunca é CTA.
+- Preferir verbos diretos: “Abrir votação”, “Revisar escolhas”, “Confirmar
+  voto”, “Ver resultado”.
+- Loading preserva largura do botão e bloqueia reenvio.
+- Ícones sozinhos apenas para ações universais, com nome acessível.
+
+### 5.3 Cards de votação
+
+Evitar uma parede homogênea de cards.
+
+**Card em destaque**
+
+- Um único item prioritário na home.
+- Horizontal no desktop e empilhado no mobile.
+- Faixa de etapa, título, prazo, quantidade de escolhas e CTA.
+- Pode ter motivo de pista e retrato lateral opcional.
+- Descrição limitada a duas linhas.
+
+**Card de lista**
+
+- Sem hero, textura ou imagem apenas decorativa.
+- Mostra estado, título, prazo e ação.
+- Mantém altura previsível; descrição é opcional e truncada.
+
+### 5.4 Grade de personagens
+
+O grid deve parecer uma escalação organizada, não uma loja.
+
+- 3 colunas no mobile compacto; 4 no mobile amplo; 5 no tablet; 6 no desktop;
+  7 apenas no desktop amplo, se os nomes continuarem legíveis.
+- Toda opção possui retrato, nome e indicador circular de seleção.
+- Seleção: borda violeta, fundo suave, check visível e número de ordem da
+  escolha. Nunca depender só de cor ou sombra.
+- No limite, opções não selecionadas permanecem legíveis, porém
+  indisponíveis; não devem sumir.
+- Busca fica sempre visível. Filtros ficam recolhidos e chips só representam
+  filtros ativos.
+
+### 5.5 Barra de escolhas
+
+A barra persistente é o resumo decisório:
+
+- exibe “2 de 3 escolhas” e miniaturas das escolhas atuais;
+- coloca CTA à direita no desktop e o mantém visível no mobile;
+- ao atingir o limite, orienta: “Limite atingido. Desmarque uma escolha para
+  alterar.”;
+- usa superfície clara e elevação discreta, sem faixa decorativa.
+
+### 5.6 Resultados
+
+Resultados devem ser editoriais e comparáveis.
+
+- Topo com faixa de etapa, estado encerrado, participação agregada e data.
+- Primeiras posições podem ter índice ampliado e detalhe coral mínimo; evitar
+  medalhas, troféus e ouro/prata/bronze literais.
+- Cada linha: posição, retrato limitado, nome, quantidade e barra proporcional
+  acessível.
+- Barras usam violeta; empates mantêm a mesma posição.
+- Não ampliar retratos a ponto de prejudicar a leitura do ranking.
+
+### 5.7 Administração
+
+A administração é uma mesa de organização, não uma versão cinza do
+participante.
+
+- Dashboard começa por “ação necessária” e votação em andamento; saúde de
+  catálogo vem depois.
+- Métricas usam número, frase curta e link de destino. Evitar muitos cards
+  iguais empilhados.
+- Tabelas têm cabeçalho discreto, linhas confortáveis e ações alinhadas.
+- Risco usa cores semânticas e texto objetivo; nunca coral.
+- Formulários usam seções com índice pequeno e legenda, sem motivo de pista.
+
+### 5.8 Badges, alertas e estados vazios
+
+- Badges são compactos e textuais; status não é oportunidade de decoração.
+- Alertas usam fundo suave e incluem ação quando necessário.
+- Estados vazios podem trazer pequeno marcador de pista abstrato, não uma
+  ilustração dominante. Explicam a situação e, quando cabível, oferecem uma
+  única próxima ação.
+
+## 6. Composição por área
+
+### Participante
+
+**Home:** cabeçalho; título/contexto; uma votação atual em destaque quando
+existir; demais votações em lista; histórico separado da ação presente.
+
+**Seleção:** retorno e sobrelinha; metadados compactos; busca/filtros; grid;
+barra persistente de escolhas.
+
+**Revisão e resultado:** largura de leitura de 760–860 px. Aviso de confirmação
+é claro, mas menor que as escolhas. Resultado prioriza comparação, sem hero
+gráfico que prejudique o ranking.
+
+### Administração
+
+- Sidebar de 224 px em desktop e drawer abaixo de 1024 px.
+- Conteúdo máximo de 1200 px; formulários limitados a 760 px.
+- Topbar tem título, contexto e no máximo duas ações expostas.
+- No mobile, tabelas operacionais viram cards com título e ação visíveis.
+
+## 7. Responsividade e movimento
+
+| Faixa | Largura | Regra principal |
+|---|---:|---|
+| Mobile compacto | 360–479 px | Uma coluna, grid de 3, CTA persistente. |
+| Mobile amplo | 480–767 px | Grid de 4, filtros recolhidos. |
+| Tablet | 768–1023 px | Grid de 5 e drawer administrativo. |
+| Desktop | 1024–1279 px | Grid de 6 e sidebar. |
+| Desktop amplo | 1280 px+ | Até 7 colunas e respiro extra. |
+
+- Transições duram 120–180 ms e servem apenas a foco, hover, filtro e seleção.
+- Não animar listas completas, ranking ou retratos.
+- Respeitar `prefers-reduced-motion: reduce`.
+- Conteúdo e ações essenciais não podem depender de hover.
+
+## 8. Acessibilidade
+
+- Alvo: WCAG 2.2 AA.
+- Controles e alvos de toque com pelo menos 44 × 44 px.
+- Foco de 2 px com `--focus-ring`, nunca encoberto pela barra persistente.
+- Retratos informativos usam `alt` com nome; motivos decorativos usam
+  `alt=""` ou ficam fora da árvore de acessibilidade.
+- Seleção tem estado textual/programático além de borda e cor.
+- Chips, drawer, filtros e mensagens preservam semântica nativa e retorno de
+  foco adequado.
+- Nunca inserir prazo, estado ou resultado somente dentro de imagens.
+
+## 9. Checklist de revisão
+
+- [x] A tela parece um evento de corrida sem citar ou copiar UI do jogo?
+- [x] Há apenas um elemento de alto destaque na primeira viewport?
+- [x] Coral aparece como acento, não CTA ou estado semântico?
+- [x] O motivo de pista é discreto e não interfere com leitura?
+- [x] Retratos melhoram reconhecimento e têm moldura consistente?
+- [x] Título, prazo, estado e ação são escaneáveis sem imagem?
+- [x] Labels funcionais permanecem genéricos e em PT-BR?
+- [x] Teclado, contraste, loading, erro e mobile foram verificados?
+- [x] A administração mantém eficiência e densidade operacional?
+
+### 9.1 Decisões finais
+
+**Etapa.** A faixa de etapa fica restrita à votação atual do participante e ao resultado. A
+administração usa o marcador de marca e o índice da topbar; formulários, tabelas e listas não
+recebem faixa nem motivo de pista.
+
+**Coral.** `--color-accent` é exclusivamente decorativo: marcador de marca, ponto da faixa de
+etapa, detalhe de posição no ranking e traço de índice. Não é usado em CTA, estado, erro, foco ou
+texto pequeno. Seu contraste de 4,02:1 sobre superfície clara não atende AA para texto.
+
+**Peso tipográfico.** 700 fica reservado a título de página, índices e números de métrica; 600 a
+títulos de seção/card, botões e badges; 500 a rótulos e ênfase curta; 400 ao corpo. Não há pesos
+sintéticos nem texto abaixo de 11 px.
+
+## 10. Implementação sugerida
+
+`static/css/tokens.css` concentra tokens. Componentes compartilhados ficam em
+`components.css`; composições de participante e administração, em suas folhas
+de página. O motivo de pista deve ser uma única classe utilitária reutilizável
+(`.track-motif`), nunca regras duplicadas em templates.
+
+Ordem de adoção:
+
+1. Atualizar tokens de cor, elevação, raio e tipografia.
+2. Criar marca, faixa de etapa e motivo de pista abstrato.
+3. Recompôr home e cards em destaque/lista.
+4. Atualizar grid e barra persistente com miniaturas resumidas.
+5. Recompôr resultado e dashboard administrativo.
+6. Validar contraste, teclado e responsividade em cada etapa.
+
+Este guia orienta apenas apresentação e interação. Não altera regras de negócio,
+permissões, elegibilidade, privacidade de votos ou catálogo.

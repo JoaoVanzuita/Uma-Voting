@@ -5,6 +5,10 @@
 
 {% block page_title %}Votações{% endblock %}
 
+{% block page_subtitle %}
+  <p class="text-muted text-small">Configure, abra e acompanhe cada votação.</p>
+{% endblock %}
+
 {% block page_actions %}
   <a class="btn btn-primary" href="{% url 'admin:voting_create' %}">Nova votação</a>
 {% endblock %}
@@ -41,42 +45,51 @@
   </form>
 
   {% if votings %}
-    <ul class="av-voting-list">
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <span class="section-header__index" aria-hidden="true">01</span>
+          <h2>Acervo de votações</h2>
+        </div>
+        <p class="section-header__lead">
+          Da mais recente para a mais antiga. O estado aparece ao lado de cada título.
+        </p>
+      </div>
+      <span class="text-muted text-small">
+        {{ votings|length }} votaç{{ votings|length|pluralize:"ão,ões" }}
+      </span>
+    </div>
+
+    <ul class="editorial-list av-voting-list">
       {% for voting in votings %}
-        <li class="av-voting-item">
-          <div class="av-voting-item__head">
-            <a class="av-voting-item__title" href="{% url 'admin:voting_detail' voting.pk %}">
-              {{ voting.title }}
-            </a>
-            {% status_badge voting.status %}
+        <li class="editorial-item">
+          <span class="editorial-item__index" aria-hidden="true">
+            {{ forloop.counter|stringformat:"02d" }}
+          </span>
+
+          <div class="editorial-item__body">
+            <div class="editorial-item__head">
+              <a class="editorial-item__title" href="{% url 'admin:voting_detail' voting.pk %}">
+                {{ voting.title }}
+              </a>
+              {% status_badge voting.status %}
+            </div>
+
+            <p class="editorial-item__meta">
+              <span>{{ voting.choices_count }} escolha{{ voting.choices_count|pluralize }} por pessoa</span>
+              <span>Corte {{ voting.catalog_cutoff_date|date_br }}</span>
+              <span>
+                Abre {{ voting.get_open_mode_display|lower }}
+                {% if voting.opens_at %}em {{ voting.opens_at|datetime_br }}{% endif %}
+              </span>
+              <span>
+                Encerra {{ voting.get_close_mode_display|lower }}
+                {% if voting.closes_at %}em {{ voting.closes_at|datetime_br }}{% endif %}
+              </span>
+            </p>
           </div>
 
-          <dl class="av-meta">
-            <div>
-              <dt>Escolhas por participante</dt>
-              <dd>{{ voting.choices_count }}</dd>
-            </div>
-            <div>
-              <dt>Data de corte</dt>
-              <dd>{{ voting.catalog_cutoff_date|date_br }}</dd>
-            </div>
-            <div>
-              <dt>Abertura</dt>
-              <dd>
-                {{ voting.get_open_mode_display }}
-                {% if voting.opens_at %}<br>{{ voting.opens_at|datetime_br }}{% endif %}
-              </dd>
-            </div>
-            <div>
-              <dt>Encerramento</dt>
-              <dd>
-                {{ voting.get_close_mode_display }}
-                {% if voting.closes_at %}<br>{{ voting.closes_at|datetime_br }}{% endif %}
-              </dd>
-            </div>
-          </dl>
-
-          <div class="av-voting-item__actions">
+          <div class="editorial-item__actions">
             <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
               Detalhes
             </a>

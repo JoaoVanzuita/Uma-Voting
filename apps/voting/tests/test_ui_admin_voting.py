@@ -1,4 +1,4 @@
-"""Contratos de apresentação do dashboard e da administração de votações (Fase 4)."""
+"""Contratos de apresentação do dashboard e da administração de votações (Fases 4–6)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.catalog.models import ImageAsset
 from apps.voting.models import VotingStatus
 from apps.voting.services.ballots import submit_ballot
 from apps.voting.services.eligibility import add_default_eligible
@@ -18,7 +19,9 @@ from tests.factories import (
     AdminUserFactory,
     CharacterFactory,
     CharacterVersionFactory,
+    ImageAssetFactory,
     ParticipantFactory,
+    SyncChangeFactory,
     VotingEligibilityFactory,
     VotingFactory,
 )
@@ -74,6 +77,46 @@ def test_dashboard_vazio_mantem_estados_vazios(client):
 
     assert "Nenhuma votação aberta ou agendada no momento." in body
     assert "Nenhuma votação criada ainda." in body
+    assert "Em dia" in body
+    assert "Nada bloqueando a operação agora." in body
+    assert "dashboard-section--attention" not in body
+
+
+def test_dashboard_comeca_pela_acao_e_termina_na_saude_do_catalogo(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    SyncChangeFactory()
+    ImageAssetFactory(status=ImageAsset.Status.INVALID, is_current=True)
+
+    body = client.get(reverse("admin:dashboard")).content.decode()
+
+    assert 'class="admin-content"' in body
+    assert "admin-topbar__marker" in body
+    assert body.index('id="actions-title"') < body.index('id="ongoing-title"')
+    assert body.index('id="ongoing-title"') < body.index('id="metrics-title"')
+    assert body.index('id="metrics-title"') < body.index('id="catalog-health-title"')
+    assert "dashboard-section--attention" in body
+    assert "2 pendências" in body
+    assert "Revisar catálogo" in body
+    assert reverse("admin:catalog_images") + "?status=invalid" in body
+    assert body.count('class="dashboard-section__index"') == 4
+
+
+def test_dashboard_explica_votacao_agendada_bloqueada(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    voting = VotingFactory(
+        title="Agendada sem configuração",
+        status=VotingStatus.SCHEDULED,
+        opens_at=timezone.now() + timedelta(days=1),
+    )
+
+    body = client.get(reverse("admin:dashboard")).content.decode()
+
+    assert "Agendada sem configuração" in body
+    assert "A abertura automática está bloqueada por:" in body
+    assert "A votação não possui participantes elegíveis." in body
+    assert reverse("admin:voting_detail", args=[voting.pk]) in body
 
 
 # ---------------------------------------------------------------------------
@@ -91,6 +134,9 @@ def test_lista_exibe_cards_e_acoes_por_estado(client):
 
     assert "Rascunho visível" in body
     assert "Aberta visível" in body
+    assert "Acervo de votações" in body
+    assert "editorial-list av-voting-list" in body
+    assert body.count("editorial-item__index") >= 2
     assert reverse("admin:voting_edit", args=[draft.pk]) in body
     assert reverse("admin:voting_edit", args=[open_voting.pk]) not in body
     assert reverse("admin:voting_detail", args=[draft.pk]) in body
@@ -121,6 +167,9 @@ def test_formulario_agrupa_secoes_e_preserva_campos(client):
 
     assert "Informações gerais" in body
     assert "Agendamento" in body
+    assert "form-panel" in body
+    assert "form-grid" in body
+    assert body.count("form-section__index") == 2
     for field_name in (
         "title",
         "description",
@@ -174,6 +223,8 @@ def test_detalhe_rascunho_pronto_oferece_abertura(client):
     body = client.get(reverse("admin:voting_detail", args=[voting.pk])).content.decode()
 
     assert "Pré-condições de abertura" in body
+    assert "Ação principal" in body
+    assert "Zona de risco" in body
     assert "Abrir votação" in body
     assert reverse("admin:voting_open", args=[voting.pk]) in body
     assert "Abrir a votação agora? Os elegíveis e o catálogo serão congelados." in body
@@ -321,6 +372,7 @@ def test_resultados_parciais_sem_associacao_participante_personagem(client):
     body = client.get(reverse("admin:voting_results", args=[voting.pk])).content.decode()
 
     assert "Resultados parciais" in body
+    assert "result-list--partial" in body
     assert snapshots[0].display_name in body
     assert participant.username not in body
     assert "participant_id" not in body
@@ -337,6 +389,8 @@ def test_resultados_finais_usam_ranking_e_dense_rank(client):
 
     assert "Ranking final" in body
     assert "1º" in body
+    assert "result-list--final" in body
+    assert "result-item__bar" in body
 
 
 def test_resultado_de_cancelada_nao_e_exibido(client):

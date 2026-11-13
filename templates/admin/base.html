@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% url 'admin:dashboard' as brand_url %}
 
 {% block body_class %}layout-admin{% endblock %}
 
@@ -7,10 +8,7 @@
   <div class="admin-shell">
     <aside class="admin-sidebar" id="admin-sidebar" aria-label="Menu administrativo">
       <div class="admin-sidebar__header">
-        <a class="brand" href="{% url 'admin:dashboard' %}">
-          Uma Voting
-          <small>Administração</small>
-        </a>
+        {% include "components/brand.html" with brand_url=brand_url brand_subtitle="Administração" %}
         <button
           class="btn btn-tertiary admin-drawer__close"
           type="button"
@@ -99,35 +97,43 @@
     <div class="admin-drawer-overlay" data-admin-drawer-overlay aria-hidden="true" hidden></div>
 
     <div class="admin-main">
-      <header class="admin-topbar">
-        <button
-          class="btn btn-tertiary admin-menu-button"
-          type="button"
-          data-admin-drawer-open
-          aria-controls="admin-sidebar"
-          aria-expanded="false"
-          aria-label="Abrir menu administrativo"
-        >
-          <svg class="icon" aria-hidden="true">
-            <use href="{% static 'vendor/lucide/sprite.svg' %}#menu"></use>
-          </svg>
-        </button>
+      <div class="admin-content">
+        <header class="admin-topbar">
+          <button
+            class="btn btn-tertiary admin-menu-button"
+            type="button"
+            data-admin-drawer-open
+            aria-controls="admin-sidebar"
+            aria-expanded="false"
+            aria-label="Abrir menu administrativo"
+          >
+            <svg class="icon" aria-hidden="true">
+              <use href="{% static 'vendor/lucide/sprite.svg' %}#menu"></use>
+            </svg>
+          </button>
 
-        <div class="admin-topbar__heading">
-          <h1 class="h2">{% block page_title %}Administração{% endblock %}</h1>
-          {% block page_subtitle %}{% endblock %}
-        </div>
+          <div class="admin-topbar__heading">
+            <p class="admin-topbar__eyebrow">
+              <span class="admin-topbar__marker" aria-hidden="true"></span>
+              Administração
+            </p>
+            <h1 class="h2 admin-topbar__title">{% block page_title %}Administração{% endblock %}</h1>
+            <div class="admin-topbar__subtitle">
+              {% block page_subtitle %}{% endblock %}
+            </div>
+          </div>
 
-        <div class="admin-topbar__actions">
-          {% block page_actions %}{% endblock %}
-        </div>
-      </header>
+          <div class="admin-topbar__actions">
+            {% block page_actions %}{% endblock %}
+          </div>
+        </header>
 
-      {% include "components/messages.html" %}
+        {% include "components/messages.html" %}
 
-      <main id="conteudo">
-        {% block content %}{% endblock %}
-      </main>
+        <main id="conteudo">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
     </div>
   </div>
 {% endblock %}

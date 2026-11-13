@@ -23,14 +23,19 @@
 
     <div class="form-actions">
       {% if not job.is_terminal %}
-        <form method="post" action="{% url 'admin:catalog_import_cancel' job.pk %}">
+        <form
+          method="post"
+          action="{% url 'admin:catalog_import_cancel' job.pk %}"
+          data-confirm="Cancelar a importação? A execução para no próximo ponto seguro."
+          data-submit-once
+        >
           {% csrf_token %}
           <button class="btn btn-danger" type="submit">Cancelar importação</button>
         </form>
       {% elif job.status == "success" %}
         <a class="btn btn-primary" href="{% url 'admin:catalog_import' %}">Nova importação</a>
       {% else %}
-        <form method="post" action="{% url 'admin:catalog_import_retry' job.pk %}">
+        <form method="post" action="{% url 'admin:catalog_import_retry' job.pk %}" data-submit-once>
           {% csrf_token %}
           <button class="btn btn-primary" type="submit">Repetir importação</button>
         </form>
@@ -47,12 +52,22 @@
 
   {% if catalog_report %}
     <section class="panel stack" aria-labelledby="catalog-report-title">
-      <div class="catalog-section-header">
-        <h2 id="catalog-report-title" class="catalog-section-title">Relatório de catálogo</h2>
+      <div class="section-header">
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <span class="section-header__index" aria-hidden="true">02</span>
+            <h2 id="catalog-report-title">Relatório de catálogo</h2>
+          </div>
+          <p class="section-header__lead">
+            Contagens da aplicação do catálogo nesta execução.
+          </p>
+        </div>
         {% if job.sync_run %}
-          <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' job.sync_run.pk %}">
-            Ver sincronização
-          </a>
+          <div class="section-header__actions">
+            <a class="btn btn-tertiary" href="{% url 'admin:catalog_sync_detail' job.sync_run.pk %}">
+              Ver sincronização
+            </a>
+          </div>
         {% endif %}
       </div>
       <dl class="detail-list">
@@ -67,13 +82,17 @@
       </dl>
 
       {% if catalog_report.warnings %}
-        <h3 class="catalog-subsection-title">Avisos</h3>
+        <div class="section-header__title section-header__title--sub">
+          <h3>Avisos</h3>
+        </div>
         <ul class="text-small">
           {% for warning in catalog_report.warnings %}<li>{{ warning }}</li>{% endfor %}
         </ul>
       {% endif %}
       {% if catalog_report.errors %}
-        <h3 class="catalog-subsection-title">Erros</h3>
+        <div class="section-header__title section-header__title--sub">
+          <h3>Erros</h3>
+        </div>
         <ul class="text-small">
           {% for error in catalog_report.errors %}<li>{{ error.message }}</li>{% endfor %}
         </ul>
@@ -83,9 +102,17 @@
 
   {% if images_report %}
     <section class="panel stack" aria-labelledby="images-report-title">
-      <div class="catalog-section-header">
-        <h2 id="images-report-title" class="catalog-section-title">Relatório de imagens</h2>
-        <div class="table__actions">
+      <div class="section-header">
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <span class="section-header__index" aria-hidden="true">03</span>
+            <h2 id="images-report-title">Relatório de imagens</h2>
+          </div>
+          <p class="section-header__lead">
+            Arquivos criados, substituídos ou ignorados durante a execução.
+          </p>
+        </div>
+        <div class="section-header__actions">
           <a class="btn btn-tertiary" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
           <form method="post" action="{% url 'admin:catalog_images_validate' %}">
             {% csrf_token %}
@@ -102,7 +129,9 @@
       </dl>
 
       {% if images_report.errors %}
-        <h3 class="catalog-subsection-title">Falhas de imagem</h3>
+        <div class="section-header__title section-header__title--sub">
+          <h3>Falhas de imagem</h3>
+        </div>
         <div class="table-wrap admin-data-table-wrap">
           <table class="table admin-data-table">
             <caption class="visually-hidden">Falhas de imagem desta execução</caption>
@@ -130,14 +159,23 @@
 
   {% if last_failure and last_failure.pk != job.pk %}
     <section class="panel stack" aria-labelledby="failure-title">
-      <h2 id="failure-title" class="catalog-section-title">Última falha da fonte</h2>
-      <p class="text-muted text-small">
-        Execução #{{ last_failure.pk }} · {{ last_failure.finished_at|datetime_br }}
-      </p>
+      <div class="section-header">
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <span class="section-header__index" aria-hidden="true">04</span>
+            <h2 id="failure-title">Última falha da fonte</h2>
+          </div>
+          <p class="section-header__lead">
+            Execução #{{ last_failure.pk }} · {{ last_failure.finished_at|datetime_br }}
+          </p>
+        </div>
+      </div>
       <div class="alert alert-danger" role="alert">{{ last_failure.error_message }}</div>
-      <a class="btn btn-tertiary" href="{% url 'admin:catalog_import_detail' last_failure.pk %}">
-        Ver execução
-      </a>
+      <div class="form-actions">
+        <a class="btn btn-tertiary" href="{% url 'admin:catalog_import_detail' last_failure.pk %}">
+          Ver execução
+        </a>
+      </div>
     </section>
   {% endif %}
 

@@ -4,60 +4,81 @@
 {% block title %}Revisar escolhas — {{ voting.title }}{% endblock %}
 
 {% block content %}
-  <div class="page-header review-header">
-    <div>
-      <p class="text-muted text-small">Votação</p>
-      <h1>Revisar escolhas</h1>
-      <p class="review-header__voting">{{ voting.title }}</p>
-      <div class="voting-header__meta">
-        {{ snapshots|length }} de {{ voting.choices_count }} escolhas
-      </div>
-    </div>
-  </div>
-
-  <div class="alert alert-warning" role="alert">
-    <strong>Seu voto será definitivo.</strong> A confirmação é definitiva e não poderá ser
-    alterada depois de confirmar.
-  </div>
-
-  <section class="panel review-panel" aria-labelledby="review-title">
-    <div class="review-panel__header">
-      <h2 id="review-title">Suas escolhas</h2>
-      <span class="badge badge--neutral">{{ snapshots|length }} escolhas</span>
-    </div>
-
-    <ul class="review-list">
-      {% for snapshot in snapshots %}
-        <li class="review-item">
-          <span class="review-item__media">
-            {% image_url snapshot.image_asset as image_src %}
-            <img
-              src="{{ image_src }}"
-              data-fallback-src="{% placeholder_url %}"
-              alt="Retrato de {{ snapshot.display_name }}"
-              width="56"
-              height="56"
-            >
+  <div class="review-shell">
+    <header class="review-header">
+      <div class="stage-band stage-band--open stage-band--thick">
+        <p class="stage-kicker">
+          <span class="stage-kicker__dot" aria-hidden="true"></span>
+          Revisão final
+        </p>
+        <p class="stage-meta">
+          <span>{{ voting.title }}</span>
+          <span>
+            <strong>{{ snapshots|length }}</strong> de
+            <strong>{{ voting.choices_count }}</strong> escolhas
           </span>
-          <p class="review-item__name">{{ snapshot.display_name }}</p>
-        </li>
-      {% endfor %}
-    </ul>
+        </p>
+      </div>
 
-    <form
-      method="post"
-      action="{% url 'participant:confirm' voting.id %}"
-      class="form-actions review-actions"
-      data-submit-once
-    >
-      {% csrf_token %}
-      {% for snapshot in snapshots %}
-        <input type="hidden" name="character_ids" value="{{ snapshot.pk }}">
-      {% endfor %}
-      <button class="btn btn-primary" type="submit">Confirmar voto</button>
-      <a class="btn btn-secondary" href="{% url 'participant:voting_detail' voting.id %}">
-        Voltar e ajustar
-      </a>
-    </form>
-  </section>
+      <h1>Revisar escolhas</h1>
+      <p class="text-muted review-header__lead">
+        Confira a ordem das escolhas antes de registrar o voto.
+      </p>
+    </header>
+
+    <div class="alert alert-warning review-notice" role="alert">
+      <strong>A confirmação é definitiva.</strong> Seu voto será registrado e não poderá ser
+      editado ou reenviado depois de confirmar.
+    </div>
+
+    <section class="panel review-panel" aria-labelledby="review-title">
+      <div class="review-panel__header">
+        <h2 id="review-title">Suas escolhas</h2>
+        <span class="badge badge--neutral">
+          {{ snapshots|length }} de {{ voting.choices_count }} escolhas
+        </span>
+      </div>
+
+      <ol class="review-list review-list--ordered" aria-label="Ordem das escolhas">
+        {% for snapshot in snapshots %}
+          <li class="review-item">
+            <span class="review-item__position" aria-hidden="true">{{ forloop.counter }}</span>
+            <span class="portrait-frame portrait-frame--md review-item__media">
+              {% image_url snapshot.image_asset as image_src %}
+              <img
+                src="{{ image_src }}"
+                data-fallback-src="{% placeholder_url %}"
+                alt="Retrato de {{ snapshot.display_name }}"
+                width="56"
+                height="56"
+                loading="lazy"
+              >
+            </span>
+            <span class="review-item__copy">
+              <span class="review-item__name">{{ snapshot.display_name }}</span>
+              <span class="text-muted text-small">
+                Escolha {{ forloop.counter }} de {{ snapshots|length }}
+              </span>
+            </span>
+          </li>
+        {% endfor %}
+      </ol>
+
+      <form
+        method="post"
+        action="{% url 'participant:confirm' voting.id %}"
+        class="form-actions review-actions"
+        data-submit-once
+      >
+        {% csrf_token %}
+        {% for snapshot in snapshots %}
+          <input type="hidden" name="character_ids" value="{{ snapshot.pk }}">
+        {% endfor %}
+        <button class="btn btn-primary" type="submit">Confirmar voto</button>
+        <a class="btn btn-secondary" href="{% url 'participant:voting_detail' voting.id %}">
+          Voltar e ajustar
+        </a>
+      </form>
+    </section>
+  </div>
 {% endblock %}
