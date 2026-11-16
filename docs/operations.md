@@ -199,3 +199,23 @@ import_job.stale job_id=42
 - A interface de importação externa não exibe, não solicita confirmação e não bloqueia por
   licença.
 - O fluxo manual por CSV mantém a revisão de licença descrita na seção 5.
+
+## 11. Staging com acesso externo (ngrok)
+
+```bash
+./scripts/staging.sh                    # staging + túnel ngrok
+./scripts/staging.sh --no-tunnel        # apenas local
+./scripts/staging.sh --fresh            # recria o banco de staging
+./scripts/staging.sh --reset-admin      # redefine a senha do admin
+./scripts/staging.sh --domain meu.ngrok.app
+```
+
+- Usa `config.settings.staging` e o banco `uma_voting_staging`.
+- Aplica migrations, garante cache e inicia o worker de importação (`--quiet`).
+- Abre o túnel ngrok, lê a URL pública e exporta `DJANGO_ALLOWED_HOSTS` e
+  `DJANGO_CSRF_TRUSTED_ORIGINS` antes de subir o Django.
+- `Ctrl+C` encerra Django, worker e túnel.
+- `EXTERNAL_IMPORT_ENABLED` é forçado para `True` neste ambiente; defina a variável no
+  ambiente para outro valor.
+- O túnel expõe o site publicamente: use apenas para validação e encerre ao terminar.
+

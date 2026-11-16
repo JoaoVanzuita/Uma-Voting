@@ -109,6 +109,7 @@ uv run pytest -m e2e
 - Sincronização diária do catálogo: `scripts/sync_catalog.sh` às 03:00.
 - Backup: `scripts/backup.sh`; restauração: `scripts/restore.sh`.
 - Limpeza de sessões: `python manage.py clearsessions` diariamente.
+- Staging com acesso externo: `./scripts/staging.sh` (banco `uma_voting_staging` + ngrok).
 - Importação externa: serviço `import-worker` processa a fila
   (`python manage.py run_import_worker --interval 5`). Variáveis `EXTERNAL_IMPORT_*` em
   `.env.example`; kill switch `EXTERNAL_IMPORT_ENABLED=False`.
