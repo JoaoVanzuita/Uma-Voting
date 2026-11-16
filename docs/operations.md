@@ -219,3 +219,16 @@ import_job.stale job_id=42
   ambiente para outro valor.
 - O túnel expõe o site publicamente: use apenas para validação e encerre ao terminar.
 
+## 12. Limpeza do staging
+
+Para entregar o ambiente limpo a um administrador, preservando usuários e fontes:
+
+```bash
+DJANGO_SETTINGS_MODULE=config.settings.staging \
+  python manage.py shell < scripts/reset_staging.py
+rm -rf media/characters
+```
+
+O script remove votações, cédulas, snapshots, catálogo, imagens e histórico de importação.
+As triggers de proteção são desativadas apenas dentro da transação e reativadas ao final.
+
