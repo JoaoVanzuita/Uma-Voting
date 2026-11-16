@@ -155,11 +155,14 @@ allowed_hosts = (
    - extrair `details.download.icon` (fallback:
      `https://en-portal.g.kuroco-img.app/files/user/character/{slug}/{slug}_icon.png`);
    - extrair `details.visual` apenas para metadados de apoio.
-3. Descobrir cards do GameTora:
-   - `GET https://gametora.com/umamusume/characters`;
-   - localizar chunk `/_next/static/chunks/...js`;
-   - localizar `/data/umamusume/character-cards.<hash>.json`;
-   - fallback fixo documentado no código.
+3. Descobrir cards do GameTora (nesta ordem):
+   - `GET https://gametora.com/data/manifests/umamusume.json` e usar a chave
+     `character-cards` para montar `/data/umamusume/character-cards.<hash>.json`;
+   - se o manifesto falhar, `GET https://gametora.com/umamusume/characters`, localizar o chunk
+     `/_next/static/chunks/...js` que referencia o manifesto e repetir a montagem;
+   - último recurso: URL fixa documentada no código (pode ficar obsoleta).
+   - `404` no card JSON indica mudança de estrutura do GameTora e é erro de dados, não de
+     disponibilidade.
 4. `GET` do JSON de cards:
    - campos `card_id`, `char_id`, `name_en`, `url_name`, `release_en`, `aptitude`.
 5. Descobrir build ID:
