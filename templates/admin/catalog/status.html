@@ -5,10 +5,6 @@
 
 {% block page_title %}Catálogo{% endblock %}
 
-{% block page_subtitle %}
-  <p class="text-muted text-small">Acompanhe o acervo, sincronize a fonte e revise as alterações pendentes.</p>
-{% endblock %}
-
 {% block page_actions %}
   <a class="btn btn-primary" href="{% url 'admin:catalog_import' %}">Importar de fonte externa</a>
   <a class="btn btn-secondary" href="{% url 'admin:catalog_characters' %}">Personagens</a>
@@ -24,25 +20,21 @@
     <section class="stat-card">
       <p class="stat-card__label">Personagens</p>
       <p class="stat-card__value">{{ character_count }}</p>
-      <p class="stat-card__hint">registros no catálogo</p>
       <a class="text-small" href="{% url 'admin:catalog_characters' %}">Ver personagens</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Alterações pendentes</p>
       <p class="stat-card__value">{{ pending_count }}</p>
-      <p class="stat-card__hint">aguardando revisão</p>
       <a class="text-small" href="#pending-title">Revisar pendências</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Imagens válidas</p>
       <p class="stat-card__value">{{ image_stats.valid }}</p>
-      <p class="stat-card__hint">assets correntes no acervo</p>
       <a class="text-small" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
     </section>
     <section class="stat-card">
       <p class="stat-card__label">Sem imagem válida</p>
       <p class="stat-card__value">{{ characters_without_image }}</p>
-      <p class="stat-card__hint">personagens sem retrato corrente</p>
       <a class="text-small" href="{% url 'admin:catalog_images' %}?status=missing">
         Ver ausências
       </a>
@@ -55,12 +47,10 @@
         <div class="section-header">
           <div class="section-header__text">
             <div class="section-header__title">
-              <span class="section-header__index" aria-hidden="true">01</span>
               <h2 id="sync-title">Sincronização manual</h2>
             </div>
             <p class="section-header__lead">
-              Personagens novas são aplicadas automaticamente; alterações em personagens
-              existentes ficam pendentes de revisão.
+              Novos personagens são aplicados automaticamente. Alterações existentes exigem aprovação.
             </p>
           </div>
         </div>
@@ -93,11 +83,10 @@
         <div class="section-header">
           <div class="section-header__text">
             <div class="section-header__title">
-              <span class="section-header__index" aria-hidden="true">02</span>
               <h2 id="external-sources-title">Fontes externas</h2>
             </div>
             <p class="section-header__lead">
-              Todas as fontes cadastradas; apenas habilitadas com conector podem ser importadas.
+              Fontes disponíveis para importação.
             </p>
           </div>
           {% if not import_enabled %}
@@ -107,7 +96,7 @@
 
         {% if external_sources %}
           <div class="table-wrap admin-data-table-wrap">
-            <table class="table admin-data-table">
+            <table class="table admin-data-table catalog-sources-table">
               <caption class="visually-hidden">Fontes externas cadastradas</caption>
               <thead>
                 <tr>
@@ -122,16 +111,13 @@
                   <tr>
                     <td data-label="Fonte">
                       <strong>{{ row.source.name }}</strong>
-                      {% if row.source.adapter %}
-                        <span class="text-muted text-small">· {{ row.source.adapter }}</span>
-                      {% endif %}
                     </td>
                     <td data-label="Situação">
                       {% if row.eligible %}
                         <span class="badge badge--success">Elegível</span>
                       {% else %}
                         <span class="badge badge--warning">Inelegível</span>
-                        <p class="text-muted text-small">{{ row.reason }}</p>
+                        <p class="text-muted text-small">{{ row.reason }} Ajuste no cadastro da fonte.</p>
                       {% endif %}
                     </td>
                     <td data-label="Última execução">
@@ -169,25 +155,14 @@
           <div class="empty-state"><p>Nenhuma fonte externa cadastrada.</p></div>
         {% endif %}
 
-        {% if has_ineligible_sources %}
-          <p class="text-muted text-small">
-            Para tornar uma fonte elegível, confirme que ela está habilitada e que o campo
-            <code>adapter</code> aponta para um conector registrado. O ajuste é feito no cadastro
-            da fonte.
-          </p>
-        {% endif %}
       </section>
 
       <section class="panel stack" aria-labelledby="pending-title">
         <div class="section-header">
           <div class="section-header__text">
             <div class="section-header__title">
-              <span class="section-header__index" aria-hidden="true">03</span>
               <h2 id="pending-title">Alterações pendentes</h2>
             </div>
-            <p class="section-header__lead">
-              Diferenças que esperam aprovação antes de alterar o catálogo publicado.
-            </p>
           </div>
           {% if pending_count %}
             <span class="badge badge--warning">{{ pending_count }} aguardando revisão</span>
@@ -242,7 +217,6 @@
         <div class="section-header">
           <div class="section-header__text">
             <div class="section-header__title">
-              <span class="section-header__index" aria-hidden="true">04</span>
               <h2 id="last-sync-title">Última sincronização</h2>
             </div>
           </div>
@@ -278,7 +252,6 @@
         <div class="section-header">
           <div class="section-header__text">
             <div class="section-header__title">
-              <span class="section-header__index" aria-hidden="true">05</span>
               <h2 id="runs-title">Histórico recente</h2>
             </div>
           </div>

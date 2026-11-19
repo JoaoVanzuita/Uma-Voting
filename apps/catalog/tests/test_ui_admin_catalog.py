@@ -53,8 +53,8 @@ def test_status_exibe_ultima_sincronizacao_e_alteracoes_pendentes(client):
     assert "Sincronização manual" in html
     assert "Última sincronização" in html
     assert "Alterações pendentes" in html
-    assert "stat-card__hint" in html
-    assert html.count("section-header__index") >= 5
+    assert "stat-card__hint" not in html
+    assert "section-header__index" not in html
     assert "Tokai Teio" in html
     assert reverse("admin:catalog_sync") in html
     assert reverse("admin:catalog_sync_detail", args=[run.pk]) in html

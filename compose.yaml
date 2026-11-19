@@ -76,6 +76,7 @@ services:
 
   scheduler:
     <<: *app
+    restart: unless-stopped
     command: ["python", "manage.py", "run_scheduler", "--interval", "60"]
     depends_on:
       db:

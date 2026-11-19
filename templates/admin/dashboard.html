@@ -14,99 +14,13 @@
 {% endblock %}
 
 {% block content %}
-  <section
-    class="dashboard-section dashboard-section--actions{% if action_count %} dashboard-section--attention{% endif %}"
-    aria-labelledby="actions-title"
-  >
-    <div class="dashboard-section__header">
-      <div class="dashboard-section__title">
-        <span class="dashboard-section__index" aria-hidden="true">01</span>
-        <h2 id="actions-title">Ação necessária</h2>
-      </div>
-      {% if action_count %}
-        <span class="badge badge--warning">
-          {{ action_count }} pendência{{ action_count|pluralize }}
-        </span>
-      {% else %}
-        <span class="badge badge--success">Em dia</span>
-      {% endif %}
-    </div>
-    <p class="dashboard-section__lead">
-      Pendências que podem bloquear a operação ou comprometer a próxima votação.
-    </p>
-
-    {% if action_count %}
-      <ul class="dashboard-action-list">
-        {% if pending_changes %}
-          <li class="dashboard-action">
-            <div class="dashboard-action__body">
-              <p class="dashboard-action__title">Mudanças de catálogo pendentes</p>
-              <p class="dashboard-action__detail">
-                {{ pending_changes }} mudança{{ pending_changes|pluralize }} aguardando revisão
-                antes de alterar o catálogo.
-              </p>
-            </div>
-            <a class="btn btn-secondary" href="{% url 'admin:catalog_status' %}">
-              Revisar catálogo
-            </a>
-          </li>
-        {% endif %}
-
-        {% if invalid_images %}
-          <li class="dashboard-action">
-            <div class="dashboard-action__body">
-              <p class="dashboard-action__title">Imagens correntes inválidas</p>
-              <p class="dashboard-action__detail">
-                {{ invalid_images }} imagem{{ invalid_images|pluralize }} inválida{{ invalid_images|pluralize }}
-                no catálogo corrente.
-              </p>
-            </div>
-            <a class="btn btn-secondary" href="{% url 'admin:catalog_images' %}?status=invalid">
-              Validar imagens
-            </a>
-          </li>
-        {% endif %}
-
-        {% for item in scheduled_blocked %}
-          <li class="dashboard-action">
-            <div class="dashboard-action__body">
-              <p class="dashboard-action__title">
-                {{ item.voting.title }}
-                <span class="badge badge--warning">Agendada</span>
-              </p>
-              <p class="dashboard-action__detail">
-                A abertura automática está bloqueada por:
-              </p>
-              <ul class="dashboard-action__problems">
-                {% for problem in item.problems %}
-                  <li>{{ problem }}</li>
-                {% endfor %}
-              </ul>
-            </div>
-            <a class="btn btn-secondary" href="{% url 'admin:voting_detail' item.voting.pk %}">
-              Revisar votação
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p class="dashboard-clear">
-        Nada bloqueando a operação agora. As próximas votações seguem o calendário.
-      </p>
-    {% endif %}
-  </section>
-
   <section class="dashboard-section" aria-labelledby="ongoing-title">
     <div class="dashboard-section__header">
       <div class="dashboard-section__title">
-        <span class="dashboard-section__index" aria-hidden="true">02</span>
         <h2 id="ongoing-title">Votações em andamento</h2>
       </div>
       <a class="text-small" href="{% url 'admin:voting_list' %}?status=open">Ver todas as abertas</a>
     </div>
-    <p class="dashboard-section__lead">
-      Abertas e agendadas, com a janela e o estado de cada uma.
-    </p>
 
     {% if ongoing_votings %}
       <div class="panel dashboard-panel">
@@ -119,7 +33,6 @@
                 <th scope="col">Estado</th>
                 <th scope="col">Abertura</th>
                 <th scope="col">Encerramento</th>
-                <th scope="col"></th>
               </tr>
             </thead>
             <tbody>
@@ -131,13 +44,6 @@
                   <td data-label="Estado">{% status_badge voting.status %}</td>
                   <td data-label="Abertura">{{ voting.opens_at|datetime_br }}</td>
                   <td data-label="Encerramento">{{ voting.closes_at|datetime_br }}</td>
-                  <td class="av-cell-actions" data-label="">
-                    <div class="table__actions">
-                      <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
-                        Detalhes
-                      </a>
-                    </div>
-                  </td>
                 </tr>
               {% endfor %}
             </tbody>
@@ -145,7 +51,7 @@
         </div>
       </div>
     {% else %}
-      <div class="empty-state">
+      <div class="empty-state dashboard-empty-state">
         <p>Nenhuma votação aberta ou agendada no momento.</p>
         <a class="btn btn-secondary" href="{% url 'admin:voting_create' %}">Nova votação</a>
       </div>
@@ -184,31 +90,24 @@
   <section class="dashboard-section" aria-labelledby="metrics-title">
     <div class="dashboard-section__header">
       <div class="dashboard-section__title">
-        <span class="dashboard-section__index" aria-hidden="true">03</span>
         <h2 id="metrics-title">Panorama da operação</h2>
       </div>
     </div>
-    <p class="dashboard-section__lead">
-      Números de apoio, com o caminho para cada área.
-    </p>
 
     <div class="dashboard-metrics">
       <article class="dashboard-metric">
         <p class="dashboard-metric__value">{{ active_participants }}</p>
         <p class="dashboard-metric__label">Participantes ativos</p>
-        <p class="dashboard-metric__hint">pessoas com acesso ao sistema</p>
         <a class="text-small" href="{% url 'admin:participant_list' %}">Gerenciar participantes</a>
       </article>
       <article class="dashboard-metric">
         <p class="dashboard-metric__value">{{ open_votings }}</p>
         <p class="dashboard-metric__label">Votações abertas</p>
-        <p class="dashboard-metric__hint">recebendo votos agora</p>
         <a class="text-small" href="{% url 'admin:voting_list' %}?status=open">Ver abertas</a>
       </article>
       <article class="dashboard-metric">
         <p class="dashboard-metric__value">{{ scheduled_votings }}</p>
         <p class="dashboard-metric__label">Votações agendadas</p>
-        <p class="dashboard-metric__hint">com abertura automática prevista</p>
         <a class="text-small" href="{% url 'admin:voting_list' %}?status=scheduled">Ver agendadas</a>
       </article>
     </div>
@@ -217,14 +116,10 @@
   <section class="dashboard-section" aria-labelledby="catalog-health-title">
     <div class="dashboard-section__header">
       <div class="dashboard-section__title">
-        <span class="dashboard-section__index" aria-hidden="true">04</span>
         <h2 id="catalog-health-title">Saúde do catálogo</h2>
       </div>
       <a class="text-small" href="{% url 'admin:catalog_status' %}">Abrir catálogo</a>
     </div>
-    <p class="dashboard-section__lead">
-      Diagnóstico de manutenção; não substitui a ação necessária acima.
-    </p>
 
     <div class="panel dashboard-health">
       <ul class="dashboard-health-list">
@@ -232,16 +127,13 @@
           <p class="dashboard-health-item__value">{{ pending_changes }}</p>
           <div class="dashboard-health-item__body">
             <p class="dashboard-health-item__label">Mudanças de catálogo pendentes</p>
-            <p class="dashboard-health-item__detail">
-              Diferenças aguardando decisão administrativa.
-            </p>
           </div>
           <p
             class="dashboard-health-item__state{% if pending_changes %} dashboard-health-item__state--warning{% endif %}"
           >
             {% if pending_changes %}Requer atenção{% else %}Estável{% endif %}
           </p>
-          <a class="text-small" href="{% url 'admin:catalog_status' %}">Revisar catálogo</a>
+          <a class="text-small" href="{% url 'admin:catalog_status' %}">Ver catálogo</a>
         </li>
         <li class="dashboard-health-item">
           <p class="dashboard-health-item__value">{{ characters_without_image }}</p>

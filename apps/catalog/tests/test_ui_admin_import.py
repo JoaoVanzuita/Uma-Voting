@@ -658,7 +658,8 @@ def test_painel_exibe_motivo_e_orientacao_para_fonte_inelegivel(client, adapter,
 
     assert "Fonte desabilitada." in html
     assert "Sem conector registrado." in html
-    assert "Para tornar uma fonte elegível" in html
+    assert "Ajuste no cadastro da fonte." in html
+    assert "<code>adapter</code>" not in html
 
 
 def test_verificar_fonte_disponivel_mostra_sucesso(client, adapter, enabled):

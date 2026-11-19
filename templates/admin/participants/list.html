@@ -5,10 +5,6 @@
 
 {% block page_title %}Participantes{% endblock %}
 
-{% block page_subtitle %}
-  <p class="text-muted text-small">Pessoas com acesso ao sistema, sem senha individual.</p>
-{% endblock %}
-
 {% block page_actions %}
   <a class="btn btn-primary" href="{% url 'admin:participant_create' %}">Novo participante</a>
   <a class="btn btn-secondary" href="{% url 'admin:participant_import' %}">Importar CSV</a>
@@ -25,7 +21,6 @@
           type="search"
           name="q"
           value="{{ query }}"
-          placeholder="Digite parte do username"
           autocomplete="off"
         >
       </div>
@@ -39,21 +34,17 @@
   {% if participants %}
     <div class="section-header">
       <div class="section-header__text">
-        <div class="section-header__title">
-          <span class="section-header__index" aria-hidden="true">01</span>
-          <h2>Lista de participantes</h2>
-        </div>
         <p class="section-header__lead">
           Contas administrativas aparecem como somente leitura.
         </p>
       </div>
-      <span class="text-muted text-small">
+      <span class="text-muted text-small" role="heading" aria-level="2">
         {{ participants|length }} conta{{ participants|length|pluralize }}
       </span>
     </div>
 
     <div class="table-wrap admin-data-table-wrap">
-      <table class="table admin-data-table">
+      <table class="table admin-data-table participants-table">
         <caption class="visually-hidden">Lista de participantes</caption>
         <thead>
           <tr>
@@ -68,7 +59,7 @@
               <td data-label="Username">
                 <span class="person-item__name">{{ participant.username }}</span>
                 {% if participant.is_admin %}
-                  <span class="badge badge--info">Administrador — somente leitura</span>
+                  <span class="badge badge--info">Admin</span>
                 {% endif %}
               </td>
               <td data-label="Situação">
@@ -80,9 +71,7 @@
               </td>
               <td data-label="Ações">
                 <div class="table__actions">
-                  {% if participant.is_admin %}
-                    <span class="text-muted text-small">Somente leitura</span>
-                  {% else %}
+                  {% if not participant.is_admin %}
                     <a
                       class="btn btn-tertiary"
                       href="{% url 'admin:participant_edit' participant.pk %}"

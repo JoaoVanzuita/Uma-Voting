@@ -1,6 +1,6 @@
 # Uma Voting — Sistema de Design
 
-> Direção visual: **Circuito editorial** — uma identidade original para uma
+> Direção visual: **Identidade editorial** — uma identidade original para uma
 > comunidade competitiva de Umamusume: Pretty Derby, inspirada em corrida,
 > preparação e eventos, sem reproduzir interfaces, símbolos ou padrões visuais
 > proprietários do jogo ou de ferramentas existentes.
@@ -300,7 +300,7 @@ participante.
   iguais empilhados.
 - Tabelas têm cabeçalho discreto, linhas confortáveis e ações alinhadas.
 - Risco usa cores semânticas e texto objetivo; nunca coral.
-- Formulários usam seções com índice pequeno e legenda, sem motivo de pista.
+- Formulários usam seções com legenda e texto introdutório, sem motivo de pista.
 
 ### 5.8 Badges, alertas e estados vazios
 

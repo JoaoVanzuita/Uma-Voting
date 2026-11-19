@@ -50,7 +50,9 @@ O script:
 2. sobe apenas o serviço `db` do Compose, se necessário;
 3. detecta o IP do container PostgreSQL ou usa um PostgreSQL local/`DATABASE_URL`;
 4. executa `migrate`, `createcachetable` e `check`;
-5. inicia `runserver` em `http://localhost:8000/` com auto-reload.
+5. inicia `runserver` em `http://localhost:8000/` com auto-reload;
+6. com `--with-scheduler`, inicia também `run_scheduler` no host (sem isso as votações
+   agendadas não abrem automaticamente).
 
 Opções:
 
@@ -58,9 +60,14 @@ Opções:
 DEV_PORT=8001 ./scripts/dev.sh          # outra porta
 ./scripts/dev.sh --port 8001            # equivalente
 ./scripts/dev.sh --stop-web             # para web/scheduler do Compose antes de iniciar
+./scripts/dev.sh --with-scheduler       # sobe também o scheduler de agendamentos
 ./scripts/dev.sh --no-migrate           # não executa migrations
 ./scripts/dev.sh --help
 ```
+
+O `--stop-web` e o aviso de porta ocupada param o container `scheduler` do Compose. Se usar
+`--with-scheduler`, o scheduler roda no host e é encerrado junto com o `runserver`; para testar
+agendamentos, mantenha apenas uma instância ativa para não disputar o lock do banco.
 
 Se a porta 8000 estiver ocupada pelo container `web`, pare os serviços de aplicação:
 

@@ -17,6 +17,37 @@
   margin-bottom: var(--space-4);
 }
 
+.catalog-sources-table th:nth-child(1),
+.catalog-sources-table td:nth-child(1) {
+  width: 24%;
+}
+
+.catalog-sources-table th:nth-child(2),
+.catalog-sources-table td:nth-child(2) {
+  width: 22%;
+}
+
+.catalog-sources-table th:nth-child(3),
+.catalog-sources-table td:nth-child(3) {
+  width: 34%;
+}
+
+.catalog-sources-table td[data-label="Fonte"] {
+  overflow-wrap: anywhere;
+}
+
+.catalog-sources-table td[data-label="Situação"] .badge + p {
+  margin: var(--space-1) 0 0;
+}
+
+.catalog-sources-table td[data-label="Última execução"] p {
+  margin: var(--space-1) 0 0;
+}
+
+.catalog-sources-table td[data-label="Ações"] .table__actions form {
+  margin: 0;
+}
+
 /* Filtros e barra de ações ------------------------------------------------ */
 .catalog-toolbar {
   display: flex;

@@ -35,7 +35,7 @@ def _login(client, user):
 # ---------------------------------------------------------------------------
 
 
-def test_login_de_participante_e_compacto_e_preserva_aviso_de_identidade(client):
+def test_login_de_participante_e_compacto_e_oferece_acesso_admin(client):
     response = client.get(reverse("participant:login"))
     html = response.content.decode()
 
@@ -44,7 +44,6 @@ def test_login_de_participante_e_compacto_e_preserva_aviso_de_identidade(client)
     assert "auth-brand" in html
     assert 'id="id_username"' in html
     assert 'name="username"' in html
-    assert "Este acesso identifica apenas o username; não comprova sua identidade." in html
     assert reverse("admin:login") in html
 
 

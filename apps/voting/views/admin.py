@@ -46,10 +46,7 @@ from apps.voting.services.results import (
 def dashboard(request):
     active_participants = User.objects.filter(is_active=True).count()
     open_votings = Voting.objects.filter(status=VotingStatus.OPEN).count()
-    scheduled_rows = list(
-        Voting.objects.filter(status=VotingStatus.SCHEDULED).order_by("opens_at", "title")
-    )
-    scheduled_votings = len(scheduled_rows)
+    scheduled_votings = Voting.objects.filter(status=VotingStatus.SCHEDULED).count()
     pending_changes = SyncChange.objects.filter(status=SyncChange.Status.PENDING).count()
     characters_without_image = (
         Character.objects.exclude(
@@ -63,13 +60,6 @@ def dashboard(request):
         is_current=True,
         status=ImageAsset.Status.INVALID,
     ).count()
-
-    scheduled_blocked = []
-    for voting in scheduled_rows:
-        problems = evaluate_open_preconditions(voting).problems()
-        if problems:
-            scheduled_blocked.append({"voting": voting, "problems": problems})
-    action_count = pending_changes + invalid_images + len(scheduled_blocked)
 
     latest_votings = Voting.objects.select_related("created_by").order_by("-created_at")[:5]
     ongoing_votings = Voting.objects.filter(
@@ -86,8 +76,6 @@ def dashboard(request):
             "pending_changes": pending_changes,
             "characters_without_image": characters_without_image,
             "invalid_images": invalid_images,
-            "scheduled_blocked": scheduled_blocked,
-            "action_count": action_count,
             "latest_votings": latest_votings,
             "ongoing_votings": ongoing_votings,
         },

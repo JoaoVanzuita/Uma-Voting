@@ -77,12 +77,11 @@ def test_dashboard_vazio_mantem_estados_vazios(client):
 
     assert "Nenhuma votação aberta ou agendada no momento." in body
     assert "Nenhuma votação criada ainda." in body
-    assert "Em dia" in body
-    assert "Nada bloqueando a operação agora." in body
-    assert "dashboard-section--attention" not in body
+    assert "Ação necessária" not in body
+    assert "Nada bloqueando a operação agora." not in body
 
 
-def test_dashboard_comeca_pela_acao_e_termina_na_saude_do_catalogo(client):
+def test_dashboard_comeca_pelas_votacoes_e_termina_na_saude_do_catalogo(client):
     admin = AdminUserFactory()
     client.force_login(admin)
     SyncChangeFactory()
@@ -92,14 +91,14 @@ def test_dashboard_comeca_pela_acao_e_termina_na_saude_do_catalogo(client):
 
     assert 'class="admin-content"' in body
     assert "admin-topbar__marker" in body
-    assert body.index('id="actions-title"') < body.index('id="ongoing-title"')
+    assert "Ação necessária" not in body
     assert body.index('id="ongoing-title"') < body.index('id="metrics-title"')
     assert body.index('id="metrics-title"') < body.index('id="catalog-health-title"')
-    assert "dashboard-section--attention" in body
-    assert "2 pendências" in body
-    assert "Revisar catálogo" in body
+    assert "Mudanças de catálogo pendentes" in body
+    assert "2 pendências" not in body
+    assert "Ver catálogo" in body
     assert reverse("admin:catalog_images") + "?status=invalid" in body
-    assert body.count('class="dashboard-section__index"') == 4
+    assert 'class="dashboard-section__index"' not in body
 
 
 def test_dashboard_explica_votacao_agendada_bloqueada(client):
@@ -114,8 +113,7 @@ def test_dashboard_explica_votacao_agendada_bloqueada(client):
     body = client.get(reverse("admin:dashboard")).content.decode()
 
     assert "Agendada sem configuração" in body
-    assert "A abertura automática está bloqueada por:" in body
-    assert "A votação não possui participantes elegíveis." in body
+    assert "A abertura automática está bloqueada por:" not in body
     assert reverse("admin:voting_detail", args=[voting.pk]) in body
 
 
@@ -134,9 +132,9 @@ def test_lista_exibe_cards_e_acoes_por_estado(client):
 
     assert "Rascunho visível" in body
     assert "Aberta visível" in body
-    assert "Acervo de votações" in body
+    assert "2 votações" in body
     assert "editorial-list av-voting-list" in body
-    assert body.count("editorial-item__index") >= 2
+    assert "editorial-item__index" not in body
     assert reverse("admin:voting_edit", args=[draft.pk]) in body
     assert reverse("admin:voting_edit", args=[open_voting.pk]) not in body
     assert reverse("admin:voting_detail", args=[draft.pk]) in body
@@ -169,7 +167,7 @@ def test_formulario_agrupa_secoes_e_preserva_campos(client):
     assert "Agendamento" in body
     assert "form-panel" in body
     assert "form-grid" in body
-    assert body.count("form-section__index") == 2
+    assert body.count("form-section__legend") == 2
     for field_name in (
         "title",
         "description",

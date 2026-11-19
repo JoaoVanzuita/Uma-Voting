@@ -1,4 +1,4 @@
-/* Auditoria de acessibilidade e responsividade — Circuito editorial (Fase 8).
+/* Auditoria de acessibilidade e responsividade da interface (Fase 8).
  *
  * Executa depois do inventário visual, na mesma instância isolada:
  *   NODE_PATH=var/screenshot-harness/node_modules node tests/e2e/screenshot_inventory/qa.js

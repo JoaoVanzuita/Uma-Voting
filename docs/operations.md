@@ -43,7 +43,9 @@ não rodam no entrypoint de cada worker.
 ## 3. Scheduler e sincronização
 
 - **Transições de votação**: container `scheduler` executa
-  `python manage.py run_scheduler --interval 60`.
+  `python manage.py run_scheduler --interval 60`. Em desenvolvimento fora do Docker, use
+  `./scripts/dev.sh --with-scheduler` ou rode o comando manualmente — sem ele, votações
+  agendadas permanecem em `scheduled` e são canceladas quando a janela se encerra.
 - **Sincronização de catálogo**: cron/systemd diário às 03:00 chamando
   `scripts/sync_catalog.sh`; o scheduler de votos não sincroniza catálogo.
 - **Sessões**: `clearsessions` diário via cron/systemd.

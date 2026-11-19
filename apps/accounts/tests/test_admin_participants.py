@@ -30,8 +30,7 @@ def test_lista_mostra_participantes_e_administrador_read_only(client):
     assert response.status_code == 200
     assert "SpecialWeek" in html
     assert "AdminUser" in html
-    assert "Administrador — somente leitura" in html
-    assert "Somente leitura" in html
+    assert ">Admin</span>" in html
 
 
 def test_lista_pesquisa_por_username(client):
