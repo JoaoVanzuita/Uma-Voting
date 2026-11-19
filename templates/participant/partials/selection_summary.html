@@ -1,23 +1,47 @@
+{% load ui_tags %}
+{% placeholder_url as fallback_src %}
+
 <div
   id="selection-summary"
   class="selection-summary"
   {% if oob_summary %}hx-swap-oob="true"{% endif %}
 >
   <div class="selection-summary__info">
-    <span
-      class="selection-counter"
-      data-selection-counter
-      data-limit-reached="{% if selected_count >= voting.choices_count %}true{% else %}false{% endif %}"
-      aria-live="polite"
-    >
-      {{ selected_count }} de {{ voting.choices_count }} escolhas
-    </span>
+    <div class="selection-summary__heading">
+      <span
+        class="selection-counter"
+        data-selection-counter
+        data-limit-reached="{% if selected_count >= voting.choices_count %}true{% else %}false{% endif %}"
+        aria-live="polite"
+      >
+        {{ selected_count }} de {{ voting.choices_count }} escolhas
+      </span>
+
+      <span class="selection-summary__preview" data-selection-preview aria-hidden="true">
+        {% for item in selected_preview %}
+          {% image_url item.image_asset as preview_src %}
+          <span class="selection-summary__thumb">
+            <img
+              src="{{ preview_src }}"
+              data-fallback-src="{{ fallback_src }}"
+              alt=""
+              width="32"
+              height="32"
+              loading="lazy"
+            >
+          </span>
+        {% endfor %}
+        {% if selected_more_count %}
+          <span class="selection-summary__more">+{{ selected_more_count }}</span>
+        {% endif %}
+      </span>
+    </div>
 
     <span class="selection-status" data-selection-status aria-live="polite">
       {% if selected_count == 0 %}
         Nenhuma personagem selecionada.
       {% elif selected_count >= voting.choices_count %}
-        Limite de {{ voting.choices_count }} escolhas atingido. Desmarque uma opção para trocar.
+        Limite atingido. Desmarque uma escolha para alterar.
       {% else %}
         {{ selected_count }} de {{ voting.choices_count }} escolhas selecionadas.
       {% endif %}

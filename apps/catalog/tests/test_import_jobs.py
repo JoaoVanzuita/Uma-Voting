@@ -370,3 +370,16 @@ def test_logs_de_criacao_claim_cancelamento_retry_e_stale(adapter, enabled, capl
     assert "import_job.cancel_requested" in messages
     assert "import_job.stale" in messages
     assert "import_job.retry_requested" in messages
+
+
+@pytest.mark.django_db
+def test_worker_quiet_omite_ciclos_ociosos(adapter, enabled):
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    output = StringIO()
+
+    call_command("run_import_worker", "--once", "--quiet", stdout=output)
+
+    assert output.getvalue().strip() == ""

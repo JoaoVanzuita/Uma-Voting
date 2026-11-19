@@ -19,6 +19,7 @@ from apps.catalog.services.sources.base import (
 from apps.catalog.services.sources.umamusume_global import (
     GAMETORA_CARDS_FALLBACK,
     GAMETORA_CHARACTERS_URL,
+    GAMETORA_MANIFEST_URL,
     GAMETORA_RELEASE_URL,
     OFFICIAL_DETAIL_URL,
     OFFICIAL_ICON_FALLBACK,
@@ -34,7 +35,8 @@ from tests.factories import CatalogSourceFactory, CharacterFactory, ImageAssetFa
 pytestmark = pytest.mark.django_db
 
 FIXTURES = Path(__file__).parent / "fixtures" / "sources"
-CARDS_URL = "https://gametora.com/data/umamusume/character-cards.abc123.json"
+CARDS_HASH = "abc123"
+CARDS_URL = f"https://gametora.com/data/umamusume/character-cards.{CARDS_HASH}.json"
 CHUNK_URL = "https://gametora.com/_next/static/chunks/main-abc.js"
 BUILD_ID = "test-build"
 CHUNK_SCRIPT = f'const url = "{CARDS_URL.replace("https://gametora.com", "")}";'
@@ -91,7 +93,11 @@ def make_client(
     detail = detail if detail is not None else load_fixture("official_character_detail.json")
     cards = cards if cards is not None else load_fixture("gametora_cards.json")
 
-    json_responses = {OFFICIAL_LIST_URL: official, CARDS_URL: cards}
+    json_responses = {
+        OFFICIAL_LIST_URL: official,
+        CARDS_URL: cards,
+        GAMETORA_MANIFEST_URL: {"character-cards": CARDS_HASH},
+    }
     for entry in official.get("umamusume", []):
         slug = entry["slug"]
         error = (detail_errors or {}).get(slug)
@@ -266,28 +272,37 @@ def test_aptidoes_incompletas_viram_aviso(source):
 # ---------------------------------------------------------------------------
 # GameTora: descoberta, build ID e datas estimadas (T029)
 # ---------------------------------------------------------------------------
-def test_descobre_cards_e_build_id_e_estima_data(source):
+def test_descobre_cards_pelo_manifesto_e_estima_data(source):
     client = make_client()
     adapter = build_adapter(source, client)
 
     report = adapter.fetch_catalog()
 
+    assert GAMETORA_MANIFEST_URL in client.calls
     assert CARDS_URL in client.calls
-    assert CHUNK_URL in client.calls
+    assert CHUNK_URL not in client.calls
     assert GAMETORA_RELEASE_URL.format(build_id=BUILD_ID, url_name="symboli-rudolf") in client.calls
     rudolf = report.characters["symboli-rudolf"].versions[0]
     assert rudolf.release_date_global == date(2025, 8, 14)
+
+
+def test_descobre_cards_pelo_chunk_quando_manifesto_falha(source):
+    client = make_client()
+    del client.json_responses[GAMETORA_MANIFEST_URL]
+    adapter = build_adapter(source, client)
+
+    report = adapter.fetch_catalog()
+
+    assert CHUNK_URL in client.calls
+    assert CARDS_URL in client.calls
+    assert report.total_rows == 4
 
 
 def test_usa_fallback_quando_descoberta_falha(source, settings):
     settings.EXTERNAL_IMPORT_CONCURRENCY = 1
     official = load_fixture("official_characters.json")
     detail = load_fixture("official_character_detail.json")
-    cards = load_fixture("gametora_cards.json")
-    json_responses = {
-        OFFICIAL_LIST_URL: official,
-        CARDS_URL: cards,
-    }
+    json_responses = {OFFICIAL_LIST_URL: official}
     for entry in official["umamusume"]:
         json_responses[OFFICIAL_DETAIL_URL.format(slug=entry["slug"])] = detail
     client = FakeClient(
@@ -298,10 +313,19 @@ def test_usa_fallback_quando_descoberta_falha(source, settings):
     )
     adapter = build_adapter(source, client)
 
-    # Sem chunk acessível, o conector usa a URL fixa documentada.
-    with pytest.raises(SourceUnavailableError):
+    # Sem manifesto e sem chunk, o conector tenta a URL fixa documentada.
+    with pytest.raises(SourceDataError, match="mudou a estrutura"):
         adapter.fetch_catalog()
     assert GAMETORA_CARDS_FALLBACK in client.calls
+
+
+def test_card_json_404_indica_mudanca_de_estrutura(source):
+    client = make_client()
+    client.json_responses[CARDS_URL] = SourceHTTPError("sumiu", status=404, url=CARDS_URL)
+    adapter = build_adapter(source, client)
+
+    with pytest.raises(SourceDataError, match="mudou a estrutura"):
+        adapter.fetch_catalog()
 
 
 def test_sem_data_conhecida_vira_aviso_e_personagem_ignorada(source):
@@ -311,7 +335,11 @@ def test_sem_data_conhecida_vira_aviso_e_personagem_ignorada(source):
             card["release_en"] = None
     official = load_fixture("official_characters.json")
     detail = load_fixture("official_character_detail.json")
-    json_responses = {OFFICIAL_LIST_URL: official, CARDS_URL: cards}
+    json_responses = {
+        OFFICIAL_LIST_URL: official,
+        CARDS_URL: cards,
+        GAMETORA_MANIFEST_URL: {"character-cards": CARDS_HASH},
+    }
     for entry in official["umamusume"]:
         json_responses[OFFICIAL_DETAIL_URL.format(slug=entry["slug"])] = detail
     client = FakeClient(

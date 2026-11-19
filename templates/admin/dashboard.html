@@ -6,7 +6,7 @@
 {% block page_title %}Painel administrativo{% endblock %}
 
 {% block page_subtitle %}
-  Olá, {{ request.user.username }}.
+  Olá, {{ request.user.username }}. O que precisa de atenção hoje.
 {% endblock %}
 
 {% block page_actions %}
@@ -14,140 +14,160 @@
 {% endblock %}
 
 {% block content %}
-  <section class="av-metrics" aria-labelledby="metrics-title">
-    <h2 id="metrics-title" class="visually-hidden">Indicadores principais</h2>
-    <div class="stats-grid">
-      <section class="stat-card">
-        <p class="stat-card__label">Participantes ativos</p>
-        <p class="stat-card__value">{{ active_participants }}</p>
-        <a class="text-small" href="{% url 'admin:participant_list' %}">Gerenciar participantes</a>
-      </section>
-      <section class="stat-card">
-        <p class="stat-card__label">Votações abertas</p>
-        <p class="stat-card__value">{{ open_votings }}</p>
-        <a class="text-small" href="{% url 'admin:voting_list' %}?status=open">Ver abertas</a>
-      </section>
-      <section class="stat-card">
-        <p class="stat-card__label">Votações agendadas</p>
-        <p class="stat-card__value">{{ scheduled_votings }}</p>
-        <a class="text-small" href="{% url 'admin:voting_list' %}?status=scheduled">Ver agendadas</a>
-      </section>
-    </div>
-  </section>
-
-  <section class="panel av-health" aria-labelledby="catalog-health-title">
-    <div class="section-header">
-      <h2 id="catalog-health-title">Saúde do catálogo</h2>
-      <a class="text-small" href="{% url 'admin:catalog_status' %}">Abrir catálogo</a>
-    </div>
-    <div class="stats-grid">
-      <section class="stat-card{% if pending_changes %} stat-card--warning{% endif %}">
-        <p class="stat-card__label">Mudanças de catálogo pendentes</p>
-        <p class="stat-card__value">{{ pending_changes }}</p>
-        <a class="text-small" href="{% url 'admin:catalog_status' %}">Revisar catálogo</a>
-      </section>
-      <section class="stat-card">
-        <p class="stat-card__label">Personagens sem imagem válida</p>
-        <p class="stat-card__value">{{ characters_without_image }}</p>
-        <a class="text-small" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
-      </section>
-      <section class="stat-card{% if invalid_images %} stat-card--danger{% endif %}">
-        <p class="stat-card__label">Imagens correntes inválidas</p>
-        <p class="stat-card__value">{{ invalid_images }}</p>
-        <a class="text-small" href="{% url 'admin:catalog_images' %}?status=invalid">Validar imagens</a>
-      </section>
-    </div>
-  </section>
-
-  <section class="panel stack" aria-labelledby="ongoing-title">
-    <div class="section-header">
-      <h2 id="ongoing-title">Votações em andamento</h2>
+  <section class="dashboard-section" aria-labelledby="ongoing-title">
+    <div class="dashboard-section__header">
+      <div class="dashboard-section__title">
+        <h2 id="ongoing-title">Votações em andamento</h2>
+      </div>
       <a class="text-small" href="{% url 'admin:voting_list' %}?status=open">Ver todas as abertas</a>
     </div>
+
     {% if ongoing_votings %}
-      <div class="table-wrap av-table-wrap">
-        <table class="table av-table">
-          <caption class="visually-hidden">Votações abertas e agendadas</caption>
-          <thead>
-            <tr>
-              <th scope="col">Título</th>
-              <th scope="col">Estado</th>
-              <th scope="col">Abertura</th>
-              <th scope="col">Encerramento</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for voting in ongoing_votings %}
+      <div class="panel dashboard-panel">
+        <div class="table-wrap av-table-wrap">
+          <table class="table av-table dashboard-table">
+            <caption class="visually-hidden">Votações abertas e agendadas</caption>
+            <thead>
               <tr>
-                <td class="av-cell-primary" data-label="">
-                  <a href="{% url 'admin:voting_detail' voting.pk %}">{{ voting.title }}</a>
-                </td>
-                <td data-label="Estado">{% status_badge voting.status %}</td>
-                <td data-label="Abertura">{{ voting.opens_at|datetime_br }}</td>
-                <td data-label="Encerramento">{{ voting.closes_at|datetime_br }}</td>
-                <td class="av-cell-actions" data-label="">
-                  <div class="table__actions">
-                    <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
-                      Detalhes
-                    </a>
-                  </div>
-                </td>
+                <th scope="col">Título</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Abertura</th>
+                <th scope="col">Encerramento</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for voting in ongoing_votings %}
+                <tr>
+                  <td class="av-cell-primary" data-label="">
+                    <a href="{% url 'admin:voting_detail' voting.pk %}">{{ voting.title }}</a>
+                  </td>
+                  <td data-label="Estado">{% status_badge voting.status %}</td>
+                  <td data-label="Abertura">{{ voting.opens_at|datetime_br }}</td>
+                  <td data-label="Encerramento">{{ voting.closes_at|datetime_br }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     {% else %}
-      <div class="empty-state">
+      <div class="empty-state dashboard-empty-state">
         <p>Nenhuma votação aberta ou agendada no momento.</p>
         <a class="btn btn-secondary" href="{% url 'admin:voting_create' %}">Nova votação</a>
       </div>
     {% endif %}
+
+    <div class="dashboard-recent">
+      <div class="dashboard-recent__header">
+        <h3 id="latest-title">Últimas votações</h3>
+        <a class="text-small" href="{% url 'admin:voting_list' %}">Ver todas</a>
+      </div>
+      {% if latest_votings %}
+        <ul class="dashboard-recent-list" aria-labelledby="latest-title">
+          {% for voting in latest_votings %}
+            <li class="dashboard-recent-item">
+              <a class="dashboard-recent-item__title" href="{% url 'admin:voting_detail' voting.pk %}">
+                {{ voting.title }}
+              </a>
+              <div class="dashboard-recent-item__meta">
+                {% status_badge voting.status %}
+                <time datetime="{{ voting.created_at|date:'c' }}">
+                  {{ voting.created_at|datetime_br }}
+                </time>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="empty-state">
+          <p>Nenhuma votação criada ainda.</p>
+          <a class="btn btn-primary" href="{% url 'admin:voting_create' %}">Criar votação</a>
+        </div>
+      {% endif %}
+    </div>
   </section>
 
-  <section class="panel stack" aria-labelledby="latest-title">
-    <div class="section-header">
-      <h2 id="latest-title">Últimas votações</h2>
-      <a class="text-small" href="{% url 'admin:voting_list' %}">Ver todas</a>
+  <section class="dashboard-section" aria-labelledby="metrics-title">
+    <div class="dashboard-section__header">
+      <div class="dashboard-section__title">
+        <h2 id="metrics-title">Panorama da operação</h2>
+      </div>
     </div>
-    {% if latest_votings %}
-      <div class="table-wrap av-table-wrap">
-        <table class="table av-table">
-          <caption class="visually-hidden">Últimas votações criadas</caption>
-          <thead>
-            <tr>
-              <th scope="col">Título</th>
-              <th scope="col">Estado</th>
-              <th scope="col">Criada em</th>
-              <th scope="col"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for voting in latest_votings %}
-              <tr>
-                <td class="av-cell-primary" data-label="">
-                  <a href="{% url 'admin:voting_detail' voting.pk %}">{{ voting.title }}</a>
-                </td>
-                <td data-label="Estado">{% status_badge voting.status %}</td>
-                <td data-label="Criada em">{{ voting.created_at|datetime_br }}</td>
-                <td class="av-cell-actions" data-label="">
-                  <div class="table__actions">
-                    <a class="btn btn-tertiary" href="{% url 'admin:voting_detail' voting.pk %}">
-                      Detalhes
-                    </a>
-                  </div>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+
+    <div class="dashboard-metrics">
+      <article class="dashboard-metric">
+        <p class="dashboard-metric__value">{{ active_participants }}</p>
+        <p class="dashboard-metric__label">Participantes ativos</p>
+        <a class="text-small" href="{% url 'admin:participant_list' %}">Gerenciar participantes</a>
+      </article>
+      <article class="dashboard-metric">
+        <p class="dashboard-metric__value">{{ open_votings }}</p>
+        <p class="dashboard-metric__label">Votações abertas</p>
+        <a class="text-small" href="{% url 'admin:voting_list' %}?status=open">Ver abertas</a>
+      </article>
+      <article class="dashboard-metric">
+        <p class="dashboard-metric__value">{{ scheduled_votings }}</p>
+        <p class="dashboard-metric__label">Votações agendadas</p>
+        <a class="text-small" href="{% url 'admin:voting_list' %}?status=scheduled">Ver agendadas</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="dashboard-section" aria-labelledby="catalog-health-title">
+    <div class="dashboard-section__header">
+      <div class="dashboard-section__title">
+        <h2 id="catalog-health-title">Saúde do catálogo</h2>
       </div>
-    {% else %}
-      <div class="empty-state">
-        <p>Nenhuma votação criada ainda.</p>
-        <a class="btn btn-primary" href="{% url 'admin:voting_create' %}">Criar votação</a>
-      </div>
-    {% endif %}
+      <a class="text-small" href="{% url 'admin:catalog_status' %}">Abrir catálogo</a>
+    </div>
+
+    <div class="panel dashboard-health">
+      <ul class="dashboard-health-list">
+        <li class="dashboard-health-item">
+          <p class="dashboard-health-item__value">{{ pending_changes }}</p>
+          <div class="dashboard-health-item__body">
+            <p class="dashboard-health-item__label">Mudanças de catálogo pendentes</p>
+          </div>
+          <p
+            class="dashboard-health-item__state{% if pending_changes %} dashboard-health-item__state--warning{% endif %}"
+          >
+            {% if pending_changes %}Requer atenção{% else %}Estável{% endif %}
+          </p>
+          <a class="text-small" href="{% url 'admin:catalog_status' %}">Ver catálogo</a>
+        </li>
+        <li class="dashboard-health-item">
+          <p class="dashboard-health-item__value">{{ characters_without_image }}</p>
+          <div class="dashboard-health-item__body">
+            <p class="dashboard-health-item__label">Personagens sem imagem válida</p>
+            <p class="dashboard-health-item__detail">
+              Personagens que podem ficar sem retrato nas cédulas.
+            </p>
+          </div>
+          <p
+            class="dashboard-health-item__state{% if characters_without_image %} dashboard-health-item__state--warning{% endif %}"
+          >
+            {% if characters_without_image %}Requer atenção{% else %}Estável{% endif %}
+          </p>
+          <a class="text-small" href="{% url 'admin:catalog_images' %}">Ver imagens</a>
+        </li>
+        <li class="dashboard-health-item">
+          <p class="dashboard-health-item__value">{{ invalid_images }}</p>
+          <div class="dashboard-health-item__body">
+            <p class="dashboard-health-item__label">Imagens correntes inválidas</p>
+            <p class="dashboard-health-item__detail">
+              Arquivos correntes que precisam de validação.
+            </p>
+          </div>
+          <p
+            class="dashboard-health-item__state{% if invalid_images %} dashboard-health-item__state--danger{% endif %}"
+          >
+            {% if invalid_images %}Requer atenção{% else %}Estável{% endif %}
+          </p>
+          <a class="text-small" href="{% url 'admin:catalog_images' %}?status=invalid">
+            Validar imagens
+          </a>
+        </li>
+      </ul>
+    </div>
   </section>
 {% endblock %}

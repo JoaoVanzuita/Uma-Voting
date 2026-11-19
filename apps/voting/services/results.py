@@ -96,6 +96,21 @@ def final_results(voting: Voting) -> list[RankedResultRow]:
     return rank_results(aggregate_results(voting))
 
 
+@dataclass(frozen=True)
+class ParticipationSummary:
+    ballots: int
+    eligible: int
+    percent: int | None
+
+
+def participation_summary(voting: Voting) -> ParticipationSummary:
+    """Agregado público de participação; nunca expõe quem votou ou em quem."""
+    ballots = Ballot.objects.filter(voting=voting).count()
+    eligible = VotingEligibility.objects.filter(voting=voting).count()
+    percent = round(ballots / eligible * 100) if eligible else None
+    return ParticipationSummary(ballots=ballots, eligible=eligible, percent=percent)
+
+
 def participation(voting: Voting) -> list[ParticipationRow]:
     """Lista elegíveis e se votaram, sem qualquer escolha individual."""
     ballots = Ballot.objects.filter(voting=voting)

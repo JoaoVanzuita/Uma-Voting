@@ -18,15 +18,23 @@
 
 {% block content %}
   {% if not import_enabled %}
-    <p class="text-muted text-small">
+    <div class="alert alert-warning" role="status">
       Importação externa desabilitada por configuração. Execuções existentes continuam disponíveis.
-    </p>
+    </div>
   {% endif %}
 
   <div class="catalog-columns">
     <section class="panel stack" aria-labelledby="import-title">
-      <div class="catalog-section-header">
-        <h2 id="import-title" class="catalog-section-title">Nova importação</h2>
+      <div class="section-header">
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="import-title">Nova importação</h2>
+          </div>
+          <p class="section-header__lead">
+            Escolha a fonte, o modo e o escopo das imagens. A execução é acompanhada em uma
+            página própria.
+          </p>
+        </div>
       </div>
 
       {% if sources %}
@@ -71,8 +79,15 @@
     </section>
 
     <section class="panel stack" aria-labelledby="sources-title">
-      <div class="catalog-section-header">
-        <h2 id="sources-title" class="catalog-section-title">Fontes cadastradas</h2>
+      <div class="section-header">
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="sources-title">Fontes cadastradas</h2>
+          </div>
+          <p class="section-header__lead">
+            Situação de cada fonte e a última execução registrada.
+          </p>
+        </div>
       </div>
       <div class="stack">
         {% for row in sources %}

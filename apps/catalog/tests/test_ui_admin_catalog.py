@@ -53,6 +53,8 @@ def test_status_exibe_ultima_sincronizacao_e_alteracoes_pendentes(client):
     assert "Sincronização manual" in html
     assert "Última sincronização" in html
     assert "Alterações pendentes" in html
+    assert "stat-card__hint" not in html
+    assert "section-header__index" not in html
     assert "Tokai Teio" in html
     assert reverse("admin:catalog_sync") in html
     assert reverse("admin:catalog_sync_detail", args=[run.pk]) in html
@@ -103,6 +105,8 @@ def test_detalhe_de_sincronizacao_separa_status_e_diferencas(client):
     assert "Alterações rejeitadas" in html
     assert "Antes" in html
     assert "Depois" in html
+    assert "change-diff" in html
+    assert "Aprovar esta mudança e aplicá-la ao catálogo?" in html
     assert "Tokai Teio Renomeada" in html
     assert "Dados propostos" in html
     assert reverse("admin:catalog_approve", args=[pending.pk]) in html
@@ -159,6 +163,8 @@ def test_imagens_filtro_relatorio_e_miniaturas_controladas(client, tmp_path, set
     assert 'width="48"' in html
     assert 'height="48"' in html
     assert "data-fallback-src" in html
+    assert "character-thumb" in html
+    assert "stat-card__hint" in html
     assert "Exibindo até 500 registros" in html
     assert "Sem Asset" in html
 

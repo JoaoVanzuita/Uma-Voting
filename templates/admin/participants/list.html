@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block content %}
-  <form class="filters participant-filters" method="get" role="search">
+  <form class="filters" method="get" role="search">
     <div class="filters__row">
       <div class="filters__search form-group">
         <label class="form-label" for="participant-search">Buscar por username</label>
@@ -21,7 +21,6 @@
           type="search"
           name="q"
           value="{{ query }}"
-          placeholder="Digite parte do username"
           autocomplete="off"
         >
       </div>
@@ -33,8 +32,19 @@
   </form>
 
   {% if participants %}
+    <div class="section-header">
+      <div class="section-header__text">
+        <p class="section-header__lead">
+          Contas administrativas aparecem como somente leitura.
+        </p>
+      </div>
+      <span class="text-muted text-small" role="heading" aria-level="2">
+        {{ participants|length }} conta{{ participants|length|pluralize }}
+      </span>
+    </div>
+
     <div class="table-wrap admin-data-table-wrap">
-      <table class="table admin-data-table participant-table">
+      <table class="table admin-data-table participants-table">
         <caption class="visually-hidden">Lista de participantes</caption>
         <thead>
           <tr>
@@ -47,9 +57,9 @@
           {% for participant in participants %}
             <tr>
               <td data-label="Username">
-                <span class="participant-name">{{ participant.username }}</span>
+                <span class="person-item__name">{{ participant.username }}</span>
                 {% if participant.is_admin %}
-                  <span class="badge badge--info">Administrador — somente leitura</span>
+                  <span class="badge badge--info">Admin</span>
                 {% endif %}
               </td>
               <td data-label="Situação">
@@ -61,9 +71,7 @@
               </td>
               <td data-label="Ações">
                 <div class="table__actions">
-                  {% if participant.is_admin %}
-                    <span class="text-muted text-small">Somente leitura</span>
-                  {% else %}
+                  {% if not participant.is_admin %}
                     <a
                       class="btn btn-tertiary"
                       href="{% url 'admin:participant_edit' participant.pk %}"
@@ -73,6 +81,7 @@
                         class="inline-form"
                         method="post"
                         action="{% url 'admin:participant_deactivate' participant.pk %}"
+                        data-confirm="Desativar este participante? Ele perde o acesso ao sistema."
                       >
                         {% csrf_token %}
                         <button class="btn btn-danger" type="submit">Desativar</button>

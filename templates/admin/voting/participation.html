@@ -21,10 +21,12 @@
       <section class="stat-card">
         <p class="stat-card__label">Participantes com acesso</p>
         <p class="stat-card__value">{{ eligible_count }}</p>
+        <p class="stat-card__hint">habilitados nesta votação</p>
       </section>
       <section class="stat-card">
         <p class="stat-card__label">Votaram</p>
         <p class="stat-card__value">{{ voted_count }}</p>
+        <p class="stat-card__hint">cédulas registradas</p>
       </section>
       <section class="stat-card">
         <p class="stat-card__label">Pendentes</p>
@@ -35,6 +37,7 @@
             {% for group in vote_groups %}{% if not group.grouper %}{{ group.list|length }}{% endif %}{% endfor %}
           {% endif %}
         </p>
+        <p class="stat-card__hint">ainda sem cédula</p>
       </section>
     </div>
     <p class="text-muted text-small">
@@ -45,27 +48,53 @@
 
   <section class="panel stack" aria-labelledby="participation-title">
     <div class="section-header">
-      <h2 id="participation-title">Quem votou</h2>
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <h2 id="participation-title">Quem votou</h2>
+        </div>
+        <p class="section-header__lead">
+          Agrupado por situação. Nenhuma associação entre participante e personagem é exibida.
+        </p>
+      </div>
       <span class="text-small text-muted">{{ voted_count }} de {{ eligible_count }} voto(s)</span>
     </div>
 
     {% if rows %}
-      <ul class="av-user-list">
-        {% for row in rows %}
-          <li class="av-user-item">
-            <div class="av-user-item__identity">
-              <span class="av-user-item__name">{{ row.username }}</span>
+      {% for group in vote_groups reversed %}
+        <div class="stack">
+          <div class="section-header">
+            <div class="section-header__text">
+              <div class="section-header__title section-header__title--sub">
+                {% if group.grouper %}
+                  <h3>Votaram</h3>
+                {% else %}
+                  <h3>Pendentes</h3>
+                {% endif %}
+              </div>
             </div>
-            <div class="av-user-item__actions">
-              {% if row.voted %}
-                <span class="badge badge--success">Votou</span>
-              {% else %}
-                <span class="badge badge--neutral" aria-label="Não votou">Pendente</span>
-              {% endif %}
-            </div>
-          </li>
-        {% endfor %}
-      </ul>
+            <span class="badge {% if group.grouper %}badge--success{% else %}badge--neutral{% endif %}">
+              {{ group.list|length }}
+            </span>
+          </div>
+
+          <ul class="person-list">
+            {% for row in group.list %}
+              <li class="person-item">
+                <div class="person-item__identity">
+                  <span class="person-item__name">{{ row.username }}</span>
+                </div>
+                <div class="person-item__state">
+                  {% if row.voted %}
+                    <span class="badge badge--success">Votou</span>
+                  {% else %}
+                    <span class="badge badge--neutral" aria-label="Não votou">Pendente</span>
+                  {% endif %}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
     {% else %}
       <div class="empty-state">
         <p>Nenhum participante elegível.</p>

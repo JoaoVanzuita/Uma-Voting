@@ -1,10 +1,11 @@
 /* ---------------------------------------------------------------------------
  * Uma Voting — Design tokens
  *
- * Fundação visual "Racing Academy": base clara, discreta e legível.
+ * Fundação visual editorial: canvas quente, superfícies claras,
+ * violeta de ação, coral editorial e estados semânticos reservados.
  * Tokens são organizados por finalidade, não por página.
  * Breakpoints de referência (não utilizáveis em media queries via custom
- * properties): 360–479, 480–767, 768–1023 e 1024+ px.
+ * properties): 360–479, 480–767, 768–1023, 1024–1279 e 1280+ px.
  * ------------------------------------------------------------------------- */
 
 :root {
@@ -12,45 +13,39 @@
   accent-color: var(--color-primary);
 
   /* Cores ---------------------------------------------------------------- */
-  --color-bg: #f7f6fa;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f0eff5;
-  --color-ink: #25243a;
-  --color-muted: #646174;
-  --color-primary: #5145a8;
-  --color-primary-hover: #40368f;
-  --color-rose: #a83f65;
-  --color-sky: #2e6895;
-  --color-border: #e4e1eb;
-  --color-border-strong: #8f879f;
-  --color-success: #1a7a61;
-  --color-warning: #8a5200;
-  --color-danger: #a53d54;
-  --color-info: #2e6895;
-
-  /* Aliases de compatibilidade com a folha anterior. */
-  --color-white: var(--color-surface);
-  --color-canvas: var(--color-bg);
+  --color-canvas: #f7f5f2;
+  --color-surface: #fffefc;
+  --color-surface-muted: #f0edf4;
+  --color-ink: #28243a;
+  --color-muted: #6a6578;
+  --color-primary: #5646a8;
+  --color-primary-strong: #40337f;
+  --color-accent: #c85b6f;
+  --color-support: #3b759a;
+  --color-border: #e2dde8;
+  --color-border-strong: #8d849d;
+  --color-success: #18745c;
+  --color-warning: #8a5709;
+  --color-danger: #a63e55;
 
   /* Ponte para utilitários do Bootstrap que usam !important. */
   --bs-secondary-color: var(--color-muted);
 
   /* Texto sobre fundos suaves (contraste AA validado). */
-  --color-primary-ink: #40368f;
+  --color-primary-ink: var(--color-primary-strong);
   --color-success-ink: #14624d;
   --color-warning-ink: #6b3f00;
   --color-danger-ink: #8f3247;
   --color-info-ink: #245273;
-  --color-neutral-ink: #646174;
+  --color-neutral-ink: var(--color-muted);
 
   /* Superfícies suaves e tintas semânticas. */
-  --color-primary-soft: #eeebf9;
-  --color-rose-soft: #f7e9ef;
-  --color-sky-soft: #e7f0f7;
+  --color-primary-soft: #eeebfa;
+  --color-accent-soft: #f9e9ec;
+  --color-support-soft: #e8f1f6;
   --color-success-soft: #e6f3ee;
-  --color-warning-soft: #f7eedf;
+  --color-warning-soft: #f8efdf;
   --color-danger-soft: #f8e9ed;
-  --color-info-soft: #e7f0f7;
 
   /* Bordas suaves para badges e alertas. */
   --color-primary-border: #d8d2ef;
@@ -59,19 +54,23 @@
   --color-danger-border: #e8c3cc;
   --color-info-border: #c9ddec;
 
-  --color-focus: #40368f;
-  --color-focus-inverse: #ffffff;
-  --color-overlay: rgb(37 36 58 / 45%);
-  --focus-ring: 0 0 0 3px rgb(64 54 143 / 28%);
+  /* Motivo de pista: linhas abstratas em baixa opacidade. */
+  --color-track-line: rgb(86 70 168 / 12%);
+
+  --color-focus: var(--color-primary-strong);
+  --color-focus-inverse: var(--color-surface);
+  --color-overlay: rgb(40 36 58 / 45%);
+  --focus-ring: 0 0 0 3px rgb(64 51 127 / 25%);
 
   /* Tipografia ----------------------------------------------------------- */
   --font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
-  --font-size-page-title: 1.625rem; /* 26px */
-  --font-size-section-title: 1.1875rem; /* 19px */
+  --font-size-page-title: 2rem; /* 32px */
+  --font-size-section-title: 1.25rem; /* 20px */
   --font-size-card-title: 1rem; /* 16px */
   --font-size-body: 0.875rem; /* 14px */
   --font-size-caption: 0.75rem; /* 12px */
+  --font-size-index: 0.6875rem; /* 11px */
   --font-size-small: var(--font-size-caption);
   --font-size-control: 0.875rem; /* 14px */
   --font-weight-regular: 400;
@@ -81,7 +80,8 @@
   --line-height-tight: 1.2;
   --line-height-heading: 1.28;
   --line-height-body: 1.55;
-  --letter-spacing-label: 0.01em;
+  --letter-spacing-label: 0.08em;
+  --letter-spacing-index: 0.08em;
 
   /* Espaçamento ---------------------------------------------------------- */
   --space-1: 4px;
@@ -91,19 +91,19 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
-  /* Passo legado usado pelo shell de autenticação. */
-  --space-10: 40px;
+  --space-16: 64px;
 
   /* Formas --------------------------------------------------------------- */
   --radius-sm: 8px;
   --radius-control: 10px;
-  --radius-card: 14px;
+  --radius-panel: 12px;
+  --radius-card: 16px;
   --radius-pill: 999px;
 
   /* Elevação ------------------------------------------------------------- */
-  --shadow-soft: 0 1px 2px rgb(37 36 58 / 5%), 0 4px 12px rgb(37 36 58 / 4%);
-  --shadow-raised: 0 8px 24px rgb(37 36 58 / 10%);
-  --shadow-control: 0 1px 2px rgb(37 36 58 / 6%);
+  --shadow-card: 0 1px 2px rgb(40 36 58 / 5%), 0 8px 20px rgb(40 36 58 / 5%);
+  --shadow-raised: 0 12px 28px rgb(40 36 58 / 10%);
+  --shadow-control: 0 1px 2px rgb(40 36 58 / 6%);
 
   /* Layout --------------------------------------------------------------- */
   --container-max: 1200px;

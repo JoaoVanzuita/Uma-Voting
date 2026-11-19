@@ -42,6 +42,8 @@ OFFICIAL_ICON_FALLBACK = (
     "https://en-portal.g.kuroco-img.app/files/user/character/{slug}/{slug}_icon.png"
 )
 GAMETORA_CHARACTERS_URL = "https://gametora.com/umamusume/characters"
+GAMETORA_MANIFEST_URL = "https://gametora.com/data/manifests/umamusume.json"
+GAMETORA_CARDS_KEY = "character-cards"
 GAMETORA_CARDS_FALLBACK = "https://gametora.com/data/umamusume/character-cards.0e9f93ec.json"
 GAMETORA_RELEASE_URL = (
     "https://gametora.com/_next/data/{build_id}/umamusume/characters/{url_name}.json"
@@ -66,6 +68,7 @@ DISTANCE_KEYS = ("sprint", "mile", "medium", "long")
 SURFACE_KEYS = ("turf", "dirt")
 
 _CARDS_RE = re.compile(r"/data/umamusume/character-cards\.[a-f0-9]+\.json")
+_MANIFEST_RE = re.compile(r"/data/manifests/[a-z0-9_-]+\.json")
 _CHUNK_RE = re.compile(r"/_next/static/chunks/[^\"']+\.js")
 _BUILD_ID_RE = re.compile(r'"buildId":"([^"]+)"')
 
@@ -323,6 +326,33 @@ class UmamusumeGlobalAdapter:
         if self._cards_url_override:
             return self._cards_url_override
 
+        # 1) Manifesto público: /data/manifests/umamusume.json mapeia chaves para
+        #    hashes de conteúdo, que o site usa para montar /data/<app>/<key>.<hash>.json.
+        url = self._cards_url_from_manifest()
+        if url:
+            return url
+
+        # 2) Descoberta pelo chunk que referencia o manifesto.
+        url = self._cards_url_from_chunks()
+        if url:
+            return url
+
+        # 3) Último recurso: URL fixa documentada (pode ficar obsoleta).
+        return GAMETORA_CARDS_FALLBACK
+
+    def _cards_url_from_manifest(self) -> str:
+        try:
+            manifest = self.client.get_json(GAMETORA_MANIFEST_URL)
+        except SourceError:
+            return ""
+        if not isinstance(manifest, dict):
+            return ""
+        version = manifest.get(GAMETORA_CARDS_KEY)
+        if not isinstance(version, str) or not version:
+            return ""
+        return f"https://gametora.com/data/umamusume/{GAMETORA_CARDS_KEY}.{version}.json"
+
+    def _cards_url_from_chunks(self) -> str:
         html = self._gametora_page()
         for chunk in sorted(set(_CHUNK_RE.findall(html))):
             try:
@@ -332,7 +362,20 @@ class UmamusumeGlobalAdapter:
             match = _CARDS_RE.search(script)
             if match:
                 return f"https://gametora.com{match.group(0)}"
-        return GAMETORA_CARDS_FALLBACK
+            manifest_match = _MANIFEST_RE.search(script)
+            if manifest_match:
+                try:
+                    manifest = self.client.get_json(
+                        f"https://gametora.com{manifest_match.group(0)}"
+                    )
+                except SourceError:
+                    continue
+                version = manifest.get(GAMETORA_CARDS_KEY) if isinstance(manifest, dict) else None
+                if isinstance(version, str) and version:
+                    return (
+                        f"https://gametora.com/data/umamusume/{GAMETORA_CARDS_KEY}.{version}.json"
+                    )
+        return ""
 
     def _discover_build_id(self) -> str:
         if self._build_id_override:
@@ -350,6 +393,13 @@ class UmamusumeGlobalAdapter:
 
         try:
             payload = self.client.get_json(url)
+        except SourceHTTPError as exc:
+            if exc.status == 404:
+                raise SourceDataError(
+                    "O GameTora mudou a estrutura dos dados de personagens "
+                    f"(card JSON não encontrado em {url})."
+                ) from exc
+            raise SourceUnavailableError(f"GameTora indisponível: {exc}") from exc
         except SourceError as exc:
             raise SourceUnavailableError(f"GameTora indisponível: {exc}") from exc
 

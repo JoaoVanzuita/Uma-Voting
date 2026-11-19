@@ -26,17 +26,29 @@
   {% elif voting.status == "closed" %}
     <section class="panel stack" aria-labelledby="ranking-title">
       <div class="section-header">
-        <h2 id="ranking-title">Ranking final</h2>
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="ranking-title">Ranking final</h2>
+          </div>
+          <p class="section-header__lead">
+            Personagens sem votos não aparecem. Empates ocupam a mesma posição.
+          </p>
+        </div>
         <span class="badge badge--neutral">Resultado oficial</span>
       </div>
-      <p class="text-muted av-results-note">
-        Personagens sem votos não aparecem. Empates ocupam a mesma posição.
-      </p>
+
       {% if ranked %}
-        <ol class="result-list">
+        <ol class="result-list result-list--final">
           {% for row in ranked %}
-            <li class="result-item">
-              <span class="result-item__position">{{ row.position }}º</span>
+            <li
+              class="result-item{% if row.position == 1 %} result-item--leader{% elif row.position <= 3 %} result-item--top{% endif %}"
+            >
+              <span class="result-item__position">
+                {{ row.position }}º
+                {% if row.position <= 3 %}
+                  <span class="result-item__accent" aria-hidden="true"></span>
+                {% endif %}
+              </span>
               <span class="result-item__media">
                 {% image_url row.image_asset as image_src %}
                 <img
@@ -49,7 +61,15 @@
                 >
               </span>
               <span class="result-item__name">{{ row.display_name }}</span>
-              <span class="result-item__votes">{{ row.votes }} voto(s)</span>
+              <span class="result-item__votes">{{ row.votes }} voto{{ row.votes|pluralize }}</span>
+              <span class="result-item__bar-wrap">
+                <progress
+                  class="result-item__bar"
+                  max="{{ ranked.0.votes }}"
+                  value="{{ row.votes }}"
+                  aria-label="{{ row.display_name }}: {{ row.votes }} voto{{ row.votes|pluralize }} de {{ ranked.0.votes }} do primeiro colocado"
+                >{{ row.votes }} de {{ ranked.0.votes }}</progress>
+              </span>
             </li>
           {% endfor %}
         </ol>
@@ -62,15 +82,20 @@
   {% else %}
     <section class="panel stack" aria-labelledby="partial-title">
       <div class="section-header">
-        <h2 id="partial-title">Resultados parciais</h2>
+        <div class="section-header__text">
+          <div class="section-header__title">
+            <h2 id="partial-title">Resultados parciais</h2>
+          </div>
+          <p class="section-header__lead">
+            Visão exclusiva de administradores durante a votação. Apenas totais agregados são
+            exibidos; nenhuma escolha individual ou associação participante–personagem é mostrada.
+          </p>
+        </div>
         <span class="badge badge--info">Parcial</span>
       </div>
-      <p class="text-muted av-results-note">
-        Visão exclusiva de administradores durante a votação. Apenas totais agregados são
-        exibidos; nenhuma escolha individual ou associação participante–personagem é mostrada.
-      </p>
+
       {% if results %}
-        <ul class="result-list">
+        <ul class="result-list result-list--partial">
           {% for row in results %}
             <li class="result-item result-item--partial">
               <span class="result-item__media">
@@ -85,7 +110,17 @@
                 >
               </span>
               <span class="result-item__name">{{ row.display_name }}</span>
-              <span class="result-item__votes">{{ row.votes }} voto(s)</span>
+              <span class="result-item__votes">{{ row.votes }} voto{{ row.votes|pluralize }}</span>
+              {% if row.votes and results.0.votes %}
+                <span class="result-item__bar-wrap">
+                  <progress
+                    class="result-item__bar"
+                    max="{{ results.0.votes }}"
+                    value="{{ row.votes }}"
+                    aria-label="{{ row.display_name }}: {{ row.votes }} voto{{ row.votes|pluralize }} de {{ results.0.votes }} do primeiro colocado"
+                  >{{ row.votes }} de {{ results.0.votes }}</progress>
+                </span>
+              {% endif %}
             </li>
           {% endfor %}
         </ul>

@@ -38,9 +38,13 @@ def test_lista_mantem_busca_acoes_e_tabela_responsiva(client):
     assert reverse("admin:participant_deactivate", args=[participant.pk]) in html
     assert 'data-label="Username"' in html
     assert 'data-label="Ações"' in html
+    assert "admin-data-table" in html
+    assert "2 contas" in html
+    assert 'data-confirm="Desativar este participante? Ele perde o acesso ao sistema."' in html
     assert "AdminUser" in html
-    assert "Administrador — somente leitura" in html
-    assert "Somente leitura" in html
+    assert "Admin" in html
+    assert "Administrador — somente leitura" not in html
+    assert "Somente leitura" not in html
 
 
 def test_lista_vazia_oferece_limpar_busca(client):
@@ -91,8 +95,10 @@ def test_importacao_mostra_duas_etapas_e_previa_valida(client):
     html = response.content.decode()
 
     assert response.status_code == 200
-    assert "1. Validar arquivo" in html
-    assert "2. Conferir prévia e importar" in html
+    assert "Validar arquivo" in html
+    assert "Conferir prévia e importar" in html
+    assert "import-steps" in html
+    assert "import-preview" in html
     assert "Pronto para importar" in html
     assert 'name="action" value="apply"' in html
     assert "Confirmar importação de 2 participante(s)" in html
@@ -113,7 +119,7 @@ def test_importacao_classifica_erros_e_nao_grava(client):
     html = response.content.decode()
 
     assert response.status_code == 200
-    assert "2. Corrigir arquivo" in html
+    assert "Corrigir arquivo" in html
     assert "A importação não foi aplicada." in html
     assert "Duplicidade no arquivo" in html
     assert "Username já cadastrado" in html

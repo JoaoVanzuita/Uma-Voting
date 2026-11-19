@@ -6,17 +6,21 @@
 # - Também aceita PostgreSQL local ou DATABASE_URL.
 # - Executa migrate/createcachetable/check antes de iniciar.
 # - Inicia manage.py runserver com auto-reload em 0.0.0.0:8000.
+# - Com --with-scheduler, inicia também run_scheduler no host, encerrado
+#   junto com o runserver.
 #
 # Uso:
 #   ./scripts/dev.sh
 #   DEV_PORT=8001 ./scripts/dev.sh
 #   ./scripts/dev.sh --port 8001 --host 127.0.0.1
 #   ./scripts/dev.sh --stop-web
+#   ./scripts/dev.sh --with-scheduler
 #   DJANGO_SETTINGS_MODULE=config.settings.staging ./scripts/dev.sh
 #
 # Variáveis:
 #   DEV_HOST              host do runserver (padrão: 0.0.0.0)
 #   DEV_PORT              porta do runserver (padrão: 8000)
+#   DEV_SCHEDULER_INTERVAL  intervalo do scheduler em segundos (padrão: 60)
 #   POSTGRES_HOST         host explícito do PostgreSQL (sobrepõe o .env)
 #   POSTGRES_PORT         porta do PostgreSQL (padrão: 5432)
 #   DATABASE_URL          URL completa; tem precedência sobre POSTGRES_*
@@ -28,12 +32,14 @@ cd "$ROOT"
 
 DEV_HOST="${DEV_HOST:-0.0.0.0}"
 DEV_PORT="${DEV_PORT:-8000}"
+DEV_SCHEDULER_INTERVAL="${DEV_SCHEDULER_INTERVAL:-60}"
 STOP_WEB=0
 RUN_MIGRATIONS=1
+WITH_SCHEDULER=0
 EXPLICIT_POSTGRES_HOST="${POSTGRES_HOST:-}"
 
 usage() {
-  sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 while [[ $# -gt 0 ]]; do
@@ -52,6 +58,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-migrate)
       RUN_MIGRATIONS=0
+      shift
+      ;;
+    --with-scheduler)
+      WITH_SCHEDULER=1
       shift
       ;;
     -h|--help)
@@ -192,6 +202,18 @@ if [[ "$STOP_WEB" == "1" ]]; then
   docker compose stop web scheduler >/dev/null 2>&1 || true
 fi
 
+if [[ "$WITH_SCHEDULER" == "1" ]] && docker_available; then
+  CONTAINER_ID="$(docker compose ps -q scheduler 2>/dev/null || true)"
+  if [[ -n "$CONTAINER_ID" ]]; then
+    CONTAINER_STATUS="$(docker inspect -f '{{.State.Status}}' "$CONTAINER_ID" 2>/dev/null || true)"
+    if [[ "$CONTAINER_STATUS" == "running" ]]; then
+      echo "==> Aviso: o container scheduler do Compose está ativo."
+      echo "    O scheduler local vai disputar o advisory lock; pare com:"
+      echo "    docker compose stop scheduler"
+    fi
+  fi
+fi
+
 if port_open 127.0.0.1 "$DEV_PORT"; then
   echo "A porta ${DEV_PORT} já está em uso." >&2
   echo "Se for o container web do Compose, execute:" >&2
@@ -216,7 +238,38 @@ echo "==> Verificando configuração"
 
 echo
 echo "==> Django fora do Docker em http://localhost:${DEV_PORT}/"
+if [[ "$WITH_SCHEDULER" == "1" ]]; then
+  echo "    Scheduler ativo no host (intervalo=${DEV_SCHEDULER_INTERVAL}s)."
+fi
 echo "    Auto-reload ativo. Para CSS/JS antigo no navegador, use Ctrl+Shift+R."
 echo
 
-exec "${PYTHON[@]}" manage.py runserver "${DEV_HOST}:${DEV_PORT}"
+if [[ "$WITH_SCHEDULER" != "1" ]]; then
+  exec "${PYTHON[@]}" manage.py runserver "${DEV_HOST}:${DEV_PORT}"
+fi
+
+# Scheduler em background; encerrado junto com o runserver (Ctrl+C ou saída).
+SCHEDULER_PID=""
+cleanup() {
+  if [[ -n "$SCHEDULER_PID" ]] && kill -0 "$SCHEDULER_PID" 2>/dev/null; then
+    kill "$SCHEDULER_PID" 2>/dev/null || true
+    wait "$SCHEDULER_PID" 2>/dev/null || true
+  fi
+}
+trap cleanup EXIT INT TERM
+
+echo "==> Iniciando scheduler no host"
+"${PYTHON[@]}" manage.py run_scheduler --interval "$DEV_SCHEDULER_INTERVAL" &
+SCHEDULER_PID=$!
+
+set +e
+"${PYTHON[@]}" manage.py runserver "${DEV_HOST}:${DEV_PORT}"
+RUNSERVER_STATUS=$?
+set -e
+
+cleanup
+SCHEDULER_PID=""
+if [[ "$RUNSERVER_STATUS" != "0" ]]; then
+  echo "runserver encerrou com código ${RUNSERVER_STATUS}." >&2
+fi
+exit "$RUNSERVER_STATUS"

@@ -1,16 +1,15 @@
 {% extends "base.html" %}
+{% url 'participant:login' as brand_url %}
 
 {% block title %}Entrar — Uma Voting{% endblock %}
 
 {% block body %}
   <main id="conteudo" class="auth-shell auth-shell--participant">
     <section class="auth-card" aria-labelledby="login-title">
-      <a class="auth-brand" href="{% url 'participant:login' %}">Uma Voting</a>
+      {% include "components/brand.html" with brand_url=brand_url brand_class="auth-brand" %}
 
       <div class="auth-card__header">
-        <span class="badge badge--info">Comunidade fechada</span>
         <h1 id="login-title" class="h2">Entrar</h1>
-        <p>Use o username informado pela administração.</p>
       </div>
 
       <form method="post" data-submit-once>
@@ -34,10 +33,6 @@
 
         <button class="btn btn-primary auth-card__submit" type="submit">Entrar</button>
       </form>
-
-      <div class="auth-card__notice">
-        Este acesso identifica apenas o username; não comprova sua identidade.
-      </div>
 
       <p class="auth-card__switch">
         É administrador? <a href="{% url 'admin:login' %}">Acesse com username e senha</a>.

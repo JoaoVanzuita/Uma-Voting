@@ -33,6 +33,11 @@ class Command(BaseCommand):
             dest="as_json",
             help="Emite o resumo do ciclo em JSON.",
         )
+        parser.add_argument(
+            "--quiet",
+            action="store_true",
+            help="Não imprime ciclos ociosos (usado no loop contínuo).",
+        )
 
     def handle(self, *args, **options):
         if options["interval"] <= 0:
@@ -120,6 +125,13 @@ class Command(BaseCommand):
         }
 
     def _emit(self, summary: dict, options: dict) -> None:
+        if (
+            options.get("quiet")
+            and not summary["processed"]
+            and not summary["stale_jobs"]
+            and not summary["errors"]
+        ):
+            return
         if options["as_json"]:
             self.stdout.write(json.dumps(summary, ensure_ascii=False))
             return

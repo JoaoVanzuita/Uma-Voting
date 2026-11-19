@@ -11,14 +11,17 @@ from apps.voting.models import (
 FILTER_CATEGORIES = ("strategy", "distance", "surface")
 
 
-def _selected_ids(selected_ids) -> set[int]:
-    selected: set[int] = set()
+def _selected_positions(selected_ids) -> dict[int, int]:
+    """Posição 1-based de cada escolha, preservando a ordem de clique."""
+    positions: dict[int, int] = {}
     for value in selected_ids or []:
         try:
-            selected.add(int(value))
+            pk = int(value)
         except TypeError, ValueError:
             continue
-    return selected
+        if pk not in positions:
+            positions[pk] = len(positions) + 1
+    return positions
 
 
 def search_characters(
@@ -52,8 +55,9 @@ def search_characters(
     if filters:
         queryset = queryset.filter(version_snapshots__in=version_queryset)
 
-    selected = _selected_ids(selected_ids)
+    positions = _selected_positions(selected_ids)
     characters = list(queryset.distinct().order_by("display_name"))
     for character in characters:
-        character.selected = character.pk in selected
+        character.selection_order = positions.get(character.pk)
+        character.selected = character.selection_order is not None
     return characters

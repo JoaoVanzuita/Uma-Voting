@@ -15,8 +15,15 @@
 
 {% block content %}
   <section class="panel stack" aria-labelledby="run-title">
-    <div class="catalog-section-header">
-      <h2 id="run-title" class="catalog-section-title">Resumo da execução</h2>
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <h2 id="run-title">Resumo da execução</h2>
+        </div>
+        <p class="section-header__lead">
+          Dados da sincronização e resultado consolidado antes da revisão das mudanças.
+        </p>
+      </div>
       {% status_badge run.status %}
     </div>
 
@@ -36,8 +43,15 @@
   </section>
 
   <section class="stack" aria-labelledby="changes-title">
-    <div class="catalog-section-header">
-      <h2 id="changes-title" class="catalog-section-title">Alterações detectadas</h2>
+    <div class="section-header">
+      <div class="section-header__text">
+        <div class="section-header__title">
+          <h2 id="changes-title">Alterações detectadas</h2>
+        </div>
+        <p class="section-header__lead">
+          Cada mudança mostra o estado anterior e o payload proposto antes de qualquer aplicação.
+        </p>
+      </div>
       {% if changes %}
         <span class="text-muted text-small">{{ changes|length }} alteração(ões) nesta execução</span>
       {% endif %}
@@ -47,18 +61,22 @@
       {% regroup changes|dictsort:"status" by status as change_groups %}
       {% for group in change_groups %}
         <section class="change-group" aria-labelledby="change-group-{{ group.grouper }}">
-          <div class="catalog-section-header">
-            <h3 id="change-group-{{ group.grouper }}" class="catalog-subsection-title">
-              {% if group.grouper == "pending" %}
-                Alterações pendentes
-              {% elif group.grouper == "approved" %}
-                Alterações aprovadas
-              {% elif group.grouper == "rejected" %}
-                Alterações rejeitadas
-              {% else %}
-                Aplicadas automaticamente
-              {% endif %}
-            </h3>
+          <div class="section-header">
+            <div class="section-header__text">
+              <div class="section-header__title section-header__title--sub">
+                <h3 id="change-group-{{ group.grouper }}">
+                  {% if group.grouper == "pending" %}
+                    Alterações pendentes
+                  {% elif group.grouper == "approved" %}
+                    Alterações aprovadas
+                  {% elif group.grouper == "rejected" %}
+                    Alterações rejeitadas
+                  {% else %}
+                    Aplicadas automaticamente
+                  {% endif %}
+                </h3>
+              </div>
+            </div>
             <span class="badge {% if group.grouper == 'pending' %}badge--warning{% elif group.grouper == 'approved' or group.grouper == 'auto_applied' %}badge--success{% else %}badge--danger{% endif %}">
               {{ group.list|length }}
             </span>
@@ -153,11 +171,23 @@
 
                 {% if change.status == "pending" %}
                   <div class="change-actions">
-                    <form class="inline-form" method="post" action="{% url 'admin:catalog_approve' change.pk %}">
+                    <form
+                      class="inline-form"
+                      method="post"
+                      action="{% url 'admin:catalog_approve' change.pk %}"
+                      data-confirm="Aprovar esta mudança e aplicá-la ao catálogo?"
+                      data-submit-once
+                    >
                       {% csrf_token %}
                       <button class="btn btn-primary" type="submit">Aprovar</button>
                     </form>
-                    <form class="change-reject-form" method="post" action="{% url 'admin:catalog_reject' change.pk %}">
+                    <form
+                      class="change-reject-form"
+                      method="post"
+                      action="{% url 'admin:catalog_reject' change.pk %}"
+                      data-confirm="Rejeitar esta mudança? A nota será registrada na revisão."
+                      data-submit-once
+                    >
                       {% csrf_token %}
                       <label class="visually-hidden" for="note-{{ change.pk }}">Nota de rejeição</label>
                       <input

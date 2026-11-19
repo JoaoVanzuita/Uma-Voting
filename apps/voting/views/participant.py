@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from apps.catalog.models import Aptitude
@@ -25,7 +26,7 @@ from apps.voting.services.ballots import (
     submit_ballot,
 )
 from apps.voting.services.filters import FILTER_CATEGORIES, search_characters
-from apps.voting.services.results import final_results
+from apps.voting.services.results import final_results, participation_summary
 
 FILTER_LABELS = {
     "strategy": "Estratégia",
@@ -38,6 +39,8 @@ FILTER_ORDER = {
     "distance": ["sprint", "mile", "medium", "long"],
     "surface": ["turf", "dirt"],
 }
+
+SELECTION_PREVIEW_LIMIT = 3
 
 
 def _clean_ids(values) -> list[int]:
@@ -56,12 +59,13 @@ def _clean_ids(values) -> list[int]:
 
 def _request_values(request, key: str) -> list[str]:
     source = request.POST if request.method == "POST" else request.GET
-    values = list(source.getlist(key))
     if key == "character_ids":
-        # A seleção pode estar nos checkboxes visíveis ou nos inputs ocultos
-        # mantidos pelo JS quando um card é escondido por filtro.
-        values += list(source.getlist("selected"))
-    return values
+        # Os inputs ocultos guardam a ordem de clique. Eles vêm antes dos
+        # checkboxes visíveis, que podem estar ausentes por causa de filtros.
+        values = list(source.getlist("selected"))
+        values += list(source.getlist("character_ids"))
+        return values
+    return list(source.getlist(key))
 
 
 def _selected_ids(request) -> list[int]:
@@ -103,10 +107,28 @@ def _filter_groups(selected_filters: dict[str, list[str]]) -> list[dict]:
     return groups
 
 
-def _selected_count(voting: Voting, selected_ids: list[int]) -> int:
+def _selected_snapshots(voting: Voting, selected_ids: list[int]) -> list[VotingCharacterSnapshot]:
+    """Snapshots selecionados na ordem em que foram escolhidos."""
     if not selected_ids:
-        return 0
-    return VotingCharacterSnapshot.objects.filter(voting=voting, pk__in=selected_ids).count()
+        return []
+    snapshots = VotingCharacterSnapshot.objects.filter(
+        voting=voting,
+        pk__in=selected_ids,
+    ).select_related("image_asset")
+    by_id = {snapshot.pk: snapshot for snapshot in snapshots}
+    return [by_id[pk] for pk in selected_ids if pk in by_id]
+
+
+def _selection_context(voting: Voting, selected_ids: list[int]) -> dict:
+    """Contexto compartilhado pela página e pelo fragmento OOB."""
+    snapshots = _selected_snapshots(voting, selected_ids)
+    return {
+        "selected_ids": selected_ids,
+        "selected_snapshots": snapshots,
+        "selected_preview": snapshots[:SELECTION_PREVIEW_LIMIT],
+        "selected_more_count": max(0, len(snapshots) - SELECTION_PREVIEW_LIMIT),
+        "selected_count": len(snapshots),
+    }
 
 
 def _get_voting(voting_id: int) -> Voting:
@@ -139,18 +161,33 @@ def _render_detail(
         "query": request.POST.get("q", "")
         if request.method == "POST"
         else request.GET.get("q", ""),
-        "selected_ids": selected_ids,
-        "selected_count": _selected_count(voting, selected_ids),
         "error": error,
         "not_open": voting.status != VotingStatus.OPEN,
         "oob_summary": False,
+        **_selection_context(voting, selected_ids),
     }
     return render(request, "participant/voting_detail.html", context, status=status)
 
 
+def _closest_by_date(votings: list[Voting], field: str) -> Voting | None:
+    """Escolhe a votação com a data mais próxima, com desempate estável."""
+    if not votings:
+        return None
+    now = timezone.now()
+    return min(
+        votings,
+        key=lambda voting: (
+            getattr(voting, field) is None,
+            getattr(voting, field) or now,
+            voting.opens_at or now,
+            voting.title,
+        ),
+    )
+
+
 @login_required
 def home(request):
-    votings = (
+    votings = list(
         Voting.objects.filter(
             status__in=[VotingStatus.OPEN, VotingStatus.SCHEDULED],
             eligibilities__user=request.user,
@@ -158,7 +195,23 @@ def home(request):
         .distinct()
         .order_by("status", "opens_at", "title")
     )
-    return render(request, "participant/home.html", {"votings": votings})
+    open_votings = [voting for voting in votings if voting.status == VotingStatus.OPEN]
+    scheduled_votings = [voting for voting in votings if voting.status == VotingStatus.SCHEDULED]
+    featured_voting = _closest_by_date(open_votings, "closes_at") or _closest_by_date(
+        scheduled_votings, "opens_at"
+    )
+    other_votings = [
+        voting for voting in votings if featured_voting is None or voting.pk != featured_voting.pk
+    ]
+    return render(
+        request,
+        "participant/home.html",
+        {
+            "votings": votings,
+            "featured_voting": featured_voting,
+            "other_votings": other_votings,
+        },
+    )
 
 
 @login_required
@@ -182,10 +235,9 @@ def voting_detail(request, voting_id: int):
                 "voting": voting,
                 "characters": [],
                 "filter_groups": [],
-                "selected_ids": [],
-                "selected_count": 0,
                 "not_open": True,
                 "oob_summary": False,
+                **_selection_context(voting, []),
             },
         )
 
@@ -207,10 +259,9 @@ def character_grid(request, voting_id: int):
             {
                 "voting": voting,
                 "characters": [],
-                "selected_ids": [],
-                "selected_count": 0,
                 "oob_summary": True,
                 "not_open": True,
+                **_selection_context(voting, []),
             },
             status=409,
         )
@@ -230,9 +281,8 @@ def character_grid(request, voting_id: int):
         {
             "voting": voting,
             "characters": characters,
-            "selected_ids": selected_ids,
-            "selected_count": _selected_count(voting, selected_ids),
             "oob_summary": True,
+            **_selection_context(voting, selected_ids),
         },
     )
 
@@ -343,6 +393,7 @@ def result(request, voting_id: int):
             "voting": voting,
             "results": final_results(voting),
             "own_ballot": get_own_ballot(voting, request.user),
+            "participation": participation_summary(voting),
         },
     )
 

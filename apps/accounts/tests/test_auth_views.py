@@ -124,14 +124,13 @@ def test_username_administrativo_e_rejeitado_no_fluxo_de_participante(client):
     assert "_auth_user_id" not in client.session
 
 
-def test_pagina_de_login_exibe_aviso_de_limitacao_do_username(client):
+def test_pagina_de_login_exibe_formulario_de_username(client):
     response = client.get(reverse("participant:login"))
+    html = response.content.decode()
 
     assert response.status_code == 200
-    assert (
-        "Este acesso identifica apenas o username; não comprova sua identidade."
-        in response.content.decode()
-    )
+    assert 'id="id_username"' in html
+    assert reverse("admin:login") in html
 
 
 def test_participante_autenticado_que_visita_login_vai_para_home(client):

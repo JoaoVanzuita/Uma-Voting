@@ -6,8 +6,15 @@
   data-terminal="{% if job.is_terminal %}true{% else %}false{% endif %}"
   aria-live="polite"
 >
-  <div class="catalog-section-header">
-    <h2 id="import-progress-title" class="catalog-section-title">Progresso</h2>
+  <div class="section-header">
+    <div class="section-header__text">
+      <div class="section-header__title">
+        <h2 id="import-progress-title">Progresso</h2>
+      </div>
+      <p class="section-header__lead">
+        Atualização automática enquanto a execução estiver ativa.
+      </p>
+    </div>
     {% status_badge job.status %}
   </div>
 

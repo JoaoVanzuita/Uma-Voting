@@ -10,6 +10,7 @@ from apps.voting.services.results import (
     ResultRow,
     aggregate_results,
     participation,
+    participation_summary,
     rank_results,
 )
 from apps.voting.tests.helpers import create_open_voting
@@ -103,6 +104,20 @@ def test_participation_lista_quem_votou_e_quem_nao_votou():
     by_username = {row.username: row.voted for row in rows}
     assert by_username[participant.username] is True
     assert by_username[non_voter.username] is False
+
+
+def test_participation_summary_agrega_cedulas_sem_expor_quem_votou():
+    voting, participant, snapshots = create_open_voting(choices_count=1, candidates=1)
+    non_voter = ParticipantFactory()
+    VotingEligibilityFactory(voting=voting, user=non_voter)
+    vote(voting, participant, snapshots[0])
+
+    summary = participation_summary(voting)
+
+    assert summary.ballots == 1
+    assert summary.eligible == 2
+    assert summary.percent == 50
+    assert set(summary.__dataclass_fields__) == {"ballots", "eligible", "percent"}
 
 
 def test_resultado_cancelado_e_vazio():

@@ -1,0 +1,24 @@
+<a class="brand{% if brand_class %} {{ brand_class }}{% endif %}" href="{{ brand_url|default:'/' }}">
+  <span class="brand__mark" aria-hidden="true">
+    <svg viewBox="0 0 32 32" fill="none" focusable="false">
+      <path
+        d="M4.5 20.5C8 11 17 6.5 26 10"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+      />
+      <path
+        d="M6.5 27C11.5 19 19 16.5 27 19.5"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        opacity="0.55"
+      />
+      <circle class="brand__dot" cx="26.5" cy="9.5" r="2" />
+    </svg>
+  </span>
+  <span class="brand__text">
+    <span class="brand__wordmark">Uma Voting</span>
+    {% if brand_subtitle %}<small class="brand__subtitle">{{ brand_subtitle }}</small>{% endif %}
+  </span>
+</a>
