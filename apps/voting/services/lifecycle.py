@@ -122,6 +122,14 @@ def validate_configuration(data: dict, *, instance: Voting | None = None) -> dic
         raise VotingConfigError("A data de abertura é obrigatória no modo automático.")
     if close_mode == Mode.AUTOMATIC and closes_at is None:
         raise VotingConfigError("A data de encerramento é obrigatória no modo automático.")
+    # Apenas na criação: rascunhos antigos com abertura vencida continuam editáveis.
+    if (
+        instance is None
+        and open_mode == Mode.AUTOMATIC
+        and opens_at is not None
+        and opens_at <= timezone.now()
+    ):
+        raise VotingConfigError("A data de abertura deve estar no futuro.")
     if opens_at and closes_at and closes_at <= opens_at:
         raise VotingConfigError("O encerramento deve ser posterior à abertura.")
 

@@ -143,6 +143,58 @@ def test_datas_invertidas_sao_rejeitadas():
         create_voting(base_data(opens_at=opens_at, closes_at=closes_at), admin)
 
 
+def test_criacao_automatica_rejeita_abertura_no_passado():
+    admin = AdminUserFactory()
+
+    with pytest.raises(VotingConfigError, match="futuro"):
+        create_voting(
+            base_data(open_mode=Mode.AUTOMATIC, opens_at=timezone.now() - timedelta(minutes=5)),
+            admin,
+        )
+
+    assert not Voting.objects.exists()
+
+
+def test_criar_e_agendar_rejeita_abertura_no_passado_sem_persistir():
+    admin = AdminUserFactory()
+    add_catalog(2)
+
+    with pytest.raises(VotingConfigError, match="futuro"):
+        create_and_schedule_voting(
+            automatic_data(opens_at=timezone.now() - timedelta(minutes=5)),
+            admin,
+        )
+
+    assert not Voting.objects.exists()
+
+
+def test_abertura_igual_a_agora_e_rejeitada():
+    admin = AdminUserFactory()
+
+    with pytest.raises(VotingConfigError, match="futuro"):
+        create_voting(base_data(open_mode=Mode.AUTOMATIC, opens_at=timezone.now()), admin)
+
+
+def test_edicao_de_rascunho_com_abertura_vencida_permite_salvar():
+    voting = VotingFactory(
+        open_mode=Mode.AUTOMATIC,
+        opens_at=timezone.now() - timedelta(days=1),
+        closes_at=future(2),
+    )
+
+    updated = update_voting(
+        voting,
+        {
+            **base_data(title="Título corrigido"),
+            "open_mode": Mode.AUTOMATIC,
+            "opens_at": timezone.now() - timedelta(days=1),
+            "closes_at": future(2),
+        },
+    )
+
+    assert updated.title == "Título corrigido"
+
+
 def test_quantidade_de_escolhas_deve_ser_positiva():
     admin = AdminUserFactory()
 
