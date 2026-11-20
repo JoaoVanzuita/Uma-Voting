@@ -79,6 +79,15 @@ class OpenPreconditions:
         return problems
 
 
+@dataclass(frozen=True)
+class ScheduleResult:
+    """Resultado de uma criação que tenta agendar na mesma ação."""
+
+    voting: Voting
+    scheduled: bool
+    error: str | None = None
+
+
 def validate_configuration(data: dict, *, instance: Voting | None = None) -> dict:
     """Valida a configuração comum a criação e edição."""
     cleaned = {field: data[field] for field in CONFIG_FIELDS if field in data}
@@ -135,6 +144,30 @@ def create_voting(data: dict, admin) -> Voting:
 
     logger.info("Votação criada voting_id=%s admin_id=%s", voting.pk, admin.pk)
     return voting
+
+
+def create_and_schedule_voting(data: dict, admin) -> ScheduleResult:
+    """Cria a votação e tenta agendar na mesma ação, sem desfazer o rascunho.
+
+    Uma falha de pré-condição reverte apenas o savepoint do agendamento; o motivo é
+    devolvido no resultado em vez de lançado, porque uma exceção fora do savepoint
+    faria o `atomic()` externo descartar a votação recém-criada.
+    """
+    with transaction.atomic():
+        voting = create_voting(data, admin)
+        try:
+            with transaction.atomic():
+                scheduled = schedule_voting(voting)
+        except (VotingConfigError, PreconditionError) as exc:
+            logger.info(
+                "Votação criada com agendamento bloqueado voting_id=%s motivo=%s",
+                voting.pk,
+                exc.message,
+            )
+            return ScheduleResult(voting=voting, scheduled=False, error=exc.message)
+
+    logger.info("Votação criada e agendada voting_id=%s", scheduled.pk)
+    return ScheduleResult(voting=scheduled, scheduled=True)
 
 
 def update_voting(voting: Voting, data: dict) -> Voting:
