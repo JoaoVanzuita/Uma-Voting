@@ -206,6 +206,101 @@ def test_formulario_exibe_erros_de_validacao(client):
     assert "Este campo é obrigatório." in body
 
 
+def test_formulario_criacao_oferece_agendar_e_rascunho(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    body = client.get(reverse("admin:voting_create")).content.decode()
+
+    assert "Salvar e agendar" in body
+    assert 'name="action"' in body
+    assert 'value="schedule"' in body
+    assert "Salvar rascunho" in body
+    assert 'name="action" value="draft"' in body
+    assert 'aria-describedby="schedule-hint"' in body
+    assert "data-submit-once" in body
+    assert "Abertura manual: o agendamento não se aplica." in body
+
+
+def test_formulario_criacao_bloqueia_agendar_em_modo_manual(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    body = client.get(reverse("admin:voting_create")).content.decode()
+
+    assert 'aria-disabled="true"' in body
+    assert "Prontidão para agendar" not in body
+
+
+def test_formulario_edicao_mantem_apenas_salvar_alteracoes(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    voting = VotingFactory(title="Rascunho em edição")
+
+    body = client.get(reverse("admin:voting_edit", args=[voting.pk])).content.decode()
+
+    assert "Salvar alterações" in body
+    assert 'name="action"' not in body
+    assert "Prontidão para agendar" not in body
+
+
+def automatic_form_payload(**overrides):
+    payload = {
+        "title": "Votação automática",
+        "description": "",
+        "choices_count": 3,
+        "catalog_cutoff_date": "2026-12-01",
+        "open_mode": "automatic",
+        "close_mode": "automatic",
+        "opens_at": timezone.localtime(timezone.now() + timedelta(hours=1)).strftime(
+            "%Y-%m-%dT%H:%M"
+        ),
+        "closes_at": timezone.localtime(timezone.now() + timedelta(hours=2)).strftime(
+            "%Y-%m-%dT%H:%M"
+        ),
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_formulario_automatico_mostra_painel_de_pendencias(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(1)
+
+    body = client.post(
+        reverse("admin:voting_create"), automatic_form_payload(title="")
+    ).content.decode()
+
+    assert "Prontidão para agendar" in body
+    assert "Pendências" in body
+    assert "Corrija as pendências abaixo para agendar." in body
+    assert "1 de 3 necessária(s)" in body
+    assert reverse("admin:participant_list") in body
+    assert reverse("admin:catalog_status") in body
+    assert 'aria-disabled="true"' in body
+    assert body.count("form-section__legend") == 2
+
+
+def test_formulario_automatico_pronto_libera_o_botao(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(3)
+
+    body = client.post(
+        reverse("admin:voting_create"),
+        automatic_form_payload(
+            opens_at=timezone.localtime(timezone.now() - timedelta(minutes=5)).strftime(
+                "%Y-%m-%dT%H:%M"
+            )
+        ),
+    ).content.decode()
+
+    assert "Pronto para agendar" in body
+    assert 'aria-disabled="true"' not in body
+    assert "A data de abertura deve estar no futuro." in body
+
+
 # ---------------------------------------------------------------------------
 # V03 — Detalhe contextual
 # ---------------------------------------------------------------------------

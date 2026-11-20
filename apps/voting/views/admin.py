@@ -114,9 +114,14 @@ def _creation_readiness_context(form: VotingForm) -> dict:
     """Resumo indicativo de prontidão para agendar, calculado antes do `INSERT`.
 
     A criação torna todos os usuários ativos elegíveis, então o painel usa a contagem
-    de usuários ativos; as pré-condições autoritativas continuam no serviço.
+    de usuários ativos; as pré-condições autoritativas continuam no serviço. O form
+    bound mesmo inválido fornece os valores limpos para reexibir o painel com pendências.
     """
-    values = form.cleaned_data if form.is_bound and form.is_valid() else {}
+    values: dict = {}
+    if form.is_bound:
+        form.is_valid()
+        values = form.cleaned_data or {}
+
     open_mode = values.get("open_mode") or Voting._meta.get_field("open_mode").get_default()
     if open_mode != Mode.AUTOMATIC:
         return {"open_mode": open_mode, "readiness": None, "opens_at": None, "ready": False}

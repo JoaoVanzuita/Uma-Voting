@@ -8,6 +8,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.core.templatetags.ui_tags import datetime_br
 from apps.voting.models import Mode, Voting, VotingEligibility, VotingStatus
 from apps.voting.services.eligibility import add_default_eligible
 from tests.factories import (
@@ -289,3 +290,177 @@ def test_fluxo_completo_criacao_configuracao_e_agendamento(client):
     assert voting.status == VotingStatus.SCHEDULED
     assert voting.title == "Fluxo completo ajustado"
     assert VotingEligibility.objects.filter(voting=voting, user=participant).exists()
+
+
+# ---------------------------------------------------------------------------
+# Salvar e agendar na criação (US5 cenário 4)
+# ---------------------------------------------------------------------------
+
+
+def stamp(moment) -> str:
+    """Formata no fuso local: o form interpreta o `datetime-local` em America/Sao_Paulo."""
+    return timezone.localtime(moment).strftime("%Y-%m-%dT%H:%M")
+
+
+def automatic_payload(**overrides):
+    payload = form_payload(
+        choices_count=2,
+        open_mode=Mode.AUTOMATIC,
+        close_mode=Mode.AUTOMATIC,
+        opens_at=stamp(future()),
+        closes_at=stamp(future(2)),
+    )
+    payload.update(overrides)
+    return payload
+
+
+def test_salvar_e_agendar_pelo_formulario_transiciona_para_scheduled(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(2)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        automatic_payload(title="Agendamento direto", action="schedule"),
+        follow=True,
+    )
+
+    voting = Voting.objects.get()
+    assert response.redirect_chain[0][0] == reverse("admin:voting_detail", args=[voting.pk])
+    assert voting.status == VotingStatus.SCHEDULED
+
+    body = response.content.decode()
+    assert 'class="alert alert-success"' in body
+    assert "criada e agendada para" in body
+    assert datetime_br(voting.opens_at) in body
+
+
+def test_salvar_e_agendar_com_catalogo_insuficiente_persiste_rascunho(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(1)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        automatic_payload(title="Catálogo curto", choices_count=3, action="schedule"),
+        follow=True,
+    )
+
+    voting = Voting.objects.get()
+    assert response.redirect_chain[0][0] == reverse("admin:voting_detail", args=[voting.pk])
+    assert voting.status == VotingStatus.DRAFT
+
+    body = response.content.decode()
+    assert 'class="alert alert-warning"' in body
+    assert "não agendada" in body
+    assert "catálogo" in body
+    assert "Revise e confirme o agendamento" in body
+
+
+def test_salvar_e_agendar_em_modo_manual_persiste_rascunho(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(2)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        form_payload(title="Manual agendado", action="schedule"),
+        follow=True,
+    )
+
+    voting = Voting.objects.get()
+    assert voting.status == VotingStatus.DRAFT
+
+    body = response.content.decode()
+    assert 'class="alert alert-warning"' in body
+    assert "automático" in body
+
+
+def test_salvar_rascunho_automatico_avisa_que_nao_foi_agendada(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(2)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        automatic_payload(title="Só rascunho", action="draft"),
+        follow=True,
+    )
+
+    voting = Voting.objects.get()
+    assert voting.status == VotingStatus.DRAFT
+    body = response.content.decode()
+    assert 'class="alert alert-success"' in body
+    assert "criada em rascunho, não agendada" in body
+
+
+def test_post_sem_action_trata_como_rascunho(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(2)
+
+    response = client.post(reverse("admin:voting_create"), automatic_payload(title="Sem action"))
+
+    voting = Voting.objects.get()
+    assert response.status_code == 302
+    assert voting.status == VotingStatus.DRAFT
+
+
+def test_agendar_com_formulario_invalido_nao_cria_votacao(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(2)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        automatic_payload(title="", action="schedule"),
+    )
+
+    assert response.status_code == 200
+    assert not Voting.objects.exists()
+    assert 'class="alert alert-danger"' in response.content.decode()
+
+
+def test_agendar_com_abertura_no_passado_nao_cria_votacao(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(2)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        automatic_payload(
+            title="Abertura vencida",
+            opens_at=stamp(timezone.now() - timedelta(minutes=5)),
+            action="schedule",
+        ),
+    )
+
+    assert response.status_code == 200
+    assert not Voting.objects.exists()
+    assert "A data de abertura deve estar no futuro." in response.content.decode()
+
+
+def test_agendamento_bloqueado_na_criacao_pode_ser_agendado_pelo_detalhe(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(3)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        automatic_payload(title="Quatro escolhas", choices_count=4, action="schedule"),
+    )
+    voting = Voting.objects.get()
+    assert response.status_code == 302
+    assert voting.status == VotingStatus.DRAFT
+
+    response = client.post(
+        reverse("admin:voting_edit", args=[voting.pk]),
+        automatic_payload(title="Quatro escolhas", choices_count=3),
+    )
+    assert response.status_code == 302
+
+    response = client.post(reverse("admin:voting_schedule", args=[voting.pk]))
+
+    voting.refresh_from_db()
+    assert response.status_code == 302
+    assert voting.status == VotingStatus.SCHEDULED
