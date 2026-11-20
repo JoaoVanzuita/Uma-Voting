@@ -130,13 +130,20 @@
             Corrija as pendências abaixo para agendar.
           {% endif %}
         {% else %}
-          Abertura manual: o agendamento não se aplica. Salve o rascunho e abra quando quiser.
+          Abertura manual: o agendamento não se aplica. Escolha "Automática" em
+          "Modo de abertura" para liberar o agendamento, ou salve o rascunho e
+          abra a votação manualmente.
         {% endif %}
       </p>
     {% endif %}
 
-    {% if readiness %}
-      <section class="panel stack" aria-labelledby="readiness-title">
+    {% if not voting %}
+      <section
+        class="panel stack"
+        aria-labelledby="readiness-title"
+        data-schedule-readiness
+        {% if open_mode != "automatic" %}hidden{% endif %}
+      >
         <div class="section-header">
           <div class="section-header__text">
             <div class="section-header__title">
@@ -146,14 +153,17 @@
               Conferência indicativa; o agendamento revalida estas condições ao salvar.
             </p>
           </div>
-          {% if ready %}
-            <span class="badge badge--success">Pronto para agendar</span>
-          {% else %}
-            <span class="badge badge--warning">Pendências</span>
+          {% if readiness %}
+            {% if ready %}
+              <span class="badge badge--success">Pronto para agendar</span>
+            {% else %}
+              <span class="badge badge--warning">Pendências</span>
+            {% endif %}
           {% endif %}
         </div>
 
-        <ul class="av-check-list">
+        {% if readiness %}
+          <ul class="av-check-list">
           <li class="av-check {% if readiness.has_eligible %}av-check--success{% else %}av-check--warning{% endif %}">
             <div class="av-check__body">
               <p class="av-check__title">Participantes ativos</p>
@@ -203,28 +213,26 @@
             {% endif %}
           </li>
         </ul>
+        {% endif %}
       </section>
     {% endif %}
 
     <div class="form-actions">
       {% if voting %}
         <button class="btn btn-primary" type="submit">Salvar alterações</button>
-      {% elif open_mode == "automatic" %}
+      {% else %}
         <button
           class="btn btn-primary"
           type="submit"
           name="action"
           value="schedule"
           aria-describedby="schedule-hint"
+          data-schedule-submit
           {% if not ready %}aria-disabled="true"{% endif %}
         >
           Salvar e agendar
         </button>
         <button class="btn btn-secondary" type="submit" name="action" value="draft">
-          Salvar rascunho
-        </button>
-      {% else %}
-        <button class="btn btn-primary" type="submit" name="action" value="draft">
           Salvar rascunho
         </button>
       {% endif %}

@@ -206,7 +206,13 @@ def test_formulario_exibe_erros_de_validacao(client):
     assert "Este campo é obrigatório." in body
 
 
-def test_formulario_criacao_manual_oferece_apenas_rascunho(client):
+def _readiness_panel_is_hidden(body: str) -> bool:
+    """O painel existe sempre, mas fica oculto enquanto o modo for manual."""
+    match = re.search(r"<section[^>]*data-schedule-readiness[^>]*>", body)
+    return bool(match) and "hidden" in match.group(0)
+
+
+def test_formulario_criacao_manual_mostra_agendar_desabilitado(client):
     admin = AdminUserFactory()
     client.force_login(admin)
 
@@ -214,12 +220,14 @@ def test_formulario_criacao_manual_oferece_apenas_rascunho(client):
 
     assert "Salvar rascunho" in body
     assert 'name="action" value="draft"' in body
-    assert "Salvar e agendar" not in body
+    assert "Salvar e agendar" in body
     assert "data-submit-once" in body
     assert "Abertura manual: o agendamento não se aplica." in body
+    assert _readiness_panel_is_hidden(body)
+    assert 'aria-disabled="true"' in body
 
 
-def test_formulario_criacao_automatico_oferece_agendar_e_rascunho(client):
+def test_formulario_criacao_automatico_libera_agendar(client):
     admin = AdminUserFactory()
     client.force_login(admin)
 
@@ -233,6 +241,7 @@ def test_formulario_criacao_automatico_oferece_agendar_e_rascunho(client):
     assert 'aria-describedby="schedule-hint"' in body
     assert "Salvar rascunho" in body
     assert 'name="action" value="draft"' in body
+    assert "Prontidão para agendar" in body
 
 
 def test_formulario_criacao_bloqueia_agendar_em_modo_manual(client):
@@ -241,10 +250,11 @@ def test_formulario_criacao_bloqueia_agendar_em_modo_manual(client):
 
     body = client.get(reverse("admin:voting_create")).content.decode()
 
-    assert "Salvar e agendar" not in body
-    assert 'value="schedule"' not in body
+    # O botão existe sempre; o bloqueio é semântico e o JS impede o envio.
+    assert "data-schedule-submit" in body
+    assert 'aria-disabled="true"' in body
+    assert _readiness_panel_is_hidden(body)
     assert 'name="action" value="draft"' in body
-    assert "Prontidão para agendar" not in body
 
 
 def test_formulario_manual_cria_rascunho_mesmo_sem_botao_de_agendar(client):

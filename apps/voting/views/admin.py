@@ -121,9 +121,6 @@ def _creation_readiness_context(form: VotingForm) -> dict:
     values: dict = getattr(form, "cleaned_data", None) or {}
 
     open_mode = values.get("open_mode") or Voting._meta.get_field("open_mode").get_default()
-    if open_mode != Mode.AUTOMATIC:
-        return {"open_mode": open_mode, "readiness": None, "opens_at": None, "ready": False}
-
     transient = Voting(
         choices_count=values.get("choices_count")
         or Voting._meta.get_field("choices_count").get_default(),
@@ -140,7 +137,7 @@ def _creation_readiness_context(form: VotingForm) -> dict:
         "open_mode": open_mode,
         "readiness": readiness,
         "opens_at": values.get("opens_at"),
-        "ready": readiness.ok,
+        "ready": open_mode == Mode.AUTOMATIC and readiness.ok,
     }
 
 
