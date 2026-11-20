@@ -9,15 +9,17 @@ from django.utils import timezone
 
 from apps.core.exceptions import PreconditionError
 from apps.voting.forms import VotingForm
-from apps.voting.models import Mode, VotingEligibility, VotingStatus
+from apps.voting.models import Mode, Voting, VotingEligibility, VotingStatus
 from apps.voting.services.eligibility import (
     EligibilityError,
     add_eligible,
     remove_eligible,
 )
 from apps.voting.services.lifecycle import (
+    ScheduleResult,
     VotingConfigError,
     VotingStateError,
+    create_and_schedule_voting,
     create_voting,
     evaluate_open_preconditions,
     schedule_voting,
@@ -139,6 +141,58 @@ def test_datas_invertidas_sao_rejeitadas():
 
     with pytest.raises(VotingConfigError, match="posterior"):
         create_voting(base_data(opens_at=opens_at, closes_at=closes_at), admin)
+
+
+def test_criacao_automatica_rejeita_abertura_no_passado():
+    admin = AdminUserFactory()
+
+    with pytest.raises(VotingConfigError, match="futuro"):
+        create_voting(
+            base_data(open_mode=Mode.AUTOMATIC, opens_at=timezone.now() - timedelta(minutes=5)),
+            admin,
+        )
+
+    assert not Voting.objects.exists()
+
+
+def test_criar_e_agendar_rejeita_abertura_no_passado_sem_persistir():
+    admin = AdminUserFactory()
+    add_catalog(2)
+
+    with pytest.raises(VotingConfigError, match="futuro"):
+        create_and_schedule_voting(
+            automatic_data(opens_at=timezone.now() - timedelta(minutes=5)),
+            admin,
+        )
+
+    assert not Voting.objects.exists()
+
+
+def test_abertura_igual_a_agora_e_rejeitada():
+    admin = AdminUserFactory()
+
+    with pytest.raises(VotingConfigError, match="futuro"):
+        create_voting(base_data(open_mode=Mode.AUTOMATIC, opens_at=timezone.now()), admin)
+
+
+def test_edicao_de_rascunho_com_abertura_vencida_permite_salvar():
+    voting = VotingFactory(
+        open_mode=Mode.AUTOMATIC,
+        opens_at=timezone.now() - timedelta(days=1),
+        closes_at=future(2),
+    )
+
+    updated = update_voting(
+        voting,
+        {
+            **base_data(title="Título corrigido"),
+            "open_mode": Mode.AUTOMATIC,
+            "opens_at": timezone.now() - timedelta(days=1),
+            "closes_at": future(2),
+        },
+    )
+
+    assert updated.title == "Título corrigido"
 
 
 def test_quantidade_de_escolhas_deve_ser_positiva():
@@ -336,3 +390,90 @@ def test_agendamento_bem_sucedido_bloqueia_configuracao():
         update_voting(scheduled, base_data(title="Outro"))
     with pytest.raises(EligibilityError):
         add_eligible(scheduled, [ParticipantFactory().pk])
+
+
+# ---------------------------------------------------------------------------
+# Criar e agendar em uma única ação
+# ---------------------------------------------------------------------------
+
+
+def automatic_data(**overrides):
+    data = base_data(
+        open_mode=Mode.AUTOMATIC,
+        close_mode=Mode.AUTOMATIC,
+        opens_at=future(),
+        closes_at=future(2),
+        choices_count=2,
+    )
+    data.update(overrides)
+    return data
+
+
+def test_criar_e_agendar_transiciona_para_scheduled():
+    admin = AdminUserFactory()
+    ParticipantFactory()
+    add_catalog(2)
+
+    result = create_and_schedule_voting(automatic_data(), admin)
+
+    assert isinstance(result, ScheduleResult)
+    assert result.scheduled is True
+    assert result.error is None
+    result.voting.refresh_from_db()
+    assert result.voting.status == VotingStatus.SCHEDULED
+
+
+def test_criar_e_agendar_sem_elegiveis_persiste_rascunho():
+    admin = AdminUserFactory(is_active=False)
+    add_catalog(2)
+
+    result = create_and_schedule_voting(automatic_data(choices_count=1), admin)
+
+    assert result.scheduled is False
+    assert "elegíveis" in result.error
+    result.voting.refresh_from_db()
+    assert result.voting.status == VotingStatus.DRAFT
+
+
+def test_criar_e_agendar_com_catalogo_insuficiente_persiste_rascunho():
+    admin = AdminUserFactory()
+    add_catalog(1)
+
+    result = create_and_schedule_voting(automatic_data(choices_count=3), admin)
+
+    assert result.scheduled is False
+    assert "catálogo" in result.error
+    result.voting.refresh_from_db()
+    assert result.voting.status == VotingStatus.DRAFT
+
+
+def test_criar_e_agendar_em_modo_manual_persiste_rascunho():
+    admin = AdminUserFactory()
+    add_catalog(2)
+
+    result = create_and_schedule_voting(base_data(), admin)
+
+    assert result.scheduled is False
+    assert "automático" in result.error
+    result.voting.refresh_from_db()
+    assert result.voting.status == VotingStatus.DRAFT
+
+
+def test_criar_e_agendar_com_titulo_vazio_nao_persiste():
+    admin = AdminUserFactory()
+
+    with pytest.raises(VotingConfigError, match="título"):
+        create_and_schedule_voting(base_data(title="   "), admin)
+
+    assert not Voting.objects.exists()
+
+
+def test_agendamento_bloqueado_nao_deixa_scheduled_parcial():
+    admin = AdminUserFactory()
+    add_catalog(1)
+
+    result = create_and_schedule_voting(automatic_data(choices_count=3), admin)
+
+    assert result.scheduled is False
+    assert Voting.objects.filter(status=VotingStatus.SCHEDULED).count() == 0
+    assert Voting.objects.filter(status=VotingStatus.DRAFT).count() == 1

@@ -163,8 +163,10 @@ verificar as validações de abertura.
 3. **Given** uma votação sem participantes elegíveis ou com personagens insuficientes para a
    quantidade de escolhas, **When** o administrador tenta abri-la, **Then** a abertura é bloqueada
    com explicação.
-4. **Given** uma votação com abertura automática configurada, **When** o agendamento é confirmado,
-   **Then** a votação passa ao estado agendada e fica bloqueada para edição.
+4. **Given** uma votação com abertura automática configurada, **When** o administrador escolhe
+   "Salvar e agendar", **Then** a votação é criada e passa ao estado agendada em uma única ação e
+   fica bloqueada para edição. Se as pré-condições não forem atendidas, permanece em rascunho com
+   as pendências exibidas.
 5. **Given** uma votação já aberta, **When** o administrador tenta alterar suas configurações,
    **Then** a alteração é bloqueada.
 

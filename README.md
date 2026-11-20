@@ -13,7 +13,8 @@ PostgreSQL, Gunicorn e Caddy em Docker Compose.
 - Catálogo curado de personagens, versões, aptidões e imagens locais.
 - Sincronização híbrida: novas personagens são aplicadas; alterações ficam pendentes.
 - Importação e validação de imagens WebP 256 × 256 com placeholder local.
-- Criação e configuração de votações em rascunho, com elegíveis e data de corte.
+- Criação de votação com duas ações: salvar rascunho ou salvar e agendar na mesma requisição.
+- Configuração, elegíveis e data de corte editáveis enquanto a votação está em rascunho.
 - Abertura manual e automática, encerramento, cancelamento e recuperação de janelas.
 - Cédula definitiva com revisão, confirmação, privacidade e exclusão administrativa.
 - Resultados agregados, participação e ranking final com dense rank.
@@ -88,6 +89,24 @@ uv run python manage.py migrate
 uv run python manage.py create_admin --username admin
 uv run python manage.py runserver
 ```
+
+## Administração de votações
+
+Em `/admin/votacoes/nova/` o formulário oferece duas ações de submit no mesmo form:
+
+- **Salvar e agendar** — cria a votação e a transiciona de rascunho para agendada numa única
+  requisição; a configuração e os elegíveis ficam bloqueados e a abertura automática passa a
+  ser feita pelo scheduler.
+- **Salvar rascunho** — cria a votação em rascunho, mantendo a configuração editável.
+
+O painel "Prontidão para agendar" aparece apenas com abertura automática e mostra participantes
+ativos, personagens no catálogo até a data de corte e a janela de encerramento. Ele é indicativo:
+as pré-condições são revalidadas pelo serviço ao salvar. Se alguma delas falhar, a votação é
+persistida como rascunho e o aviso explica o motivo e o próximo passo — nenhum dado digitado é
+perdido. Com abertura manual o agendamento não se aplica, e o botão primário nasce bloqueado.
+
+A edição de um rascunho mantém apenas "Salvar alterações", e o agendamento pelo detalhe
+(`/admin/votacoes/<id>/`) continua disponível para rascunhos criados antes de configurar as datas.
 
 ## Testes e qualidade
 

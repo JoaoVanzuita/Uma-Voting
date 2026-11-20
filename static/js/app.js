@@ -350,17 +350,75 @@
     true
   );
 
+  /* Libera "Salvar e agendar" assim que o modo de abertura automático é escolhido,
+   * sem exigir um envio do formulário. O estado inicial vem do servidor. */
+  (function () {
+    var scheduleButton = document.querySelector("[data-schedule-submit]");
+    var modeField = document.getElementById("id_open_mode");
+    var readinessPanel = document.querySelector("[data-schedule-readiness]");
+    var hint = document.getElementById("schedule-hint");
+    if (!scheduleButton || !modeField) {
+      return;
+    }
+
+    var AUTOMATIC_HINT =
+      "Agendar bloqueia a configuração e os participantes; a votação abre na data informada.";
+    var MANUAL_HINT = hint ? hint.textContent.trim() : "";
+
+    function syncScheduleState() {
+      var isAutomatic = modeField.value === "automatic";
+      if (isAutomatic) {
+        scheduleButton.removeAttribute("aria-disabled");
+      } else {
+        scheduleButton.setAttribute("aria-disabled", "true");
+      }
+      if (readinessPanel) {
+        readinessPanel.hidden = !isAutomatic;
+      }
+      if (hint) {
+        hint.textContent = isAutomatic ? AUTOMATIC_HINT : MANUAL_HINT;
+      }
+    }
+
+    modeField.addEventListener("change", syncScheduleState);
+  })();
+
+  /* Impede o envio quando o próprio botão acionado está marcado como inativo.
+   * `aria-disabled` é semântico: sem isto o clique ainda submeteria o formulário. */
+  document.addEventListener(
+    "submit",
+    function (event) {
+      var submitter = event.submitter;
+      if (!submitter || submitter.getAttribute("aria-disabled") !== "true") {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      var describedBy = document.getElementById(submitter.getAttribute("aria-describedby"));
+      if (describedBy) {
+        describedBy.setAttribute("role", "alert");
+      }
+    },
+    true
+  );
+
   /* Evita envio duplicado de formulários marcados explicitamente. */
   document.addEventListener("submit", function (event) {
     var form = event.target;
     if (!form || !form.matches || !form.matches("[data-submit-once]")) {
       return;
     }
-    var submitter = form.querySelector('[type="submit"]');
+    var submitter = event.submitter || form.querySelector('[type="submit"]');
     if (submitter) {
       submitter.setAttribute("aria-busy", "true");
-      submitter.disabled = true;
     }
+    /* Desabilita apenas os outros botões: o acionado precisa permanecer habilitado
+     * para que seu name/value (ex.: action=schedule) entre no corpo enviado. */
+    Array.prototype.forEach.call(form.querySelectorAll('[type="submit"]'), function (button) {
+      if (button !== submitter) {
+        button.disabled = true;
+      }
+    });
   });
 
   /* -----------------------------------------------------------------------

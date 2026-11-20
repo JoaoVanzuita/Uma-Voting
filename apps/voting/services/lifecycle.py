@@ -79,6 +79,15 @@ class OpenPreconditions:
         return problems
 
 
+@dataclass(frozen=True)
+class ScheduleResult:
+    """Resultado de uma criação que tenta agendar na mesma ação."""
+
+    voting: Voting
+    scheduled: bool
+    error: str | None = None
+
+
 def validate_configuration(data: dict, *, instance: Voting | None = None) -> dict:
     """Valida a configuração comum a criação e edição."""
     cleaned = {field: data[field] for field in CONFIG_FIELDS if field in data}
@@ -113,6 +122,14 @@ def validate_configuration(data: dict, *, instance: Voting | None = None) -> dic
         raise VotingConfigError("A data de abertura é obrigatória no modo automático.")
     if close_mode == Mode.AUTOMATIC and closes_at is None:
         raise VotingConfigError("A data de encerramento é obrigatória no modo automático.")
+    # Apenas na criação: rascunhos antigos com abertura vencida continuam editáveis.
+    if (
+        instance is None
+        and open_mode == Mode.AUTOMATIC
+        and opens_at is not None
+        and opens_at <= timezone.now()
+    ):
+        raise VotingConfigError("A data de abertura deve estar no futuro.")
     if opens_at and closes_at and closes_at <= opens_at:
         raise VotingConfigError("O encerramento deve ser posterior à abertura.")
 
@@ -137,6 +154,30 @@ def create_voting(data: dict, admin) -> Voting:
     return voting
 
 
+def create_and_schedule_voting(data: dict, admin) -> ScheduleResult:
+    """Cria a votação e tenta agendar na mesma ação, sem desfazer o rascunho.
+
+    Uma falha de pré-condição reverte apenas o savepoint do agendamento; o motivo é
+    devolvido no resultado em vez de lançado, porque uma exceção fora do savepoint
+    faria o `atomic()` externo descartar a votação recém-criada.
+    """
+    with transaction.atomic():
+        voting = create_voting(data, admin)
+        try:
+            with transaction.atomic():
+                scheduled = schedule_voting(voting)
+        except (VotingConfigError, PreconditionError) as exc:
+            logger.info(
+                "Votação criada com agendamento bloqueado voting_id=%s motivo=%s",
+                voting.pk,
+                exc.message,
+            )
+            return ScheduleResult(voting=voting, scheduled=False, error=exc.message)
+
+    logger.info("Votação criada e agendada voting_id=%s", scheduled.pk)
+    return ScheduleResult(voting=scheduled, scheduled=True)
+
+
 def update_voting(voting: Voting, data: dict) -> Voting:
     """Atualiza a configuração de uma votação em rascunho."""
     with transaction.atomic():
@@ -154,8 +195,14 @@ def update_voting(voting: Voting, data: dict) -> Voting:
 
 
 def evaluate_open_preconditions(voting: Voting) -> OpenPreconditions:
-    """Calcula as pré-condições de abertura sem alterar a votação."""
-    eligible_count = VotingEligibility.objects.filter(voting=voting).count()
+    """Calcula as pré-condições de abertura sem alterar a votação.
+
+    Uma instância ainda não salva tem zero elegíveis por definição, o que permite
+    avaliar a configuração de criação antes do `INSERT`.
+    """
+    eligible_count = (
+        0 if voting.pk is None else VotingEligibility.objects.filter(voting=voting).count()
+    )
     catalog_count = eligible_characters(voting.catalog_cutoff_date).count()
     window_open = True
     if voting.close_mode == Mode.AUTOMATIC and voting.closes_at is not None:

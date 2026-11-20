@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.catalog.models import ImageAsset
-from apps.voting.models import VotingStatus
+from apps.voting.models import Voting, VotingStatus
 from apps.voting.services.ballots import submit_ballot
 from apps.voting.services.eligibility import add_default_eligible
 from apps.voting.services.lifecycle import cancel_voting, close_voting
@@ -204,6 +204,149 @@ def test_formulario_exibe_erros_de_validacao(client):
     assert 'class="alert alert-danger"' in body
     assert "Informe o título da votação." in body
     assert "Este campo é obrigatório." in body
+
+
+def _readiness_panel_is_hidden(body: str) -> bool:
+    """O painel existe sempre, mas fica oculto enquanto o modo for manual."""
+    match = re.search(r"<section[^>]*data-schedule-readiness[^>]*>", body)
+    return bool(match) and "hidden" in match.group(0)
+
+
+def test_formulario_criacao_manual_mostra_agendar_desabilitado(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    body = client.get(reverse("admin:voting_create")).content.decode()
+
+    assert "Salvar rascunho" in body
+    assert 'name="action" value="draft"' in body
+    assert "Salvar e agendar" in body
+    assert "data-submit-once" in body
+    assert "Abertura manual: o agendamento não se aplica." in body
+    assert _readiness_panel_is_hidden(body)
+    assert 'aria-disabled="true"' in body
+
+
+def test_formulario_criacao_automatico_libera_agendar(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    body = client.post(
+        reverse("admin:voting_create"),
+        automatic_form_payload(title=""),
+    ).content.decode()
+
+    assert "Salvar e agendar" in body
+    assert 'value="schedule"' in body
+    assert 'aria-describedby="schedule-hint"' in body
+    assert "Salvar rascunho" in body
+    assert 'name="action" value="draft"' in body
+    assert "Prontidão para agendar" in body
+
+
+def test_formulario_criacao_bloqueia_agendar_em_modo_manual(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    body = client.get(reverse("admin:voting_create")).content.decode()
+
+    # O botão existe sempre; o bloqueio é semântico e o JS impede o envio.
+    assert "data-schedule-submit" in body
+    assert 'aria-disabled="true"' in body
+    assert _readiness_panel_is_hidden(body)
+    assert 'name="action" value="draft"' in body
+
+
+def test_formulario_manual_cria_rascunho_mesmo_sem_botao_de_agendar(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        {
+            "title": "Manual sem agendar",
+            "description": "",
+            "choices_count": 3,
+            "catalog_cutoff_date": "2026-12-01",
+            "open_mode": "manual",
+            "close_mode": "manual",
+            "opens_at": "",
+            "closes_at": "",
+        },
+    )
+
+    voting = Voting.objects.get()
+    assert response.status_code == 302
+    assert voting.status == VotingStatus.DRAFT
+
+
+def test_formulario_edicao_mantem_apenas_salvar_alteracoes(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    voting = VotingFactory(title="Rascunho em edição")
+
+    body = client.get(reverse("admin:voting_edit", args=[voting.pk])).content.decode()
+
+    assert "Salvar alterações" in body
+    assert 'name="action"' not in body
+    assert "Prontidão para agendar" not in body
+
+
+def automatic_form_payload(**overrides):
+    payload = {
+        "title": "Votação automática",
+        "description": "",
+        "choices_count": 3,
+        "catalog_cutoff_date": "2026-12-01",
+        "open_mode": "automatic",
+        "close_mode": "automatic",
+        "opens_at": timezone.localtime(timezone.now() + timedelta(hours=1)).strftime(
+            "%Y-%m-%dT%H:%M"
+        ),
+        "closes_at": timezone.localtime(timezone.now() + timedelta(hours=2)).strftime(
+            "%Y-%m-%dT%H:%M"
+        ),
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_formulario_automatico_invalido_mostra_painel_com_pendencias(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(1)
+
+    body = client.post(
+        reverse("admin:voting_create"), automatic_form_payload(title="")
+    ).content.decode()
+
+    assert "Prontidão para agendar" in body
+    assert "Pendências" in body
+    assert "Corrija as pendências abaixo para agendar." in body
+    assert "1 de 3 necessária(s)" in body
+    assert reverse("admin:participant_list") in body
+    assert reverse("admin:catalog_status") in body
+    assert 'aria-disabled="true"' in body
+    assert body.count("form-section__legend") == 2
+
+
+def test_formulario_automatico_com_abertura_vencida_mostra_erro_sem_bloqueio(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+    add_catalog(3)
+
+    body = client.post(
+        reverse("admin:voting_create"),
+        automatic_form_payload(
+            opens_at=timezone.localtime(timezone.now() - timedelta(minutes=5)).strftime(
+                "%Y-%m-%dT%H:%M"
+            )
+        ),
+    ).content.decode()
+
+    assert "Pronto para agendar" in body
+    assert 'aria-disabled="true"' not in body
+    assert "A data de abertura deve estar no futuro." in body
 
 
 # ---------------------------------------------------------------------------

@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from zoneinfo import ZoneInfo
 
 from django import template
 from django.conf import settings
 from django.templatetags.static import static
-from django.utils import timezone
+
+from apps.core.formatting import format_date_br, format_datetime_br
 
 register = template.Library()
-
-LOCAL_TIME_ZONE = ZoneInfo(settings.TIME_ZONE)
 
 STATUS_LABELS = {
     # Votações
@@ -89,24 +87,12 @@ def status_badge(status: str, label: str | None = None) -> dict[str, str]:
     }
 
 
-def _localize(value: datetime) -> datetime:
-    if timezone.is_naive(value):
-        value = timezone.make_aware(value, LOCAL_TIME_ZONE)
-    return value.astimezone(LOCAL_TIME_ZONE)
-
-
 @register.filter
 def datetime_br(value: datetime | None, fmt: str = "%d/%m/%Y %H:%M") -> str:
     """Formata data/hora em America/Sao_Paulo (formato strftime)."""
-    if not value:
-        return "—"
-    return _localize(value).strftime(fmt)
+    return format_datetime_br(value, fmt)
 
 
 @register.filter
 def date_br(value: date | datetime | None, fmt: str = "%d/%m/%Y") -> str:
-    if not value:
-        return "—"
-    if isinstance(value, datetime):
-        value = _localize(value)
-    return value.strftime(fmt)
+    return format_date_br(value, fmt)
