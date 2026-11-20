@@ -8,7 +8,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from apps.core.templatetags.ui_tags import datetime_br
+from apps.core.formatting import format_datetime_br
 from apps.voting.models import Mode, Voting, VotingEligibility, VotingStatus
 from apps.voting.services.eligibility import add_default_eligible
 from tests.factories import (
@@ -332,7 +332,7 @@ def test_salvar_e_agendar_pelo_formulario_transiciona_para_scheduled(client):
     body = response.content.decode()
     assert 'class="alert alert-success"' in body
     assert "criada e agendada para" in body
-    assert datetime_br(voting.opens_at) in body
+    assert format_datetime_br(voting.opens_at) in body
 
 
 def test_salvar_e_agendar_com_catalogo_insuficiente_persiste_rascunho(client):

@@ -12,8 +12,8 @@ from django.views.decorators.http import require_POST
 from apps.accounts.models import User
 from apps.catalog.models import Character, ImageAsset, SyncChange
 from apps.core.exceptions import PreconditionError
+from apps.core.formatting import format_datetime_br
 from apps.core.permissions import admin_required
-from apps.core.templatetags.ui_tags import datetime_br
 from apps.voting.forms import EligibleAddForm, VotingForm
 from apps.voting.models import (
     Ballot,
@@ -114,13 +114,11 @@ def _creation_readiness_context(form: VotingForm) -> dict:
     """Resumo indicativo de prontidão para agendar, calculado antes do `INSERT`.
 
     A criação torna todos os usuários ativos elegíveis, então o painel usa a contagem
-    de usuários ativos; as pré-condições autoritativas continuam no serviço. O form
-    bound mesmo inválido fornece os valores limpos para reexibir o painel com pendências.
+    de usuários ativos; as pré-condições autoritativas continuam no serviço. Quando o
+    form está vinculado, usa os valores já limpos pela validação da view — esta função
+    não chama ``is_valid()`` para não depender da ordem de avaliação do contexto.
     """
-    values: dict = {}
-    if form.is_bound:
-        form.is_valid()
-        values = form.cleaned_data or {}
+    values: dict = getattr(form, "cleaned_data", None) or {}
 
     open_mode = values.get("open_mode") or Voting._meta.get_field("open_mode").get_default()
     if open_mode != Mode.AUTOMATIC:
@@ -146,11 +144,40 @@ def _creation_readiness_context(form: VotingForm) -> dict:
     }
 
 
+def _scheduled_message(voting: Voting) -> str:
+    opens = format_datetime_br(voting.opens_at)
+    return f"Votação '{voting.title}' criada e agendada para {opens}."
+
+
+def _schedule_blocked_message(voting: Voting, error: str) -> str:
+    """Explica o bloqueio sem prometer um próximo passo impossível.
+
+    Em modo manual não existe agendamento a confirmar, então o texto apenas orienta a
+    salvar o rascunho e abrir a votação manualmente.
+    """
+    if voting.open_mode == Mode.MANUAL:
+        return (
+            f"Votação '{voting.title}' criada em rascunho. "
+            f"{error} Use 'Abrir votação' no detalhe quando quiser começar."
+        )
+    return (
+        f"Votação '{voting.title}' criada em rascunho, não agendada. "
+        f"{error} Revise e confirme o agendamento."
+    )
+
+
+def _draft_message(voting: Voting) -> str:
+    suffix = ", não agendada" if voting.open_mode == Mode.AUTOMATIC else ""
+    return f"Votação '{voting.title}' criada em rascunho{suffix}."
+
+
 @admin_required
 def voting_create(request):
     form = VotingForm(request.POST or None)
+    # Validar uma vez aqui garante `cleaned_data` disponível para o resumo de prontidão.
+    is_valid = form.is_valid()
 
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and is_valid:
         action = request.POST.get("action", "draft")
         if action == "schedule":
             try:
@@ -159,16 +186,11 @@ def voting_create(request):
                 form.add_error(None, exc.message)
             else:
                 if result.scheduled:
-                    messages.success(
-                        request,
-                        f"Votação '{result.voting.title}' criada e agendada para "
-                        f"{datetime_br(result.voting.opens_at)}.",
-                    )
+                    messages.success(request, _scheduled_message(result.voting))
                 else:
                     messages.warning(
                         request,
-                        f"Votação '{result.voting.title}' criada em rascunho, não agendada. "
-                        f"{result.error}. Revise e confirme o agendamento.",
+                        _schedule_blocked_message(result.voting, result.error),
                     )
                 return redirect("admin:voting_detail", voting_id=result.voting.pk)
 
@@ -177,8 +199,7 @@ def voting_create(request):
         except VotingConfigError as exc:
             form.add_error(None, exc.message)
         else:
-            suffix = ", não agendada" if voting.open_mode == Mode.AUTOMATIC else ""
-            messages.success(request, f"Votação '{voting.title}' criada em rascunho{suffix}.")
+            messages.success(request, _draft_message(voting))
             return redirect("admin:voting_detail", voting_id=voting.pk)
 
     return render(

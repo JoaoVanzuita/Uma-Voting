@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.catalog.models import ImageAsset
-from apps.voting.models import VotingStatus
+from apps.voting.models import Voting, VotingStatus
 from apps.voting.services.ballots import submit_ballot
 from apps.voting.services.eligibility import add_default_eligible
 from apps.voting.services.lifecycle import cancel_voting, close_voting
@@ -206,20 +206,33 @@ def test_formulario_exibe_erros_de_validacao(client):
     assert "Este campo é obrigatório." in body
 
 
-def test_formulario_criacao_oferece_agendar_e_rascunho(client):
+def test_formulario_criacao_manual_oferece_apenas_rascunho(client):
     admin = AdminUserFactory()
     client.force_login(admin)
 
     body = client.get(reverse("admin:voting_create")).content.decode()
 
-    assert "Salvar e agendar" in body
-    assert 'name="action"' in body
-    assert 'value="schedule"' in body
     assert "Salvar rascunho" in body
     assert 'name="action" value="draft"' in body
-    assert 'aria-describedby="schedule-hint"' in body
+    assert "Salvar e agendar" not in body
     assert "data-submit-once" in body
     assert "Abertura manual: o agendamento não se aplica." in body
+
+
+def test_formulario_criacao_automatico_oferece_agendar_e_rascunho(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    body = client.post(
+        reverse("admin:voting_create"),
+        automatic_form_payload(title=""),
+    ).content.decode()
+
+    assert "Salvar e agendar" in body
+    assert 'value="schedule"' in body
+    assert 'aria-describedby="schedule-hint"' in body
+    assert "Salvar rascunho" in body
+    assert 'name="action" value="draft"' in body
 
 
 def test_formulario_criacao_bloqueia_agendar_em_modo_manual(client):
@@ -228,8 +241,33 @@ def test_formulario_criacao_bloqueia_agendar_em_modo_manual(client):
 
     body = client.get(reverse("admin:voting_create")).content.decode()
 
-    assert 'aria-disabled="true"' in body
+    assert "Salvar e agendar" not in body
+    assert 'value="schedule"' not in body
+    assert 'name="action" value="draft"' in body
     assert "Prontidão para agendar" not in body
+
+
+def test_formulario_manual_cria_rascunho_mesmo_sem_botao_de_agendar(client):
+    admin = AdminUserFactory()
+    client.force_login(admin)
+
+    response = client.post(
+        reverse("admin:voting_create"),
+        {
+            "title": "Manual sem agendar",
+            "description": "",
+            "choices_count": 3,
+            "catalog_cutoff_date": "2026-12-01",
+            "open_mode": "manual",
+            "close_mode": "manual",
+            "opens_at": "",
+            "closes_at": "",
+        },
+    )
+
+    voting = Voting.objects.get()
+    assert response.status_code == 302
+    assert voting.status == VotingStatus.DRAFT
 
 
 def test_formulario_edicao_mantem_apenas_salvar_alteracoes(client):
@@ -263,7 +301,7 @@ def automatic_form_payload(**overrides):
     return payload
 
 
-def test_formulario_automatico_mostra_painel_de_pendencias(client):
+def test_formulario_automatico_invalido_mostra_painel_com_pendencias(client):
     admin = AdminUserFactory()
     client.force_login(admin)
     add_catalog(1)
@@ -282,7 +320,7 @@ def test_formulario_automatico_mostra_painel_de_pendencias(client):
     assert body.count("form-section__legend") == 2
 
 
-def test_formulario_automatico_pronto_libera_o_botao(client):
+def test_formulario_automatico_com_abertura_vencida_mostra_erro_sem_bloqueio(client):
     admin = AdminUserFactory()
     client.force_login(admin)
     add_catalog(3)

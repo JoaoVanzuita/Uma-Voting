@@ -350,6 +350,25 @@
     true
   );
 
+  /* Impede o envio quando o próprio botão acionado está marcado como inativo.
+   * `aria-disabled` é semântico: sem isto o clique ainda submeteria o formulário. */
+  document.addEventListener(
+    "submit",
+    function (event) {
+      var submitter = event.submitter;
+      if (!submitter || submitter.getAttribute("aria-disabled") !== "true") {
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      var describedBy = document.getElementById(submitter.getAttribute("aria-describedby"));
+      if (describedBy) {
+        describedBy.setAttribute("role", "alert");
+      }
+    },
+    true
+  );
+
   /* Evita envio duplicado de formulários marcados explicitamente. */
   document.addEventListener("submit", function (event) {
     var form = event.target;
