@@ -356,10 +356,12 @@
     if (!form || !form.matches || !form.matches("[data-submit-once]")) {
       return;
     }
-    var submitter = form.querySelector('[type="submit"]');
+    var submitter = event.submitter || form.querySelector('[type="submit"]');
+    Array.prototype.forEach.call(form.querySelectorAll('[type="submit"]'), function (button) {
+      button.disabled = true;
+    });
     if (submitter) {
       submitter.setAttribute("aria-busy", "true");
-      submitter.disabled = true;
     }
   });
 

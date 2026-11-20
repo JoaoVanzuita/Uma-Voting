@@ -195,8 +195,14 @@ def update_voting(voting: Voting, data: dict) -> Voting:
 
 
 def evaluate_open_preconditions(voting: Voting) -> OpenPreconditions:
-    """Calcula as pré-condições de abertura sem alterar a votação."""
-    eligible_count = VotingEligibility.objects.filter(voting=voting).count()
+    """Calcula as pré-condições de abertura sem alterar a votação.
+
+    Uma instância ainda não salva tem zero elegíveis por definição, o que permite
+    avaliar a configuração de criação antes do `INSERT`.
+    """
+    eligible_count = (
+        0 if voting.pk is None else VotingEligibility.objects.filter(voting=voting).count()
+    )
     catalog_count = eligible_characters(voting.catalog_cutoff_date).count()
     window_open = True
     if voting.close_mode == Mode.AUTOMATIC and voting.closes_at is not None:

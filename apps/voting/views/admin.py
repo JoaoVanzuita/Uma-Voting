@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
@@ -11,9 +13,11 @@ from apps.accounts.models import User
 from apps.catalog.models import Character, ImageAsset, SyncChange
 from apps.core.exceptions import PreconditionError
 from apps.core.permissions import admin_required
+from apps.core.templatetags.ui_tags import datetime_br
 from apps.voting.forms import EligibleAddForm, VotingForm
 from apps.voting.models import (
     Ballot,
+    Mode,
     Voting,
     VotingEligibility,
     VotingStatus,
@@ -29,6 +33,7 @@ from apps.voting.services.lifecycle import (
     VotingStateError,
     cancel_voting,
     close_voting,
+    create_and_schedule_voting,
     create_voting,
     evaluate_open_preconditions,
     open_voting,
@@ -105,11 +110,63 @@ def voting_list(request):
     )
 
 
+def _creation_readiness_context(form: VotingForm) -> dict:
+    """Resumo indicativo de prontidão para agendar, calculado antes do `INSERT`.
+
+    A criação torna todos os usuários ativos elegíveis, então o painel usa a contagem
+    de usuários ativos; as pré-condições autoritativas continuam no serviço.
+    """
+    values = form.cleaned_data if form.is_bound and form.is_valid() else {}
+    open_mode = values.get("open_mode") or Voting._meta.get_field("open_mode").get_default()
+    if open_mode != Mode.AUTOMATIC:
+        return {"open_mode": open_mode, "readiness": None, "opens_at": None, "ready": False}
+
+    transient = Voting(
+        choices_count=values.get("choices_count")
+        or Voting._meta.get_field("choices_count").get_default(),
+        catalog_cutoff_date=values.get("catalog_cutoff_date")
+        or form.initial.get("catalog_cutoff_date"),
+        close_mode=values.get("close_mode") or Voting._meta.get_field("close_mode").get_default(),
+        closes_at=values.get("closes_at"),
+    )
+    readiness = replace(
+        evaluate_open_preconditions(transient),
+        eligible_count=User.objects.filter(is_active=True).count(),
+    )
+    return {
+        "open_mode": open_mode,
+        "readiness": readiness,
+        "opens_at": values.get("opens_at"),
+        "ready": readiness.ok,
+    }
+
+
 @admin_required
 def voting_create(request):
     form = VotingForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
+        action = request.POST.get("action", "draft")
+        if action == "schedule":
+            try:
+                result = create_and_schedule_voting(form.cleaned_data, request.user)
+            except VotingConfigError as exc:
+                form.add_error(None, exc.message)
+            else:
+                if result.scheduled:
+                    messages.success(
+                        request,
+                        f"Votação '{result.voting.title}' criada e agendada para "
+                        f"{datetime_br(result.voting.opens_at)}.",
+                    )
+                else:
+                    messages.warning(
+                        request,
+                        f"Votação '{result.voting.title}' criada em rascunho, não agendada. "
+                        f"{result.error}. Revise e confirme o agendamento.",
+                    )
+                return redirect("admin:voting_detail", voting_id=result.voting.pk)
+
         try:
             voting = create_voting(form.cleaned_data, request.user)
         except VotingConfigError as exc:
@@ -121,7 +178,7 @@ def voting_create(request):
     return render(
         request,
         "admin/voting/form.html",
-        {"form": form, "voting": None},
+        {"form": form, "voting": None, **_creation_readiness_context(form)},
     )
 
 

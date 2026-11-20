@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% load ui_tags %}
 
 {% block title %}
   {% if voting %}Editar votação{% else %}Nova votação{% endif %} — Uma Voting
@@ -119,10 +120,39 @@
       </fieldset>
     </section>
 
+    {% if not voting %}
+      <p class="form-help" id="schedule-hint">
+        {% if open_mode == "automatic" %}
+          {% if ready %}
+            Agendar bloqueia a configuração e os participantes; a votação abre em
+            {{ opens_at|datetime_br }}.
+          {% else %}
+            Corrija as pendências abaixo para agendar.
+          {% endif %}
+        {% else %}
+          Abertura manual: o agendamento não se aplica. Salve o rascunho e abra quando quiser.
+        {% endif %}
+      </p>
+    {% endif %}
+
     <div class="form-actions">
-      <button class="btn btn-primary" type="submit">
-        {% if voting %}Salvar alterações{% else %}Criar votação{% endif %}
-      </button>
+      {% if voting %}
+        <button class="btn btn-primary" type="submit">Salvar alterações</button>
+      {% else %}
+        <button
+          class="btn btn-primary"
+          type="submit"
+          name="action"
+          value="schedule"
+          aria-describedby="schedule-hint"
+          {% if not ready %}aria-disabled="true"{% endif %}
+        >
+          Salvar e agendar
+        </button>
+        <button class="btn btn-secondary" type="submit" name="action" value="draft">
+          Salvar rascunho
+        </button>
+      {% endif %}
       <a class="btn btn-secondary" href="{% url 'admin:voting_list' %}">Cancelar</a>
     </div>
   </form>
