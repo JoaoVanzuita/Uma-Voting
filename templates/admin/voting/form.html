@@ -135,6 +135,77 @@
       </p>
     {% endif %}
 
+    {% if readiness %}
+      <section class="panel stack" aria-labelledby="readiness-title">
+        <div class="section-header">
+          <div class="section-header__text">
+            <div class="section-header__title">
+              <h2 id="readiness-title">Prontidão para agendar</h2>
+            </div>
+            <p class="section-header__lead">
+              Conferência indicativa; o agendamento revalida estas condições ao salvar.
+            </p>
+          </div>
+          {% if ready %}
+            <span class="badge badge--success">Pronto para agendar</span>
+          {% else %}
+            <span class="badge badge--warning">Pendências</span>
+          {% endif %}
+        </div>
+
+        <ul class="av-check-list">
+          <li class="av-check {% if readiness.has_eligible %}av-check--success{% else %}av-check--warning{% endif %}">
+            <div class="av-check__body">
+              <p class="av-check__title">Participantes ativos</p>
+              <p class="av-check__meta">
+                {{ readiness.eligible_count }} participante(s) ativo(s) entram como elegíveis.
+                É necessário ao menos um.
+                <a href="{% url 'admin:participant_list' %}">Ver participantes</a>
+              </p>
+            </div>
+            {% if readiness.has_eligible %}
+              <span class="badge badge--success av-check__state">Atendido</span>
+            {% else %}
+              <span class="badge badge--warning av-check__state">Pendente</span>
+            {% endif %}
+          </li>
+
+          <li class="av-check {% if readiness.has_catalog %}av-check--success{% else %}av-check--warning{% endif %}">
+            <div class="av-check__body">
+              <p class="av-check__title">Personagens no catálogo até o corte</p>
+              <p class="av-check__meta">
+                {{ readiness.catalog_count }} de {{ readiness.choices_count }} necessária(s).
+                <a href="{% url 'admin:catalog_status' %}">Ver catálogo</a>
+              </p>
+            </div>
+            {% if readiness.has_catalog %}
+              <span class="badge badge--success av-check__state">Atendido</span>
+            {% else %}
+              <span class="badge badge--warning av-check__state">Pendente</span>
+            {% endif %}
+          </li>
+
+          <li class="av-check {% if readiness.window_open %}av-check--success{% else %}av-check--warning{% endif %}">
+            <div class="av-check__body">
+              <p class="av-check__title">Janela de encerramento</p>
+              <p class="av-check__meta">
+                {% if readiness.window_open %}
+                  O prazo de encerramento ainda não foi atingido.
+                {% else %}
+                  O prazo de encerramento já passou. Ajuste a data antes de agendar.
+                {% endif %}
+              </p>
+            </div>
+            {% if readiness.window_open %}
+              <span class="badge badge--success av-check__state">Dentro do prazo</span>
+            {% else %}
+              <span class="badge badge--warning av-check__state">Expirada</span>
+            {% endif %}
+          </li>
+        </ul>
+      </section>
+    {% endif %}
+
     <div class="form-actions">
       {% if voting %}
         <button class="btn btn-primary" type="submit">Salvar alterações</button>
