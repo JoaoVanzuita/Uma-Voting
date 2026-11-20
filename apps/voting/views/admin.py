@@ -172,7 +172,8 @@ def voting_create(request):
         except VotingConfigError as exc:
             form.add_error(None, exc.message)
         else:
-            messages.success(request, f"Votação '{voting.title}' criada em rascunho.")
+            suffix = ", não agendada" if voting.open_mode == Mode.AUTOMATIC else ""
+            messages.success(request, f"Votação '{voting.title}' criada em rascunho{suffix}.")
             return redirect("admin:voting_detail", voting_id=voting.pk)
 
     return render(
