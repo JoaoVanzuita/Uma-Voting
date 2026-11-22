@@ -9,7 +9,13 @@ import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
 
-from apps.voting.models import Ballot, Voting, VotingStatus
+from apps.voting.models import (
+    Ballot,
+    Voting,
+    VotingCharacterSnapshot,
+    VotingEligibility,
+    VotingStatus,
+)
 from tests.factories import BallotFactory, OpenVotingFactory, VotingFactory
 
 pytestmark = pytest.mark.django_db
@@ -44,6 +50,33 @@ def test_apply_apaga_apenas_votacoes_sem_cedulas():
     closed.refresh_from_db()
     assert closed.status == VotingStatus.CANCELLED
     assert Voting.objects.filter(pk=real.pk).exists()
+
+
+def test_votacao_aberta_sem_cedula_e_cancelada():
+    voting = OpenVotingFactory(title="TESTE aberta sem voto")
+
+    run("--prefix", "TESTE ", "--apply", "--json")
+
+    voting.refresh_from_db()
+    assert voting.status == VotingStatus.CANCELLED
+
+
+def test_votacao_agendada_e_cancelada():
+    voting = VotingFactory(title="TESTE agendada", status=VotingStatus.SCHEDULED)
+
+    run("--prefix", "TESTE ", "--apply", "--json")
+
+    voting.refresh_from_db()
+    assert voting.status == VotingStatus.CANCELLED
+
+
+def test_limpeza_remove_elegiveis_e_snapshots():
+    voting = VotingFactory(title="TESTE rascunho")
+    open_voting = OpenVotingFactory(title="TESTE aberta")
+    run("--prefix", "TESTE ", "--apply", "--json")
+
+    assert not VotingEligibility.objects.filter(voting__in=[voting.pk, open_voting.pk]).exists()
+    assert not VotingCharacterSnapshot.objects.filter(voting=open_voting.pk).exists()
 
 
 def test_votacao_com_cedula_e_cancelada_nao_excluida():

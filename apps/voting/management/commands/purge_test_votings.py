@@ -52,21 +52,28 @@ class Command(BaseCommand):
         for voting in votings:
             voting_pk, voting_title, voting_status = voting.pk, voting.title, voting.status
             has_ballots = Ballot.objects.filter(voting=voting).exists()
-            if voting.status == VotingStatus.CANCELLED and not has_ballots:
-                outcome = "deleted"
+            if voting.status in {VotingStatus.OPEN, VotingStatus.SCHEDULED}:
+                # Elegíveis/snapshots não podem ser removidos com a votação
+                # aberta ou agendada (trigger de banco): cancelar primeiro.
+                outcome = "cancelled"
             elif has_ballots or voting.status == VotingStatus.CLOSED:
                 outcome = "cancelled"
             else:
                 outcome = "deleted"
 
             if options["apply"]:
+                if outcome == "cancelled" and voting.status in {
+                    VotingStatus.OPEN,
+                    VotingStatus.SCHEDULED,
+                }:
+                    cancel_voting(voting, reason="limpeza de teste")
                 if outcome == "deleted":
                     with transaction.atomic():
                         # Snapshots e elegíveis são PROTECT: apagar na ordem.
                         VotingEligibility.objects.filter(voting=voting).delete()
                         VotingCharacterSnapshot.objects.filter(voting=voting).delete()
                         voting.delete()
-                else:
+                elif voting.status != VotingStatus.CANCELLED:
                     cancel_voting(voting, reason="limpeza de teste")
             report[outcome].append(
                 {"id": voting_pk, "title": voting_title, "status": voting_status}
