@@ -38,6 +38,9 @@ export default <T,>(
     // injeta PORT=8080 no container e o Gunicorn escuta nela (CMD da imagem);
     // um domínio apontando para 8000 responde 502. Sem startCommand.
     networking: { serviceDomains: { web: { port: 8080 } } },
+    // Build pelo Dockerfile da raiz (a validação do Dockerfile é a mesma do
+    // build remoto; ver o histórico de `--mount` nas decisões do plano).
+    build: { builder: "DOCKERFILE", dockerfilePath: "Dockerfile" },
     deploy: {
       // O schema do Railway aceita no máximo 1 item no preDeployCommand.
       preDeployCommand: ["sh scripts/railway-predeploy.sh"],
