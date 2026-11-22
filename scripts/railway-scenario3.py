@@ -21,7 +21,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from datetime import timezone as dt_timezone
 
 CSRF_RE = re.compile(r'name="csrfmiddlewaretoken" value="([^"]+)"')
@@ -133,7 +133,7 @@ def main() -> None:
     if "/admin/" not in url:
         fail(f"login admin ({url})")
 
-    now = datetime.now(dt_timezone.utc)
+    now = datetime.now(UTC)
     closes_at = now + timedelta(minutes=args.delay_minutes)
     local = closes_at.astimezone(dt_timezone(timedelta(hours=-3)))
     title = f"TESTE encerramento {date.today().isoformat()}"
@@ -168,8 +168,7 @@ def main() -> None:
         f"{detail}abrir/", {"csrfmiddlewaretoken": Browser.csrf(html)}, detail
     )
     opened = ssh_python(
-        PRELUDE
-        + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
+        PRELUDE + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
         "print(v.status)\n"
     )
     print(f"   aberta manualmente: status={opened}")
@@ -179,17 +178,17 @@ def main() -> None:
     print("2) participante logado antes do horário; aguardando sem acessar o site")
 
     target = closes_at + timedelta(seconds=70)
-    while datetime.now(dt_timezone.utc) < target:
-        time.sleep(min(30, max(1, (target - datetime.now(dt_timezone.utc)).total_seconds())))
+    while datetime.now(UTC) < target:
+        time.sleep(min(30, max(1, (target - datetime.now(UTC)).total_seconds())))
 
-    hit_at = datetime.now(dt_timezone.utc)
+    hit_at = datetime.now(UTC)
     status, html, url = participant.get("/")
     print(f"3) primeira GET / após o horário: {status} em {hit_at:%H:%M:%S} UTC")
 
     after = ssh_python(
-        PRELUDE
-        + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
-        "print(v.status, v.closes_at.isoformat(), v.closed_at.isoformat() if v.closed_at else None)\n"
+        PRELUDE + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
+        "print(v.status, v.closes_at.isoformat(), "
+        "v.closed_at.isoformat() if v.closed_at else None)\n"
     )
     print("   banco:", after)
 

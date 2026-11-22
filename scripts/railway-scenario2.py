@@ -27,7 +27,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from datetime import timezone as dt_timezone
 
 ID_RE = re.compile(r"/admin/votacoes/(\d+)/")
@@ -137,8 +137,7 @@ def main() -> None:
     print("1) participantes de teste")
     print(
         ssh_python(
-            PRELUDE
-            + "from apps.accounts.services.participants import create_participant\n"
+            PRELUDE + "from apps.accounts.services.participants import create_participant\n"
             "from apps.accounts.models import User\n"
             "for name in ('teste_ana', 'teste_bruno'):\n"
             "    if not User.objects.filter(username=name).exists():\n"
@@ -152,7 +151,7 @@ def main() -> None:
     if "/admin/" not in url:
         fail(f"login admin ({url})")
 
-    now = datetime.now(dt_timezone.utc)
+    now = datetime.now(UTC)
     opens_at = now + timedelta(minutes=args.delay_minutes)
     local = opens_at.astimezone(dt_timezone(timedelta(hours=-3)))
     title = f"TESTE agendada {date.today().isoformat()}"
@@ -177,8 +176,7 @@ def main() -> None:
         fail(f"agendamento falhou (status {status}, url {url})")
     voting_id = int(match.group(1))
     state = ssh_python(
-        PRELUDE
-        + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
+        PRELUDE + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
         "print(v.status)\n"
     )
     print(f"   id={voting_id} status={state}")
@@ -187,17 +185,17 @@ def main() -> None:
     participant = Browser(base)
     participant.login_participant(args.participant)
     target = opens_at + timedelta(seconds=70)
-    while datetime.now(dt_timezone.utc) < target:
-        time.sleep(min(30, max(1, (target - datetime.now(dt_timezone.utc)).total_seconds())))
+    while datetime.now(UTC) < target:
+        time.sleep(min(30, max(1, (target - datetime.now(UTC)).total_seconds())))
 
-    hit_at = datetime.now(dt_timezone.utc)
+    hit_at = datetime.now(UTC)
     status, html, url = participant.get("/")
     print(f"4) primeira GET / após o horário: {status} em {hit_at:%H:%M:%S} UTC")
 
     after = ssh_python(
-        PRELUDE
-        + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
-        "print(v.status, v.opens_at.isoformat(), v.opened_at.isoformat() if v.opened_at else None)\n"
+        PRELUDE + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
+        "print(v.status, v.opens_at.isoformat(), v.opened_at.isoformat() if v.opened_at else None)"
+        "\n"
     )
     print("   banco:", after)
 

@@ -15,7 +15,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from datetime import timezone as dt_timezone
 
 PRELUDE = (
@@ -67,16 +67,15 @@ def main() -> None:
     title = f"TESTE janela perdida {date.today().isoformat()}"
 
     tz = dt_timezone(timedelta(hours=-3))
-    opens_at = datetime.now(dt_timezone.utc) + timedelta(minutes=args.open_in)
-    closes_at = datetime.now(dt_timezone.utc) + timedelta(minutes=args.close_in)
+    opens_at = datetime.now(UTC) + timedelta(minutes=args.open_in)
+    closes_at = datetime.now(UTC) + timedelta(minutes=args.close_in)
     print(
         f"1) criando '{title}' com janela "
         f"{opens_at.astimezone(tz):%H:%M}–{closes_at.astimezone(tz):%H:%M} local"
     )
 
     created = ssh_python(
-        PRELUDE
-        + "from datetime import datetime, timezone, timedelta\n"
+        PRELUDE + "from datetime import datetime, timezone, timedelta\n"
         "from apps.accounts.services.participants import create_participant\n"
         "from apps.accounts.models import User\n"
         "from apps.voting.services.lifecycle import create_and_schedule_voting\n"
@@ -113,18 +112,18 @@ def main() -> None:
     )
 
     target = datetime.fromisoformat(closes_iso) + timedelta(seconds=30)
-    print(f"3) esperando o fim da janela em {target.astimezone(tz):%H:%M:%S} local, sem acesso ao site")
-    while datetime.now(dt_timezone.utc) < target:
-        time.sleep(min(30, max(1, (target - datetime.now(dt_timezone.utc)).total_seconds())))
+    local_target = f"{target.astimezone(tz):%H:%M:%S}"
+    print(f"3) esperando o fim da janela em {local_target} local, sem acesso ao site")
+    while datetime.now(UTC) < target:
+        time.sleep(min(30, max(1, (target - datetime.now(UTC)).total_seconds())))
 
     before = ssh_python(
-        PRELUDE
-        + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
+        PRELUDE + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
         "print(v.status, v.opened_at, v.cancelled_at)\n"
     )
     print("   banco ANTES da requisição:", before)
 
-    hit_at = datetime.now(dt_timezone.utc)
+    hit_at = datetime.now(UTC)
     status = subprocess.run(
         ["curl", "--silent", "--output", "/dev/null", "--write-out", "%{http_code}", f"{base}/"],
         capture_output=True,
@@ -133,10 +132,10 @@ def main() -> None:
     print(f"4) primeira requisição dinâmica GET / -> {status} às {hit_at:%H:%M:%S} UTC")
 
     after = ssh_python(
-        PRELUDE
-        + "from apps.voting.models import Voting, Ballot\n"
+        PRELUDE + "from apps.voting.models import Voting, Ballot\n"
         f"v = Voting.objects.get(pk={voting_id})\n"
-        "print(v.status, v.opened_at, v.closed_at, v.cancelled_at, Ballot.objects.filter(voting=v).count())\n"
+        "print(v.status, v.opened_at, v.closed_at, v.cancelled_at, "
+        "Ballot.objects.filter(voting=v).count())\n"
     )
     print("   banco DEPOIS (status, opened, closed, cancelled, cédulas):", after)
 

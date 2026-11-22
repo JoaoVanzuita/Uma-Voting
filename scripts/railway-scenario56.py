@@ -90,7 +90,18 @@ PRELUDE = (
 
 def ssh(code: str) -> str:
     result = subprocess.run(
-        ["railway", "ssh", "--service", "web", "--environment", "production", "--", "python", "-c", code],
+        [
+            "railway",
+            "ssh",
+            "--service",
+            "web",
+            "--environment",
+            "production",
+            "--",
+            "python",
+            "-c",
+            code,
+        ],
         capture_output=True,
         text=True,
         timeout=300,
@@ -165,14 +176,16 @@ def main() -> None:
     voting_id = int(match.group(1))
     body = text_only(html)
     persisted = ssh(
-        PRELUDE
-        + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
+        PRELUDE + f"from apps.voting.models import Voting\nv = Voting.objects.get(pk={voting_id})\n"
         "print(v.status, v.title, v.catalog_cutoff_date.isoformat())\n"
     )
-    warning = "rascunho" in body.lower() and ("não agendada" in body.lower() or "não foi possível" in body.lower())
+    warning = "rascunho" in body.lower() and (
+        "não agendada" in body.lower() or "não foi possível" in body.lower()
+    )
     print(f"   id={voting_id} -> banco: {persisted}")
     print(f"   aviso de rascunho na página: {warning}")
-    print(f"   campos preservados (título/corte no banco): {'sem catálogo' in persisted and cutoff in persisted}")
+    fields_ok = "sem catálogo" in persisted and cutoff in persisted
+    print(f"   campos preservados (título/corte no banco): {fields_ok}")
     if not persisted.startswith("draft"):
         fail("a votação NÃO ficou em rascunho")
 
@@ -199,14 +212,22 @@ def main() -> None:
     logs_after = deployment_logs()
     ticks_after = logs_after.count("Scheduler on_request")
     new_ticks = ticks_after - ticks_before
-    new_lines = [line for line in logs_after.splitlines() if "Scheduler on_request" in line][-new_ticks:] if new_ticks else []
+    new_lines = (
+        [line for line in logs_after.splitlines() if "Scheduler on_request" in line][-new_ticks:]
+        if new_ticks
+        else []
+    )
     print(f"   ticks novos durante a rajada: {new_ticks} (esperado: ≤ 1 por intervalo de 60 s)")
     for line in new_lines:
         print("   ", line[-110:])
     if new_ticks > 1:
         fail("mais de um tick por intervalo na mesma janela")
 
-    print("\nResumo: cenário 5 validado; cenário 6 validado" if new_ticks <= 1 else "\nResumo: verificar")
+    print(
+        "\nResumo: cenário 5 validado; cenário 6 validado"
+        if new_ticks <= 1
+        else "\nResumo: verificar"
+    )
 
 
 if __name__ == "__main__":
