@@ -34,9 +34,10 @@ export default <T,>(
 
   const web = service("web", {
     source: github("JoaoVanzuita/Uma-Voting", { branch: "main" }),
-    // Define a instância do serviço no ambiente e o domínio público na porta
-    // do Gunicorn. Sem startCommand: o CMD da imagem (Gunicorn em $PORT) vale.
-    networking: { serviceDomains: { web: { port: 8000 } } },
+    // Define a instância do serviço no ambiente e o domínio público. O Railway
+    // injeta PORT=8080 no container e o Gunicorn escuta nela (CMD da imagem);
+    // um domínio apontando para 8000 responde 502. Sem startCommand.
+    networking: { serviceDomains: { web: { port: 8080 } } },
     deploy: {
       // O schema do Railway aceita no máximo 1 item no preDeployCommand.
       preDeployCommand: ["sh scripts/railway-predeploy.sh"],
