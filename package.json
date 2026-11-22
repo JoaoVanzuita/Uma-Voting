@@ -1,0 +1,12 @@
+{
+  "name": "uma-voting-railway",
+  "private": true,
+  "description": "SDK do Railway usado apenas para tipos/validação do Infrastructure as Code (.railway/railway.ts).",
+  "scripts": {
+    "iac:typecheck": "tsc --noEmit --strict --module nodenext --moduleResolution nodenext --target es2022 .railway/railway.ts"
+  },
+  "devDependencies": {
+    "railway": "^3.17.0",
+    "typescript": "^5.9.0"
+  }
+}
