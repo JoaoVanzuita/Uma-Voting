@@ -105,3 +105,52 @@ jobs:
           tags: uma-voting:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy Railway
+    needs: [quality, deploy-check, docker]
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      github.repository == 'JoaoVanzuita/Uma-Voting'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: railway-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validar configuração de deploy
+        run: |
+          test -n "$RAILWAY_TOKEN" || { echo "::error::Defina o secret RAILWAY_TOKEN (project token) no Environment production."; exit 1; }
+          test -n "${{ vars.RAILWAY_SERVICE }}" || { echo "::error::Defina a variable RAILWAY_SERVICE."; exit 1; }
+
+      - name: Instalar Railway CLI
+        run: npm install --global "@railway/cli@${{ vars.RAILWAY_CLI_VERSION || '5.75.0' }}"
+
+      - name: Deploy do commit (aguarda SUCCESS)
+        # O serviço tem fonte GitHub, então `railway up` (upload) não se aplica:
+        # o deploy é disparado pelo commit que já passou pelo CI. `--json` sai
+        # com código diferente de zero quando o deploy falha ou expira.
+        run: |
+          railway redeploy \
+            --project "${{ vars.RAILWAY_PROJECT_ID }}" \
+            --environment "${{ vars.RAILWAY_ENVIRONMENT }}" \
+            --service "${{ vars.RAILWAY_SERVICE }}" \
+            --commit "$GITHUB_SHA" \
+            --yes \
+            --json
+
+      - name: Smoke test
+        env:
+          APP_BASE_URL: ${{ vars.APP_BASE_URL }}
+        run: |
+          test -n "$APP_BASE_URL" || { echo "::error::Defina a variable APP_BASE_URL."; exit 1; }
+          curl --fail --silent --show-error \
+            --retry 12 --retry-delay 10 --retry-all-errors \
+            "$APP_BASE_URL/health/" | grep -q '"status": *"ok"'
