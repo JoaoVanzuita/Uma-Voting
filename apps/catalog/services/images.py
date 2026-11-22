@@ -5,17 +5,15 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
-import os
-import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from apps.catalog.models import CatalogSource, Character, ImageAsset
+from apps.catalog.services import media
 
 TARGET_SIZE = (256, 256)
 MIN_SIZE = (128, 128)
@@ -103,23 +101,19 @@ class ImageStoreResult:
     warnings: tuple[str, ...] = ()
 
 
-def _media_path(relative_path: str) -> Path:
-    return Path(settings.MEDIA_ROOT) / relative_path
-
-
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _inspect_image(path: Path) -> tuple[Image.Image, str, str]:
+def _inspect_image(data: bytes) -> tuple[Image.Image, str, str]:
     """Abre e valida a integridade; retorna imagem, formato e checksum do arquivo."""
-    if path.stat().st_size > MAX_IMAGE_BYTES:
+    if len(data) > MAX_IMAGE_BYTES:
         raise ValueError("Arquivo de imagem excede o limite de 10 MB.")
 
-    with Image.open(path) as probe:
+    with Image.open(io.BytesIO(data)) as probe:
         probe.verify()
 
-    image = Image.open(path)
+    image = Image.open(io.BytesIO(data))
     image.load()
 
     if image.width * image.height > MAX_PIXELS:
@@ -131,22 +125,22 @@ def _inspect_image(path: Path) -> tuple[Image.Image, str, str]:
         image.close()
         raise ValueError(f"Formato não permitido: {fmt or 'desconhecido'}.")
 
-    checksum = _sha256(path.read_bytes())
+    checksum = _sha256(data)
     return image, fmt, checksum
 
 
 def validate_image_asset(asset: ImageAsset) -> ImageValidation:
-    """Valida um asset no disco e atualiza seus campos de estado."""
-    path = _media_path(asset.file_path)
-
-    if not path.exists():
+    """Valida um asset no storage configurado e atualiza seus campos de estado."""
+    try:
+        data = media.read_bytes(asset.file_path)
+    except media.MediaStorageError, OSError:
         asset.status = ImageAsset.Status.MISSING
         asset.validated_at = timezone.now()
         asset.save(update_fields=["status", "validated_at"])
         return ImageValidation(ImageAsset.Status.MISSING, "Arquivo não encontrado.")
 
     try:
-        image, _fmt, checksum = _inspect_image(path)
+        image, _fmt, checksum = _inspect_image(data)
     except (UnidentifiedImageError, OSError, ValueError) as exc:
         asset.status = ImageAsset.Status.INVALID
         asset.validated_at = timezone.now()
@@ -226,14 +220,10 @@ def validate_all_images() -> ImageValidationReport:
         if len(character_ids) > 1:
             report.duplicate_checksums.append(checksum)
 
-    characters_root = _media_path("characters")
-    if characters_root.exists():
-        for path in sorted(characters_root.rglob("*")):
-            if not path.is_file():
-                continue
-            relative = path.relative_to(settings.MEDIA_ROOT).as_posix()
-            if relative not in referenced:
-                report.orphans.append(relative)
+    # Uma única listagem do storage (no S3, evita um EXISTS por imagem).
+    for relative in media.list_character_objects(refresh=True):
+        if relative not in referenced:
+            report.orphans.append(relative)
 
     valid_character_ids = {
         asset.character_id
@@ -363,7 +353,6 @@ def store_image_bytes(
 
     checksum = _sha256(normalized_bytes)
     destination = f"characters/{character.stable_id}/{checksum}.webp"
-    destination_path = _media_path(destination)
 
     warnings: list[str] = []
     duplicates = ImageAsset.objects.filter(checksum_sha256=checksum).exclude(character=character)
@@ -387,21 +376,9 @@ def store_image_bytes(
         message = "Nova imagem."
 
     if not dry_run:
-        if not destination_path.exists():
-            destination_path.parent.mkdir(parents=True, exist_ok=True)
-            handle = tempfile.NamedTemporaryFile(
-                dir=destination_path.parent,
-                prefix=".tmp-",
-                suffix=".webp",
-                delete=False,
-            )
-            try:
-                handle.write(normalized_bytes)
-                handle.flush()
-                os.fsync(handle.fileno())
-            finally:
-                handle.close()
-            os.replace(handle.name, destination_path)
+        if not media.exists(destination):
+            media.save_bytes(destination, normalized_bytes, content_type="image/webp")
+        media.clear_cache()
 
         with transaction.atomic():
             if is_current:

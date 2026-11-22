@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from django import template
-from django.conf import settings
 from django.templatetags.static import static
 
 from apps.catalog.models import Character, ImageAsset
+from apps.catalog.services import media
 
 register = template.Library()
 
@@ -17,7 +17,8 @@ PLACEHOLDER_ALT = "Imagem não disponível"
 def _asset_url(asset: ImageAsset | None) -> str:
     if asset is None or asset.status != ImageAsset.Status.VALID or not asset.file_path:
         return static(PLACEHOLDER)
-    return f"{settings.MEDIA_URL}{asset.file_path.lstrip('/')}"
+    # URL do storage configurado: caminho local ou URL assinada do bucket.
+    return media.asset_url(asset.file_path) or static(PLACEHOLDER)
 
 
 @register.simple_tag

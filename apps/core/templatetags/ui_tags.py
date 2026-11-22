@@ -5,9 +5,9 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from django import template
-from django.conf import settings
 from django.templatetags.static import static
 
+from apps.catalog.services import media
 from apps.core.formatting import format_date_br, format_datetime_br
 
 register = template.Library()
@@ -62,14 +62,15 @@ def _placeholder_url() -> str:
 
 @register.simple_tag
 def image_url(image_asset) -> str:
-    """URL local do asset válido ou o placeholder seguro."""
+    """URL do asset válido no storage configurado ou o placeholder seguro."""
     if image_asset is None:
         return _placeholder_url()
 
     if getattr(image_asset, "status", None) != "valid" or not image_asset.file_path:
         return _placeholder_url()
 
-    return f"{settings.MEDIA_URL}{image_asset.file_path.lstrip('/')}"
+    # No Railway o storage é S3 e a URL é assinada; no Compose é /media/.
+    return media.asset_url(image_asset.file_path) or _placeholder_url()
 
 
 @register.simple_tag
