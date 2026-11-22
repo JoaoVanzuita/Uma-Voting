@@ -1,4 +1,10 @@
-"""Configurações de produção (atrás do Caddy com TLS)."""
+"""Configurações de produção (atrás de proxy HTTPS: Caddy ou plataforma).
+
+Em ambos os casos a aplicação exige TLS, cookies seguros e HSTS. A diferença é
+o healthcheck interno: plataformas como o Railway consultam ``/health/`` por
+HTTP, sem ``X-Forwarded-Proto``; com ``DJANGO_SECURE_REDIRECT_EXEMPT_HEALTH`` a
+própria aplicação aceita só essa rota por HTTP.
+"""
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -26,3 +32,31 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = False  # o HTMX lê o token do cookie
+
+# ---------------------------------------------------------------------------
+# Deploy sem proxy próprio (ex.: Railway): estáticos pelo WhiteNoise, headers
+# de segurança do Caddy em Django e scheduler acionado por requisição.
+# ---------------------------------------------------------------------------
+if MEDIA_STORAGE_BACKEND == "s3":  # noqa: F405
+    _missing_s3 = [
+        name
+        for name, value in {
+            "AWS_S3_ENDPOINT_URL": env("AWS_S3_ENDPOINT_URL"),
+            "AWS_ACCESS_KEY_ID": env("AWS_ACCESS_KEY_ID"),
+            "AWS_SECRET_ACCESS_KEY": env("AWS_SECRET_ACCESS_KEY"),
+            "AWS_STORAGE_BUCKET_NAME": env("AWS_STORAGE_BUCKET_NAME"),
+        }.items()
+        if not value
+    ]
+    if _missing_s3:
+        raise ImproperlyConfigured(
+            "MEDIA_STORAGE_BACKEND=s3 exige: " + ", ".join(_missing_s3) + "."
+        )
+
+if env.bool("DJANGO_SECURE_REDIRECT_EXEMPT_HEALTH", default=False):
+    MIDDLEWARE = [  # noqa: F405
+        "apps.core.security_headers.PlatformHealthcheckMiddleware"
+        if item == "django.middleware.security.SecurityMiddleware"
+        else item
+        for item in MIDDLEWARE  # noqa: F405
+    ]

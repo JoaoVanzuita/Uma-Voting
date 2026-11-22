@@ -6,7 +6,7 @@ import json
 import os
 import signal
 import socket
-import time
+import threading
 
 from django.core.management.base import BaseCommand, CommandError
 from django.db import connection
@@ -44,28 +44,40 @@ class Command(BaseCommand):
             raise CommandError("O intervalo deve ser positivo.")
 
         worker_id = f"import-worker-{socket.gethostname()}-{os.getpid()}"
-        stop = {"requested": False}
+        # Event acorda imediatamente no SIGTERM/SIGINT (shutdown rápido no deploy).
+        stop = threading.Event()
 
         def _request_stop(signum, frame):  # noqa: ARG001
-            stop["requested"] = True
+            stop.set()
 
-        signal.signal(signal.SIGTERM, _request_stop)
-        signal.signal(signal.SIGINT, _request_stop)
+        previous_handlers = {}
+        for signum in (signal.SIGTERM, signal.SIGINT):
+            try:
+                previous_handlers[signum] = signal.signal(signum, _request_stop)
+            except ValueError:  # fora da thread principal (testes)
+                pass
 
-        cycle = self._run_cycle(worker_id)
-        self._emit(cycle, options)
-
-        if options["once"]:
-            self._release_advisory_lock()
-            return
-
-        while not stop["requested"]:
-            if cycle["processed"] or cycle["stale_jobs"]:
-                time.sleep(options["interval"])
+        try:
             cycle = self._run_cycle(worker_id)
             self._emit(cycle, options)
 
-        self._release_advisory_lock()
+            if options["once"]:
+                return
+
+            while not stop.is_set():
+                # Fila ociosa também espera: sem isso o worker gira em vazio.
+                stop.wait(options["interval"])
+                if stop.is_set():
+                    break
+                cycle = self._run_cycle(worker_id)
+                self._emit(cycle, options)
+        finally:
+            for signum, handler in previous_handlers.items():
+                try:
+                    signal.signal(signum, handler)
+                except ValueError:  # pragma: no cover
+                    pass
+            self._release_advisory_lock()
 
     # ------------------------------------------------------------------
     # Ciclo

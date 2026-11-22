@@ -4,6 +4,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -24,7 +25,57 @@ env = environ.Env(
     EXTERNAL_IMPORT_MAX_IMAGE_BYTES=(int, 5 * 1024 * 1024),
     EXTERNAL_IMPORT_CONCURRENCY=(int, 4),
     EXTERNAL_IMPORT_STALE_SECONDS=(int, 600),
+    STATIC_SERVE_WHITENOISE=(bool, False),
+    MEDIA_STORAGE_BACKEND=(str, "filesystem"),
+    MEDIA_CSP_SOURCE=(str, ""),
+    SECURITY_HEADERS_MODE=(str, "proxy"),
+    DJANGO_SCHEDULER_MODE=(str, "external"),
+    DJANGO_SCHEDULER_TICK_INTERVAL=(int, 60),
+    AWS_S3_ENDPOINT_URL=(str, ""),
+    AWS_ACCESS_KEY_ID=(str, ""),
+    AWS_SECRET_ACCESS_KEY=(str, ""),
+    AWS_STORAGE_BUCKET_NAME=(str, ""),
+    AWS_S3_REGION_NAME=(str, "auto"),
+    AWS_S3_ADDRESSING_STYLE=(str, "virtual"),
+    AWS_QUERYSTRING_EXPIRE=(int, 3600),
 )
+
+# Valores aceitos pelas variáveis de deploy selecionáveis.
+VALID_MEDIA_STORAGE_BACKENDS = {"filesystem", "s3"}
+VALID_SECURITY_HEADERS_MODES = {"proxy", "django"}
+VALID_SCHEDULER_MODES = {"external", "on_request"}
+
+
+def _choice(raw_value: str, valid: set[str], variable: str) -> str:
+    value = (raw_value or "").strip().lower()
+    if value not in valid:
+        raise ImproperlyConfigured(
+            f"{variable} deve ser um de {sorted(valid)}; recebido {raw_value!r}."
+        )
+    return value
+
+
+# Modo de armazenamento de mídia. O filesystem continua sendo o padrão em
+# desenvolvimento, testes e Docker Compose; no Railway usa-se o bucket S3.
+MEDIA_STORAGE_BACKEND = _choice(
+    env("MEDIA_STORAGE_BACKEND"), VALID_MEDIA_STORAGE_BACKENDS, "MEDIA_STORAGE_BACKEND"
+)
+# Estáticos: False no Compose (Caddy/volume) e True no Railway (WhiteNoise).
+STATIC_SERVE_WHITENOISE = env("STATIC_SERVE_WHITENOISE")
+# Headers do Caddy replicados no Django quando não há proxy no ambiente.
+SECURITY_HEADERS_MODE = _choice(
+    env("SECURITY_HEADERS_MODE"), VALID_SECURITY_HEADERS_MODES, "SECURITY_HEADERS_MODE"
+)
+# Scheduler: processo/container externo (Compose) ou tick sob demanda (Railway).
+DJANGO_SCHEDULER_MODE = _choice(
+    env("DJANGO_SCHEDULER_MODE"), VALID_SCHEDULER_MODES, "DJANGO_SCHEDULER_MODE"
+)
+DJANGO_SCHEDULER_TICK_INTERVAL = env("DJANGO_SCHEDULER_TICK_INTERVAL")
+if DJANGO_SCHEDULER_TICK_INTERVAL < 0:
+    raise ImproperlyConfigured("DJANGO_SCHEDULER_TICK_INTERVAL não pode ser negativo.")
+
+# Origem liberada no CSP para as URLs assinadas do bucket (ex.: https://b.endpoint).
+MEDIA_CSP_SOURCE = env("MEDIA_CSP_SOURCE").strip().rstrip("/")
 
 environ.Env.read_env(BASE_DIR / ".env")
 
@@ -48,17 +99,44 @@ INSTALLED_APPS = [
     "apps.voting",
 ]
 
-MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "apps.core.middleware.RequestIDMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "apps.core.middleware.AdminModeMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
-]
+# A ordem é a do projeto; entradas condicionais são inseridas na posição certa
+# logo abaixo para que Compose/testes continuem com a cadeia original.
+_MIDDLEWARE_CONDITIONAL = {
+    "whitenoise": "whitenoise.middleware.WhiteNoiseMiddleware",
+    "security_headers": "apps.core.security_headers.SecurityHeadersMiddleware",
+    "scheduler": "apps.voting.middleware.RequestSchedulerMiddleware",
+}
+
+
+def _with_conditionals(middleware: list[str]) -> list[str]:
+    chain = list(middleware)
+    if STATIC_SERVE_WHITENOISE:
+        chain.insert(1, _MIDDLEWARE_CONDITIONAL["whitenoise"])
+    if SECURITY_HEADERS_MODE == "django":
+        chain.insert(
+            chain.index("apps.core.middleware.RequestIDMiddleware") + 1,
+            _MIDDLEWARE_CONDITIONAL["security_headers"],
+        )
+    if DJANGO_SCHEDULER_MODE == "on_request":
+        # Objeto real no fim da cadeia: o tick roda antes da view e depois das
+        # sessões, para que a requisição siga com a conexão já aquecida.
+        chain.append(_MIDDLEWARE_CONDITIONAL["scheduler"])
+    return chain
+
+
+MIDDLEWARE = _with_conditionals(
+    [
+        "django.middleware.security.SecurityMiddleware",
+        "apps.core.middleware.RequestIDMiddleware",
+        "django.contrib.sessions.middleware.SessionMiddleware",
+        "django.middleware.common.CommonMiddleware",
+        "django.middleware.csrf.CsrfViewMiddleware",
+        "django.contrib.auth.middleware.AuthenticationMiddleware",
+        "apps.core.middleware.AdminModeMiddleware",
+        "django.contrib.messages.middleware.MessageMiddleware",
+        "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    ]
+)
 
 ROOT_URLCONF = "config.urls"
 
@@ -150,10 +228,43 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Mídia: filesystem por padrão. Com MEDIA_STORAGE_BACKEND=s3 o acervo vive no
+# bucket privado e as URLs são assinadas (Railway Bucket é S3-compatible).
+if MEDIA_STORAGE_BACKEND == "s3":
+    _MEDIA_STORAGE_OPTIONS = {
+        "bucket_name": env("AWS_STORAGE_BUCKET_NAME"),
+        "endpoint_url": env("AWS_S3_ENDPOINT_URL"),
+        "access_key": env("AWS_ACCESS_KEY_ID"),
+        "secret_key": env("AWS_SECRET_ACCESS_KEY"),
+        "region_name": env("AWS_S3_REGION_NAME"),
+        "addressing_style": env("AWS_S3_ADDRESSING_STYLE"),
+        "querystring_auth": True,
+        "querystring_expire": env("AWS_QUERYSTRING_EXPIRE"),
+        "default_acl": None,
+        "file_overwrite": True,
+        "signature_version": "s3v4",
+        "object_parameters": {"CacheControl": "public, max-age=31536000"},
+    }
+    _MEDIA_STORAGE = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": _MEDIA_STORAGE_OPTIONS,
+    }
+else:
+    _MEDIA_STORAGE = {"BACKEND": "django.core.files.storage.FileSystemStorage"}
+
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    "default": _MEDIA_STORAGE,
+    "staticfiles": (
+        {"BACKEND": "apps.core.storage.LenientCompressedManifestStaticFilesStorage"}
+        if STATIC_SERVE_WHITENOISE
+        else {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}
+    ),
 }
+
+# WhiteNoise é usado apenas com estáticos coletados no build da imagem.
+WHITENOISE_AUTOREFRESH = env("DJANGO_DEBUG")
+# Assets com hash de conteúdo podem ficar em cache por um ano (como no Caddy).
+WHITENOISE_MAX_AGE = 31_536_000
 
 # ---------------------------------------------------------------------------
 # Sessão, CSRF e segurança base

@@ -629,3 +629,37 @@ def test_logs_de_fases_e_conclusao(monkeypatch, source, caplog):
     assert "import_job.phase.finished" in messages
     assert "import_job.completed" in messages
     assert "status=success" in messages
+
+
+def test_worker_ocioso_espera_intervalo_entre_ciclos(monkeypatch):
+    """Fila vazia não pode girar o loop: cada ciclo ocioso espera o intervalo."""
+    import threading
+    from io import StringIO
+
+    from django.core.management import call_command
+
+    from apps.catalog.management.commands.run_import_worker import Command
+
+    waits = []
+    original_wait = threading.Event.wait
+    calls = {"cycles": 0, "run": Command._run_cycle}
+
+    def fake_run_cycle(self, worker_id):
+        calls["cycles"] += 1
+        return {"worker_id": worker_id, "stale_jobs": 0, "processed": [], "errors": []}
+
+    def fake_wait(event, timeout=None):
+        waits.append(timeout)
+        if len(waits) >= 3:
+            event.set()
+            return True
+        return original_wait(event, 0)
+
+    monkeypatch.setattr(Command, "_run_cycle", fake_run_cycle)
+    monkeypatch.setattr(Command, "_release_advisory_lock", lambda self: None)
+    monkeypatch.setattr(threading.Event, "wait", fake_wait)
+
+    call_command("run_import_worker", "--quiet", "--interval", "7", stdout=StringIO())
+
+    assert waits and all(timeout == 7 for timeout in waits)
+    assert calls["cycles"] == 3
