@@ -19,13 +19,13 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 
 COPY pyproject.toml uv.lock README.md ./
-# A validação do Dockerfile do Railway exige cacheKey no `id` do cache do BuildKit.
-RUN --mount=type=cache,id=uv-cache-s/uv-cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+# Sem `--mount=type=cache`: a validação remota do Dockerfile exige que o `id`
+# siga `cacheKey/path` do BuildKit, o que não é suportado pelo parser do Railway.
+# A camada do uv ainda é reaproveitada quando pyproject/uv.lock não mudam.
+RUN uv sync --frozen --no-dev --no-install-project
 
 COPY . .
-RUN --mount=type=cache,id=uv-cache-s/uv-cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+RUN uv sync --frozen --no-dev
 
 # Estáticos coletados no build da imagem: o Railway (sem Caddy/volume) os serve
 # pelo WhiteNoise. Usa settings base e chave descartável; nunca segredo real.
