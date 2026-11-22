@@ -19,12 +19,20 @@ ENV UV_COMPILE_BYTECODE=1 \
 WORKDIR /app
 
 COPY pyproject.toml uv.lock README.md ./
-RUN --mount=type=cache,target=/root/.cache/uv \
+# A validação do Dockerfile do Railway exige cacheKey no `id` do cache do BuildKit.
+RUN --mount=type=cache,id=uv-cache-s/uv-cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project
 
 COPY . .
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN --mount=type=cache,id=uv-cache-s/uv-cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
+
+# Estáticos coletados no build da imagem: o Railway (sem Caddy/volume) os serve
+# pelo WhiteNoise. Usa settings base e chave descartável; nunca segredo real.
+RUN DJANGO_SETTINGS_MODULE=config.settings.base \
+    DJANGO_SECRET_KEY=build-only-not-a-secret-key-0000000000000000000000000000000000000000 \
+    STATIC_SERVE_WHITENOISE=True \
+    /opt/venv/bin/python manage.py collectstatic --noinput
 
 # ---------------------------------------------------------------------------
 # Runtime: imagem mínima, usuário não-root, Gunicorn
@@ -44,19 +52,18 @@ WORKDIR /app
 COPY --from=builder --chown=app:app /opt/venv /opt/venv
 COPY --from=builder --chown=app:app /app /app
 
-RUN mkdir -p /app/staticfiles /app/media/characters \
+# A mídia vive em storage externo (bucket no Railway) ou em volume (Compose);
+# a imagem não embute media/.
+RUN mkdir -p /app/staticfiles /app/media \
     && chown -R app:app /app/staticfiles /app/media
 
 USER app
 
+# Railway injeta PORT; localmente (Compose) o padrão continua 8000.
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=3)"]
+    CMD python -c "import os, urllib.request as u; u.urlopen('http://127.0.0.1:%s/health/' % os.environ.get('PORT', '8000'), timeout=3)"
 
-CMD ["gunicorn", "config.wsgi:application", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "3", \
-     "--timeout", "60", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-"]
+# Um worker por padrão (512 MB no Railway Free); Compose sobrepõe --workers.
+CMD ["sh", "-c", "exec gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --workers ${GUNICORN_WORKERS:-1} --threads 2 --timeout 60 --access-logfile - --error-logfile -"]
