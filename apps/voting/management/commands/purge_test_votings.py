@@ -18,7 +18,13 @@ import json
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from apps.voting.models import Ballot, Voting, VotingStatus
+from apps.voting.models import (
+    Ballot,
+    Voting,
+    VotingCharacterSnapshot,
+    VotingEligibility,
+    VotingStatus,
+)
 from apps.voting.services.lifecycle import cancel_voting
 
 DEFAULT_PREFIX = "TESTE "
@@ -56,6 +62,9 @@ class Command(BaseCommand):
             if options["apply"]:
                 if outcome == "deleted":
                     with transaction.atomic():
+                        # Snapshots e elegíveis são PROTECT: apagar na ordem.
+                        VotingEligibility.objects.filter(voting=voting).delete()
+                        VotingCharacterSnapshot.objects.filter(voting=voting).delete()
                         voting.delete()
                 else:
                     cancel_voting(voting, reason="limpeza de teste")
