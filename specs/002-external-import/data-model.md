@@ -119,12 +119,16 @@ constraints = [
     ),
     models.CheckConstraint(
         condition=(
-            (Q(status__in=["success", "partial", "failed", "cancelled"])
-             & Q(finished_at__isnull=False)
-             & Q(phase="finished"))
-            | (~Q(status__in=["success", "partial", "failed", "cancelled"])
-               & Q(finished_at__isnull=True)
-               & ~Q(phase="finished"))
+            (
+                Q(status__in=["success", "partial", "failed", "cancelled"])
+                & Q(finished_at__isnull=False)
+                & Q(phase="finished")
+            )
+            | (
+                ~Q(status__in=["success", "partial", "failed", "cancelled"])
+                & Q(finished_at__isnull=True)
+                & ~Q(phase="finished")
+            )
         ),
         name="import_job_terminal_check",
     ),

@@ -65,6 +65,7 @@ class ImageCandidate:
     source_url: str
     content_type: str = ""
 
+
 @dataclass(frozen=True)
 class ImageFetchError:
     character_stable_id: str

@@ -19,13 +19,27 @@ serviços testáveis; o banco reforça as invariantes críticas.
 
 ```python
 class ImportJobError(Exception): ...
-class ImportJobStateError(ImportJobError): ...       # 409
-class ImportSourceError(ImportJobError): ...         # fonte inválida/sem conector
-class ImportDisabledError(ImportJobError): ...       # kill switch
-class SourceError(Exception): ...                    # base de falhas de coleta
-class SourceHTTPError(SourceError): ...              # status, timeout, tamanho, redirect
-class SourceDataError(SourceError): ...              # JSON/HTML inesperado
-class SourceUnavailableError(SourceError): ...       # check() falhou
+
+
+class ImportJobStateError(ImportJobError): ...  # 409
+
+
+class ImportSourceError(ImportJobError): ...  # fonte inválida/sem conector
+
+
+class ImportDisabledError(ImportJobError): ...  # kill switch
+
+
+class SourceError(Exception): ...  # base de falhas de coleta
+
+
+class SourceHTTPError(SourceError): ...  # status, timeout, tamanho, redirect
+
+
+class SourceDataError(SourceError): ...  # JSON/HTML inesperado
+
+
+class SourceUnavailableError(SourceError): ...  # check() falhou
 ```
 
 ## 3. Registry de conectores
@@ -33,7 +47,9 @@ class SourceUnavailableError(SourceError): ...       # check() falhou
 ### 3.1 `apps.catalog.services.sources.registry`
 
 ```python
-def get_adapter(source: CatalogSource, *, require_enabled: bool = True) -> ExternalSourceAdapter: ...
+def get_adapter(
+    source: CatalogSource, *, require_enabled: bool = True
+) -> ExternalSourceAdapter: ...
 def get_adapter_class(key: str) -> type[ExternalSourceAdapter] | None: ...
 def available_sources() -> QuerySet[CatalogSource]: ...
 def is_supported(source: CatalogSource) -> bool: ...
