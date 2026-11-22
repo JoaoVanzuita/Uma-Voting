@@ -23,6 +23,7 @@ var/
 
 # Ferramentas
 node_modules/
+.benchmarks/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
