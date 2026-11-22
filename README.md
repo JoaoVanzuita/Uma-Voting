@@ -130,7 +130,9 @@ uv run pytest -m e2e
 
 ## Operação
 
-- Release: `scripts/release.sh` executa `migrate`, `createcachetable` e `collectstatic`.
+- Release: `scripts/release.sh` executa `migrate`, `createcachetable` e `collectstatic`
+  (Compose). No Railway, `scripts/railway-predeploy.sh` faz `migrate` + `createcachetable`
+  e o `collectstatic` acontece no build da imagem.
 - Scheduler: `python manage.py run_scheduler --interval 60`.
 - Sincronização diária do catálogo: `scripts/sync_catalog.sh` às 03:00.
 - Backup: `scripts/backup.sh`; restauração: `scripts/restore.sh`.

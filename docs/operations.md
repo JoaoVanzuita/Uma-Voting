@@ -37,8 +37,35 @@ docker compose -f compose.yaml -f compose.prod.yaml run --rm release
 docker compose -f compose.yaml -f compose.prod.yaml up -d
 ```
 
-O serviço `release` executa `migrate`, `collectstatic` e `createcachetable` uma vez. Migrations
-não rodam no entrypoint de cada worker.
+No Docker Compose o serviço `release` executa `migrate`, `collectstatic` e
+`createcachetable` uma vez. Migrations não rodam no entrypoint de cada worker.
+
+### 2.1 Railway (sem Caddy)
+
+O plano de implementação está em `docs/plans/uma-voting-railway-implementation-plan.md`.
+Resumo da configuração de código já preparada:
+
+| Variável | Compose prod | Railway |
+|---|---|---|
+| `STATIC_SERVE_WHITENOISE` | `False` (Caddy/volume) | `True` (build + WhiteNoise) |
+| `MEDIA_STORAGE_BACKEND` | `filesystem` | `s3` (Railway Bucket) |
+| `SECURITY_HEADERS_MODE` | `proxy` (Caddy) | `django` |
+| `DJANGO_SCHEDULER_MODE` | `external` (serviço `scheduler`) | `on_request` |
+| `DJANGO_SECURE_REDIRECT_EXEMPT_HEALTH` | `False` | `True` (healthcheck interno HTTP) |
+| `GUNICORN_WORKERS` | `3` | `1` |
+
+- Pre-deploy: `sh scripts/railway-predeploy.sh` (configurado no Dashboard; não
+  criar `railway.json`, a Config as Code está descontinuada).
+- Scheduler sob demanda: a primeira requisição `GET`/`HEAD` depois do horário
+  devido executa as transições **antes** da view; `/health/`, `/static/` e
+  `/media/` não disparam o tick. `run_scheduler` continua sendo o modo do
+  Compose e não deve rodar junto com `on_request` no mesmo banco.
+- Mídia: `python manage.py migrate_media_to_storage --dry-run --source-root ./media`
+  e depois `--apply`; use `--manifest images.csv` quando o banco ainda estiver
+  vazio. O comando nunca apaga a origem nem altera `ImageAsset.file_path`.
+- Estáticos: `collectstatic` roda no build da imagem com
+  `LenientCompressedManifestStaticFilesStorage`, que tolera referências ausentes
+  dentro de vendors (ex.: source map do Bootstrap).
 
 ## 3. Scheduler e sincronização
 
@@ -64,6 +91,10 @@ Sincronização manual:
 CATALOG_FILE=/app/var/catalog.csv ./scripts/sync_catalog.sh
 python manage.py import_catalog --file catalog.csv --source curadoria-local --apply
 ```
+
+**Release concluído.** No Docker Compose o Caddy serve estáticos e mídia; no
+Railway use `scripts/railway-predeploy.sh` (`migrate` + `createcachetable`) e
+`collectstatic` no build da imagem.
 
 ## 4. Backups e restauração
 
