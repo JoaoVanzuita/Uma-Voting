@@ -45,7 +45,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Auditoria de dependências
-        run: uv run --with pip-audit pip-audit
+        run: uv run --with pip-audit==2.10.1 pip-audit
 
       - name: Ruff (lint)
         run: uv run ruff check .
