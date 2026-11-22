@@ -133,18 +133,49 @@ jobs:
       - name: Instalar Railway CLI
         run: npm install --global "@railway/cli@${{ vars.RAILWAY_CLI_VERSION || '5.75.0' }}"
 
-      - name: Deploy do commit (aguarda SUCCESS)
-        # O serviço tem fonte GitHub, então `railway up` (upload) não se aplica:
-        # o deploy é disparado pelo commit que já passou pelo CI. `--json` sai
-        # com código diferente de zero quando o deploy falha ou expira.
+      - name: Deploy do commit
+        # O serviço tem fonte GitHub, então `railway up` (upload) não se aplica.
+        # `redeploy --commit --json` retorna após enfileirar: o passo seguinte
+        # acompanha o status até SUCCESS/FAILED.
+        id: redeploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          set -o pipefail
           railway redeploy \
             --project "${{ vars.RAILWAY_PROJECT_ID }}" \
             --environment "${{ vars.RAILWAY_ENVIRONMENT }}" \
             --service "${{ vars.RAILWAY_SERVICE }}" \
             --commit "$GITHUB_SHA" \
             --yes \
-            --json
+            --json | tee redeploy.json
+          python3 -c '
+          import json
+          print("deployment_id=" + json.load(open("redeploy.json"))["id"])
+          ' >> "$GITHUB_OUTPUT"
+
+      - name: Aguardar o deploy terminar
+        env:
+          DEPLOYMENT_ID: ${{ steps.redeploy.outputs.deployment_id }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          set -euo pipefail
+          query='query($id: String!) { deployment(id: $id) { status } }'
+          for attempt in $(seq 1 60); do
+            payload="$(printf '{"id":"%s"}' "$DEPLOYMENT_ID")"
+            status="$(railway api "$query" --variables "$payload" \
+              | python3 -c 'import json,sys; print(json.load(sys.stdin)["data"]["deployment"]["status"])')"
+            echo "tentativa $attempt: $status"
+            case "$status" in
+              SUCCESS) exit 0 ;;
+              FAILED|CRASHED|REMOVED|SKIPPED|NEEDS_APPROVAL)
+                echo "::error::Deploy $DEPLOYMENT_ID terminou em $status"
+                exit 1 ;;
+            esac
+            sleep 20
+          done
+          echo "::error::Timeout aguardando o deploy $DEPLOYMENT_ID"
+          exit 1
 
       - name: Smoke test
         env:
