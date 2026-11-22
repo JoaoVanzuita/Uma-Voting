@@ -18,3 +18,9 @@ docs
 specs
 .opencode
 .specify
+# Ferramentas de desenvolvimento que não entram na imagem
+node_modules
+.benchmarks
+.railway
+package.json
+package-lock.json
